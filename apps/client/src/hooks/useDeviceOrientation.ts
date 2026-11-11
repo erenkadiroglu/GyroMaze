@@ -50,6 +50,11 @@ export function useDeviceOrientation({
     timestamp: 0,
   });
 
+  const smoothedRef = useRef<{ beta: number; gamma: number }>({
+    beta: 0,
+    gamma: 0,
+  });
+
   /**
    * iOS 13+ cihazlarda kullanıcı etkileşimiyle sensör izni ister.
    */
@@ -83,6 +88,8 @@ export function useDeviceOrientation({
   const calibrate = useCallback(() => {
     calibrationRef.current.betaOffset = rawAnglesRef.current.beta;
     calibrationRef.current.gammaOffset = rawAnglesRef.current.gamma;
+    smoothedRef.current.beta = 0;
+    smoothedRef.current.gamma = 0;
     calibratedRef.current.beta = 0;
     calibratedRef.current.gamma = 0;
     calibratedRef.current.timestamp = Date.now();
@@ -93,8 +100,7 @@ export function useDeviceOrientation({
       return;
     }
 
-    let smoothedBeta = 0;
-    let smoothedGamma = 0;
+    const wrapDelta = (angle: number) => ((((angle + 540) % 360) - 180));
 
     const handleOrientation = (event: DeviceOrientationEvent) => {
       const alpha = event.alpha ?? 0;
@@ -105,22 +111,27 @@ export function useDeviceOrientation({
       rawAnglesRef.current.beta = beta;
       rawAnglesRef.current.gamma = gamma;
 
-      let deltaBeta = beta - calibrationRef.current.betaOffset;
-      let deltaGamma = gamma - calibrationRef.current.gammaOffset;
+      let deltaBeta = wrapDelta(beta - calibrationRef.current.betaOffset);
+      let deltaGamma = wrapDelta(gamma - calibrationRef.current.gammaOffset);
 
       // Mikro el titremelerini sönümlemek için 0.2 derecelik minimal ölü bölge
       if (Math.abs(deltaBeta) < 0.2) deltaBeta = 0;
       if (Math.abs(deltaGamma) < 0.2) deltaGamma = 0;
 
       // MEMS sensör gürültüsünü gecikme yaratmadan temizleyen hızlı üstel filtre (EMA = 0.72)
-      smoothedBeta = smoothedBeta + (deltaBeta - smoothedBeta) * 0.72;
-      smoothedGamma = smoothedGamma + (deltaGamma - smoothedGamma) * 0.72;
+      smoothedRef.current.beta +=
+        (deltaBeta - smoothedRef.current.beta) * 0.72;
+      smoothedRef.current.gamma +=
+        (deltaGamma - smoothedRef.current.gamma) * 0.72;
 
       // Maksimum ±35 derece sınırlandırma ve saf kayan nokta yuvarlama (sıfır nesne/string tahsisi)
       const clampedBeta =
-        Math.round(Math.max(-35, Math.min(35, smoothedBeta)) * 10) / 10;
+        Math.round(Math.max(-35, Math.min(35, smoothedRef.current.beta)) * 10) /
+        10;
       const clampedGamma =
-        Math.round(Math.max(-35, Math.min(35, smoothedGamma)) * 10) / 10;
+        Math.round(
+          Math.max(-35, Math.min(35, smoothedRef.current.gamma)) * 10,
+        ) / 10;
 
       calibratedRef.current.alpha = Math.round(alpha * 10) / 10;
       calibratedRef.current.beta = clampedBeta;

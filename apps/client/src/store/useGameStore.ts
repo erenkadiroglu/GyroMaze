@@ -162,7 +162,7 @@ interface GameStoreState {
   /** Topu başlangıç noktasına ışınlamak için artırılan tetikleyici sayaç */
   resetCount: number;
   /** Mobil cihaza titreşim göndermek için tetiklenen sinyal */
-  hapticSignal: { type: HapticType; seq: number } | null;
+  hapticSignal: { type: HapticType; seq: number; playerSlot?: 1 | 2 } | null;
   /** Oda veya bağlantı hatası mesajı */
   errorMessage: string | null;
 
@@ -224,7 +224,7 @@ interface GameStoreState {
   collectCrystal: (crystalIndex: number) => void;
   toggleSoundMuted: () => void;
   triggerBallReset: () => void;
-  triggerHaptic: (type: HapticType) => void;
+  triggerHaptic: (type: HapticType, playerSlot?: 1 | 2) => void;
   setErrorMessage: (message: string | null) => void;
   updateTransientGyro: (data: GyroData) => void;
   resetTransientGyro: (slot?: 1 | 2) => void;
@@ -503,9 +503,13 @@ export const useGameStore = create<GameStoreState>()(
       elapsedSeconds: 0,
       collectedCrystals: [],
     })),
-  triggerHaptic: (type) =>
+  triggerHaptic: (type, playerSlot) =>
     set((state) => ({
-      hapticSignal: { type, seq: (state.hapticSignal?.seq ?? 0) + 1 },
+      hapticSignal: {
+        type,
+        seq: (state.hapticSignal?.seq ?? 0) + 1,
+        playerSlot,
+      },
     })),
   setErrorMessage: (errorMessage) => set({ errorMessage }),
 

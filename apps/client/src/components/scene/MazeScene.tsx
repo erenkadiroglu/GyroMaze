@@ -159,9 +159,9 @@ interface MazeStageProps {
   onReachGoal: (runPath: Array<[number, number]>, winnerSlot?: 1 | 2) => void;
   onFallIntoHole: (slot: 1 | 2) => void;
   onLaserHit: (slot: 1 | 2) => void;
-  onBoostHit: () => void;
-  onTeleportHit: () => void;
-  onWallHit: (speed: number) => void;
+  onBoostHit: (slot: 1 | 2) => void;
+  onTeleportHit: (slot: 1 | 2) => void;
+  onWallHit: (speed: number, slot: 1 | 2) => void;
 }
 
 /**
@@ -369,7 +369,7 @@ function MazeStage({
       const speed = Math.hypot(vel.x, vel.z);
       if (speed > 1.3) {
         lastWallSoundTimeRef.current[slot] = now;
-        onWallHit(speed);
+        onWallHit(speed, slot);
       }
     },
     [onWallHit],
@@ -416,7 +416,7 @@ function MazeStage({
               },
               true,
             );
-            onBoostHit();
+            onBoostHit(slot);
             break;
           }
         }
@@ -448,7 +448,7 @@ function MazeStage({
                 trailHistoryRef.current[t].z = dest[1];
               }
             }
-            onTeleportHit();
+            onTeleportHit(slot);
             break;
           }
         }
@@ -508,7 +508,7 @@ function MazeStage({
             const nx = dx / dist;
             const nz = dz / dist;
             body.setLinvel({ x: nx * 6.8, y: 0, z: nz * 6.8 }, true);
-            onWallHit(5.5);
+            onWallHit(5.5, slot);
           }
         }
       }
@@ -1345,7 +1345,7 @@ export function MazeScene() {
       if (!isSoundMuted) {
         soundEngine.playHoleFall();
       }
-      triggerHaptic('hole');
+      triggerHaptic('hole', slot);
       if (!useGameStore.getState().isMultiplayer) {
         triggerBallReset();
       } else {
@@ -1360,7 +1360,7 @@ export function MazeScene() {
       if (!isSoundMuted) {
         soundEngine.playLaserZap();
       }
-      triggerHaptic('laser');
+      triggerHaptic('laser', slot);
       if (!useGameStore.getState().isMultiplayer) {
         triggerBallReset();
       } else {
@@ -1370,27 +1370,33 @@ export function MazeScene() {
     [isSoundMuted, triggerHaptic, triggerBallReset, showHudNotification],
   );
 
-  const handleBoostHit = useCallback(() => {
-    if (!isSoundMuted) {
-      soundEngine.playBoostPad();
-    }
-    triggerHaptic('boost');
-  }, [isSoundMuted, triggerHaptic]);
+  const handleBoostHit = useCallback(
+    (slot: 1 | 2) => {
+      if (!isSoundMuted) {
+        soundEngine.playBoostPad();
+      }
+      triggerHaptic('boost', slot);
+    },
+    [isSoundMuted, triggerHaptic],
+  );
 
-  const handleTeleportHit = useCallback(() => {
-    if (!isSoundMuted) {
-      soundEngine.playTeleport();
-    }
-    triggerHaptic('teleport');
-  }, [isSoundMuted, triggerHaptic]);
+  const handleTeleportHit = useCallback(
+    (slot: 1 | 2) => {
+      if (!isSoundMuted) {
+        soundEngine.playTeleport();
+      }
+      triggerHaptic('teleport', slot);
+    },
+    [isSoundMuted, triggerHaptic],
+  );
 
   const handleWallHit = useCallback(
-    (speed: number) => {
+    (speed: number, slot: 1 | 2) => {
       if (!isSoundMuted) {
         soundEngine.playWallHit(Math.min(1, speed / 8));
       }
       if (speed > 2.4) {
-        triggerHaptic('wall');
+        triggerHaptic('wall', slot);
       }
     },
     [isSoundMuted, triggerHaptic],

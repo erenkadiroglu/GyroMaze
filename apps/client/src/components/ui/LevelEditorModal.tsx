@@ -50,6 +50,59 @@ function gridToWorld(row: number, col: number): [number, number] {
   return [x, z];
 }
 
+/**
+ * Editör ızgarasında başlangıçtan tüm kristallere ve hedefe yürünür bir yol olup olmadığını BFS ile doğrular.
+ */
+function hasSolvableGridPath(grid: CellTool[][]): boolean {
+  const visited = Array.from({ length: GRID_SIZE }, () =>
+    Array.from({ length: GRID_SIZE }, () => false),
+  );
+  const queue: Array<[number, number]> = [[0, 0]];
+  visited[0][0] = true;
+
+  let totalCrystals = 0;
+  for (let r = 0; r < GRID_SIZE; r++) {
+    for (let c = 0; c < GRID_SIZE; c++) {
+      if (grid[r][c] === 'crystal') totalCrystals += 1;
+    }
+  }
+
+  let reachedGoal = false;
+  let reachedCrystals = 0;
+  const dirs: Array<[number, number]> = [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+  ];
+
+  while (queue.length > 0) {
+    const [r, c] = queue.shift()!;
+    if (grid[r][c] === 'goal') reachedGoal = true;
+    if (grid[r][c] === 'crystal') reachedCrystals += 1;
+
+    for (const [dr, dc] of dirs) {
+      const nr = r + dr;
+      const nc = c + dc;
+      if (
+        nr < 0 ||
+        nr >= GRID_SIZE ||
+        nc < 0 ||
+        nc >= GRID_SIZE ||
+        visited[nr][nc]
+      ) {
+        continue;
+      }
+      const cell = grid[nr][nc];
+      if (cell === 'wall' || cell === 'hole') continue;
+      visited[nr][nc] = true;
+      queue.push([nr, nc]);
+    }
+  }
+
+  return reachedGoal && reachedCrystals >= totalCrystals;
+}
+
 const TOOLS: Array<{
   id: CellTool;
   label: string;
@@ -204,25 +257,45 @@ export function LevelEditorModal() {
 
   const handleRandomizeGrid = () => {
     setGrid(() => {
-      const next: CellTool[][] = Array.from({ length: GRID_SIZE }, () =>
-        Array.from({ length: GRID_SIZE }, () => 'erase'),
-      );
-      next[0][0] = 'start';
-      next[GRID_SIZE - 1][GRID_SIZE - 1] = 'goal';
+      for (let attempt = 0; attempt < 25; attempt++) {
+        const next: CellTool[][] = Array.from({ length: GRID_SIZE }, () =>
+          Array.from({ length: GRID_SIZE }, () => 'erase'),
+        );
+        next[0][0] = 'start';
+        next[GRID_SIZE - 1][GRID_SIZE - 1] = 'goal';
 
-      for (let r = 0; r < GRID_SIZE; r++) {
-        for (let c = 0; c < GRID_SIZE; c++) {
-          if ((r <= 1 && c <= 1) || (r >= GRID_SIZE - 2 && c >= GRID_SIZE - 2))
-            continue;
-          const roll = Math.random();
-          if (roll < 0.16) next[r][c] = 'wall';
-          else if (roll < 0.23) next[r][c] = 'crystal';
-          else if (roll < 0.28) next[r][c] = 'hole';
-          else if (roll < 0.31) next[r][c] = 'boost';
-          else if (roll < 0.34) next[r][c] = 'moving';
+        for (let r = 0; r < GRID_SIZE; r++) {
+          for (let c = 0; c < GRID_SIZE; c++) {
+            if (
+              (r <= 1 && c <= 1) ||
+              (r >= GRID_SIZE - 2 && c >= GRID_SIZE - 2)
+            ) {
+              continue;
+            }
+            const roll = Math.random();
+            if (roll < 0.16) next[r][c] = 'wall';
+            else if (roll < 0.23) next[r][c] = 'crystal';
+            else if (roll < 0.28) next[r][c] = 'hole';
+            else if (roll < 0.31) next[r][c] = 'boost';
+            else if (roll < 0.34) next[r][c] = 'moving';
+          }
+        }
+
+        if (hasSolvableGridPath(next)) {
+          return next;
         }
       }
-      return next;
+
+      const fallback: CellTool[][] = Array.from({ length: GRID_SIZE }, () =>
+        Array.from({ length: GRID_SIZE }, () => 'erase'),
+      );
+      fallback[0][0] = 'start';
+      fallback[GRID_SIZE - 1][GRID_SIZE - 1] = 'goal';
+      fallback[2][2] = 'crystal';
+      fallback[5][5] = 'crystal';
+      fallback[3][3] = 'wall';
+      fallback[4][4] = 'wall';
+      return fallback;
     });
   };
 
@@ -317,20 +390,54 @@ export function LevelEditorModal() {
   const handleImportFromClipboard = async () => {
     try {
       const raw = await navigator.clipboard.readText();
-      const parsed = JSON.parse(raw) as MazeLevelDefinition;
+      const parsed = JSON.parse(raw) as Partial<MazeLevelDefinition>;
+      const isVec3 = (v: unknown): v is [number, number, number] =>
+        Array.isArray(v) &&
+        v.length === 3 &&
+        v.every((n) => typeof n === 'number' && Number.isFinite(n));
+
       if (
         !parsed ||
-        !Array.isArray(parsed.startPosition) ||
-        !Array.isArray(parsed.goalPosition) ||
+        !isVec3(parsed.startPosition) ||
+        !isVec3(parsed.goalPosition) ||
         !Array.isArray(parsed.innerWalls)
       ) {
         setImportError('Panodaki metin geçerli bir GyroMaze JSON haritası değil.');
         return;
       }
+
+      const boardSize =
+        typeof parsed.boardSize === 'number' &&
+        Number.isFinite(parsed.boardSize)
+          ? Math.max(8, Math.min(18, parsed.boardSize))
+          : 12;
+
       setImportError(null);
       setCustomLevel({
-        ...parsed,
         id: 99,
+        title:
+          typeof parsed.title === 'string' && parsed.title.trim()
+            ? parsed.title.trim().slice(0, 48)
+            : 'Özel İçe Aktarılan Harita',
+        subtitle:
+          typeof parsed.subtitle === 'string' && parsed.subtitle.trim()
+            ? parsed.subtitle.trim().slice(0, 80)
+            : 'JSON ile içe aktarıldı',
+        boardSize,
+        startPosition: parsed.startPosition,
+        goalPosition: parsed.goalPosition,
+        innerWalls: parsed.innerWalls,
+        voidHoles: Array.isArray(parsed.voidHoles) ? parsed.voidHoles : [],
+        crystals: Array.isArray(parsed.crystals) ? parsed.crystals : [],
+        laserGates: Array.isArray(parsed.laserGates) ? parsed.laserGates : [],
+        boostPads: Array.isArray(parsed.boostPads) ? parsed.boostPads : [],
+        teleporters: Array.isArray(parsed.teleporters)
+          ? parsed.teleporters
+          : [],
+        movingObstacles: Array.isArray(parsed.movingObstacles)
+          ? parsed.movingObstacles
+          : [],
+        starThresholds: parsed.starThresholds,
       });
     } catch {
       setImportError('Panodan geçerli bir JSON haritası okunamadı.');

@@ -202,12 +202,17 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (!roomId) return;
 
     const room = this.roomService.getRoom(roomId);
-    if (room?.controllerSocketId) {
+    if (!room) return;
+
+    const sendToSlot1 = !payload.playerSlot || payload.playerSlot === 1;
+    const sendToSlot2 = !payload.playerSlot || payload.playerSlot === 2;
+
+    if (sendToSlot1 && room.controllerSocketId) {
       this.server
         .to(room.controllerSocketId)
         .volatile.emit(RoomEvents.GAME_HAPTIC, payload);
     }
-    if (room?.secondControllerSocketId) {
+    if (sendToSlot2 && room.secondControllerSocketId) {
       this.server
         .to(room.secondControllerSocketId)
         .volatile.emit(RoomEvents.GAME_HAPTIC, payload);

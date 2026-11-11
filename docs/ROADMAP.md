@@ -110,6 +110,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **60 FPS Tekrar Tetiklenme Koruması & Re-Render Optimizasyonu:** Kristal toplama ve hedef portalı kontrolleri senkron `useGameStore.getState()` korumasıyla aynı karede çift ses/titreşim üretimini ve 10Hz sayaç kaynaklı gereksiz 3B sahne yeniden renderlarını önler.
 - [x] **Saat Sapmasız Gerçek RTT Ping ve Senkronizasyon İyileştirmeleri (`ROOM_PING`, `useSocket.ts`, `controller/page.tsx`):** Telefon–masaüstü sistem saati farkından etkilenen yapay ping yerine WebSocket onaylı (`room:ping`) gerçek ağ gidiş-dönüş gecikmesi (`RTT ms`) ölçümü eklendi; ayrılan oyuncu yuvasına göre izole jiroskop sıfırlama (`resetTransientGyro(slot)`), `ROOM_PAIRED` anında durum snapshot gönderimi ve mobil manuel bağlantıda çift `ROOM_JOIN` tekrarı giderildi.
 
+## ✅ Faz 15: Hedefli Haptik Yönlendirme, Sensör Kalibrasyon İyileştirmesi ve Editör Doğrulama (Tamamlandı)
+
+- [x] **Oyuncu Bazlı Hedefli Mobil Titreşim (`HapticPayload.playerSlot`, `gyro.gateway.ts`):** Çok oyunculu modda duvar, delik, lazer, hız rampası ve ışınlanma titreşimleri yalnızca ilgili oyuncunun telefonuna (`playerSlot: 1 | 2`) iletilir; kristal toplama ve zafer titreşimi her iki cihaza ortak gönderilir.
+- [x] **Anlık Jiroskop Kalibrasyon Sıfırlama & Klavye Takılma Koruması (`useDeviceOrientation.ts`, `useKeyboardFallback.ts`):** Kalibrasyon anında EMA yumuşatma tamponu sıfırlanarak anında merkeze dönüş sağlandı (`±180°` açı sarma korumalı); overlay modalları açıkken veya pencere odağı kaybolduğunda (`blur`) basılı kalan klavye eksenleri otomatik sıfırlandı.
+- [x] **Mobil Süre Doldu Kartı, Dinamik Radar Ölçeği ve Çözülebilir Editör Haritası:** Mobil kontrolcüye `Time Attack` kaybı için **Süre doldu / Tekrar dene** kartı eklendi ve pasif ekranlardaki alt butonlar temizlendi; `AttitudeGauge.tsx` radarı tahta boyutuna göre dinamik ölçeklendi; `LevelEditorModal.tsx` rastgele üreticisi BFS çözülebilirlik doğrulaması ve güvenli JSON içe aktarma doğrulaması kazandı.
+
 
 
 

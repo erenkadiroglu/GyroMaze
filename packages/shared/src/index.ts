@@ -194,6 +194,8 @@ export interface ChangeLevelPayload {
 export interface HapticPayload {
   roomId: string;
   type: HapticType;
+  /** Yalnızca belirli bir oyuncunun cihazına gönderilecekse yuva numarası */
+  playerSlot?: 1 | 2;
 }
 
 /**

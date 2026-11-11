@@ -2,6 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { RoomEvents } from '@gyromaze/shared';
 import { RoomService } from '../dist/gateway/room.service.js';
+import { GyroGateway } from '../dist/gateway/gyro.gateway.js';
 
 describe('RoomService — Oda Yönetimi, 6 Haneli Kod Eşleşmesi ve Skor Tablosu Testleri', () => {
   it('6 haneli, karışıklık yaratmayan karakterlerden oluşan benzersiz oda kodu üretmelidir', async () => {
@@ -130,6 +131,49 @@ describe('RoomService — Oda Yönetimi, 6 Haneli Kod Eşleşmesi ve Skor Tablos
 
   it('RTT gecikme ölçümü için ROOM_PING olayı tanımlı olmalıdır', () => {
     assert.equal(RoomEvents.ROOM_PING, 'room:ping');
+  });
+
+  it('GyroGateway hedefli haptik yönlendirmesi yalnız ilgili yuva cihazına ve ortak olayları tümüne iletmelidir', async () => {
+    const service = new RoomService();
+    const room = await service.createRoom('host-haptic');
+    service.joinRoom(room.roomId, 'ctrl-1', 1);
+    service.joinRoom(room.roomId, 'ctrl-2', 2);
+
+    const emitted = [];
+    const gateway = new GyroGateway(service);
+    gateway.server = {
+      to(target) {
+        return {
+          volatile: {
+            emit(event, payload) {
+              emitted.push({ target, event, payload });
+            },
+          },
+        };
+      },
+    };
+
+    const hostClient = { id: 'host-haptic' };
+
+    gateway.handleGameHaptic(hostClient, {
+      roomId: room.roomId,
+      type: 'wall',
+      playerSlot: 2,
+    });
+    assert.equal(emitted.length, 1);
+    assert.equal(emitted[0].target, 'ctrl-2');
+    assert.equal(emitted[0].event, RoomEvents.GAME_HAPTIC);
+
+    gateway.handleGameHaptic(hostClient, {
+      roomId: room.roomId,
+      type: 'goal',
+    });
+    assert.equal(emitted.length, 3);
+    assert.deepEqual(
+      emitted.slice(1).map((item) => item.target),
+      ['ctrl-1', 'ctrl-2'],
+    );
+    assert.equal(typeof gateway.handlePing(), 'number');
   });
 });
 

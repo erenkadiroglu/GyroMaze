@@ -4,6 +4,8 @@ import { useEffect, useRef } from 'react';
 import { transientGyro, transientGyroP2 } from '@/store/useGameStore';
 
 interface AttitudeGaugeProps {
+  /** Labirent tahtasının genişlik/uzunluk boyutu (varsayılan 12) */
+  boardSize?: number;
   /** Hedef portalının koordinatı [x, y, z] */
   goalPosition: [number, number, number];
   /** Kalan kristallerin 2B tahta üzerindeki koordinatları */
@@ -22,12 +24,16 @@ interface AttitudeGaugeProps {
  * React yeniden render'ı tetiklemeden bilye hızı, eğim açıları ve 2B radarı gösterir.
  */
 export function AttitudeGauge({
+  boardSize = 12,
   goalPosition,
   remainingCrystals,
   isPortalUnlocked,
   isMultiplayer,
   showMiniMap,
 }: AttitudeGaugeProps) {
+  const boardSizeRef = useRef<number>(boardSize);
+  boardSizeRef.current = boardSize;
+  const halfBoard = boardSize / 2;
   const horizonRef = useRef<HTMLDivElement | null>(null);
   const pitchTextRef = useRef<HTMLSpanElement | null>(null);
   const rollTextRef = useRef<HTMLSpanElement | null>(null);
@@ -56,21 +62,44 @@ export function AttitudeGauge({
         }
       }
 
+      const currentBoardSize = boardSizeRef.current;
+      const currentHalfBoard = currentBoardSize / 2;
+
       if (miniMapBallRef.current) {
-        // 12x12 tahtada [-6..+6] aralığını 44x44px radar içi koordinata dönüştür
-        const rx = Math.max(3, Math.min(41, ((transientGyro.ballX + 6) / 12) * 44));
-        const rz = Math.max(3, Math.min(41, ((transientGyro.ballZ + 6) / 12) * 44));
+        // Aktif tahta boyutuna göre 44x44px radar içi koordinata dönüştür
+        const rx = Math.max(
+          3,
+          Math.min(
+            41,
+            ((transientGyro.ballX + currentHalfBoard) / currentBoardSize) * 44,
+          ),
+        );
+        const rz = Math.max(
+          3,
+          Math.min(
+            41,
+            ((transientGyro.ballZ + currentHalfBoard) / currentBoardSize) * 44,
+          ),
+        );
         miniMapBallRef.current.style.transform = `translate3d(${(rx - 4).toFixed(1)}px, ${(rz - 4).toFixed(1)}px, 0)`;
       }
 
       if (miniMapBall2Ref.current) {
         const rx2 = Math.max(
           3,
-          Math.min(41, ((transientGyroP2.ballX + 6) / 12) * 44),
+          Math.min(
+            41,
+            ((transientGyroP2.ballX + currentHalfBoard) / currentBoardSize) *
+              44,
+          ),
         );
         const rz2 = Math.max(
           3,
-          Math.min(41, ((transientGyroP2.ballZ + 6) / 12) * 44),
+          Math.min(
+            41,
+            ((transientGyroP2.ballZ + currentHalfBoard) / currentBoardSize) *
+              44,
+          ),
         );
         miniMapBall2Ref.current.style.transform = `translate3d(${(rx2 - 4).toFixed(1)}px, ${(rz2 - 4).toFixed(1)}px, 0)`;
       }
@@ -169,8 +198,8 @@ export function AttitudeGauge({
             {/* Hedef Portalı */}
             <div
               style={{
-                left: `${((goalPosition[0] + 6) / 12) * 100}%`,
-                top: `${((goalPosition[2] + 6) / 12) * 100}%`,
+                left: `${((goalPosition[0] + halfBoard) / boardSize) * 100}%`,
+                top: `${((goalPosition[2] + halfBoard) / boardSize) * 100}%`,
               }}
               className={`absolute h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full ${
                 isPortalUnlocked
@@ -183,8 +212,8 @@ export function AttitudeGauge({
               <div
                 key={`radar-c-${idx}`}
                 style={{
-                  left: `${((cx + 6) / 12) * 100}%`,
-                  top: `${((cz + 6) / 12) * 100}%`,
+                  left: `${((cx + halfBoard) / boardSize) * 100}%`,
+                  top: `${((cz + halfBoard) / boardSize) * 100}%`,
                 }}
                 className="absolute h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-signal"
               />

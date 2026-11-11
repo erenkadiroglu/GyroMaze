@@ -375,6 +375,7 @@ export function useSocket({
     socketRef.current?.volatile.emit(RoomEvents.GAME_HAPTIC, {
       roomId,
       type: hapticSignal.type,
+      playerSlot: hapticSignal.playerSlot,
     });
   }, [role, hapticSignal, roomId]);
 

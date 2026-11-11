@@ -587,6 +587,7 @@ export function DesktopHUD() {
       {/* ALT BÖLGE: KOKPİT GÖSTERGESİ, İPUCU VE HIZLI ARAÇ ÇUBUĞU */}
       <footer className="flex flex-wrap items-end justify-between gap-4">
         <AttitudeGauge
+          boardSize={currentLevelInfo.boardSize}
           goalPosition={currentLevelInfo.goalPosition}
           remainingCrystals={remainingCrystals}
           isPortalUnlocked={isPortalUnlocked}

@@ -18,10 +18,40 @@ export function useKeyboardFallback(): void {
     (s) => s.isSecondControllerPaired,
   );
   const isMultiplayer = useGameStore((s) => s.isMultiplayer);
+  const gameStatus = useGameStore((s) => s.gameStatus);
+  const isPairingModalOpen = useGameStore((s) => s.isPairingModalOpen);
+  const isSettingsOpen = useGameStore((s) => s.isSettingsOpen);
+  const isEditorOpen = useGameStore((s) => s.isEditorOpen);
+  const isLeaderboardOpen = useGameStore((s) => s.isLeaderboardOpen);
+
+  const isBlocked =
+    isPairingModalOpen ||
+    isSettingsOpen ||
+    isEditorOpen ||
+    isLeaderboardOpen ||
+    (gameStatus !== 'playing' && gameStatus !== 'waiting');
 
   useEffect(() => {
     const pressedKeys = new Set<string>();
     const TILT_DEGREES = 20;
+
+    const resetKeyboardAxes = () => {
+      if (!isControllerPaired) {
+        transientGyro.beta = 0;
+        transientGyro.gamma = 0;
+        transientGyro.timestamp = Date.now();
+      }
+      if (isMultiplayer && !isSecondControllerPaired) {
+        transientGyroP2.beta = 0;
+        transientGyroP2.gamma = 0;
+        transientGyroP2.timestamp = Date.now();
+      }
+    };
+
+    if (isBlocked) {
+      resetKeyboardAxes();
+      return;
+    }
 
     const updateFromKeys = () => {
       if (!isMultiplayer) {
@@ -77,7 +107,7 @@ export function useKeyboardFallback(): void {
 
     const handleKeyDown = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement | null)?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
 
       if (
         [
@@ -103,12 +133,25 @@ export function useKeyboardFallback(): void {
       }
     };
 
+    const handleBlur = () => {
+      if (pressedKeys.size === 0) return;
+      pressedKeys.clear();
+      resetKeyboardAxes();
+    };
+
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('blur', handleBlur);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('blur', handleBlur);
     };
-  }, [isControllerPaired, isSecondControllerPaired, isMultiplayer]);
+  }, [
+    isControllerPaired,
+    isSecondControllerPaired,
+    isMultiplayer,
+    isBlocked,
+  ]);
 }
 
