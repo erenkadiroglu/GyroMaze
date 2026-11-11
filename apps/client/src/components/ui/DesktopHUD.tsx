@@ -19,6 +19,9 @@ import {
   VolumeX,
   Globe,
   Network,
+  Gem,
+  Lock,
+  Unlock,
 } from 'lucide-react';
 import { useGameStore, transientGyro } from '@/store/useGameStore';
 import { MAZE_LEVELS } from '@/components/scene/mazeLevels';
@@ -45,6 +48,7 @@ export function DesktopHUD() {
   const elapsedSeconds = useGameStore((s) => s.elapsedSeconds);
   const setElapsedSeconds = useGameStore((s) => s.setElapsedSeconds);
   const bestTimes = useGameStore((s) => s.bestTimes);
+  const collectedCrystals = useGameStore((s) => s.collectedCrystals);
   const isSoundMuted = useGameStore((s) => s.isSoundMuted);
   const toggleSoundMuted = useGameStore((s) => s.toggleSoundMuted);
   const triggerBallReset = useGameStore((s) => s.triggerBallReset);
@@ -64,6 +68,8 @@ export function DesktopHUD() {
   const currentLevelInfo =
     MAZE_LEVELS[(level - 1) % MAZE_LEVELS.length] ?? MAZE_LEVELS[0];
   const currentBestTime = bestTimes[currentLevelInfo.id];
+  const totalCrystals = currentLevelInfo.crystals.length;
+  const isPortalUnlocked = collectedCrystals.length >= totalCrystals;
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -219,8 +225,34 @@ export function DesktopHUD() {
           </div>
         </div>
 
-        {/* Sağ: Durum, Süre, Rekor, Ses ve Hızlı Aksiyonlar */}
+        {/* Sağ: Durum, Kristal, Süre, Rekor, Ses ve Hızlı Aksiyonlar */}
         <div className="pointer-events-auto flex flex-wrap items-center gap-2.5">
+          {/* Enerji Kristali ve Portal Kilidi Göstergesi */}
+          <div
+            className={`flex items-center gap-2.5 rounded-xl border px-4 py-2.5 backdrop-blur-xl transition ${
+              isPortalUnlocked
+                ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
+                : 'border-zinc-800/80 bg-zinc-900/75 text-zinc-200'
+            }`}
+          >
+            <Gem className="h-4 w-4 text-sky-400" />
+            <span className="font-mono text-xs font-semibold">
+              {collectedCrystals.length}/{totalCrystals}
+            </span>
+            <div className="h-3.5 w-px bg-zinc-800" />
+            {isPortalUnlocked ? (
+              <span className="flex items-center gap-1 text-xs font-medium text-emerald-300">
+                <Unlock className="h-3.5 w-3.5" />
+                Portal Açık
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 text-xs font-medium text-amber-300">
+                <Lock className="h-3.5 w-3.5" />
+                Portal Kilitli
+              </span>
+            )}
+          </div>
+
           {/* Süre ve En İyi Rekor Sayacı */}
           <div className="flex items-center gap-3 rounded-xl border border-zinc-800/80 bg-zinc-900/75 px-4 py-2.5 backdrop-blur-xl">
             <div className="flex items-center gap-1.5">

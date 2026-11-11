@@ -39,9 +39,14 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 
 ---
 
-## 🚀 Faz 4: Sıradaki Geliştirme Hedefleri (Backlog)
+## ✅ Faz 4: Oyun Mekaniği Derinliği ve Görsel Efektler (Tamamlandı)
 
-- [ ] **Hareketli Engeller ve Lazer Kapılar:** Belirli periyotlarla açılıp kapanan enerji bariyerleri ve dönen engeller.
-- [ ] **Toplanabilir Enerji Kristalleri (Collectibles):** Hedef portalını aktif hale getirmek veya süreden bonus kazanmak için labirent içindeki kristalleri toplama mekaniği.
-- [ ] **Bilye İz Efekti (Motion Trail) ve Parçacık (Particle) Sistemleri:** Hızlanan bilyenin arkasında neon iz bırakması ve hedefe ulaşıldığında 3B konfeti/parçacık patlaması.
-- [ ] **Özel Harita Editörü (Level Editor):** Kullanıcının tarayıcı üzerinden kendi duvar ve tuzaklarını yerleştirip JSON olarak dışa aktarabilmesi.
+- [x] **Periyodik Lazer Kapılar (`laserGates`):** Belirli periyotlarla açılıp kapanan enerji bariyerleri ve elektro-darbe ses/titreşim geri bildirimi.
+- [x] **Toplanabilir Enerji Kristalleri (`crystals`) ve Portal Kilidi:** Hedef portalını kehribar (kilitli) durumdan zümrüt yeşili (açık) duruma geçiren kristal toplama mekaniği.
+- [x] **Bilye Neon Hareket İzi (`Motion Trail`):** Sıfır GC maliyetli, halka tampon (ring-buffer) tabanlı akıcı neon zemin izi.
+
+## 🚀 Faz 5: İleri Seviye Hedefler (Backlog)
+
+- [ ] **Özel Harita Editörü (Level Editor):** Kullanıcının tarayıcı üzerinden kendi duvar, kristal, lazer ve tuzaklarını yerleştirip JSON olarak dışa aktarabilmesi.
+- [ ] **Küresel Skor Tablosu (Leaderboard):** Bölüm rekorlarının sunucu tarafında da saklanarak en hızlı oyuncuların listelenmesi.
+
