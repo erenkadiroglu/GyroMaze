@@ -18,6 +18,7 @@
     "build:server": "npm run build --workspace=@gyromaze/server",
     "build": "npm run build:shared && npm run build:server && npm run build:client",
     "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present"
   },
   "engines": {

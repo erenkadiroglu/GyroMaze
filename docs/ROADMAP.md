@@ -54,4 +54,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
   - 120–240Hz frekansında tetiklenen `deviceorientation` ve `pointermove` olayları doğrudan DOM manipülasyonundan ayrıştırıldı; tek bir `requestAnimationFrame` döngüsü ve 8Hz metin seyreltmesi (throttling) ile ana iş parçacığı (Main Thread) darboğazı sıfırlandı.
   - Soket bağlantısını koparmadan çalışan 6 haneli **Oda Kodu (`joinRoomByCode`)** geçiş sistemi ve `0.1°` açısal delta filtresi eklendi.
 
+## ✅ Faz 6: Otomatik Test Paketi ve Üretim (Production) Hazırlığı (Tamamlandı)
+
+- [x] **Sunucu Birim ve Entegrasyon Testleri (`apps/server/test/room.service.test.mjs`):** 6 haneli oda üretimi, küçük/büyük harf duyarsız oda kodu eşleşmesi, sekme yenilendiğinde soket devralma, oda değiştirme ve küresel skor sıralaması testleri.
+- [x] **Harita Geometrisi ve Fizik Doğrulama Testleri (`apps/client/test/mazeLevels.test.mjs`):** 5 bölümün tamamında başlangıç/hedef noktası, iç duvarlar, enerji kristalleri ve tuzak delikleri arasında çarpışma veya sıkışma olmadığını doğrulayan matematiksel test paketi.
+- [x] **Ortam Şablonu (`.env.example`) ve Kök Test Komutu (`npm test`):** Tek komutla tüm çalışma alanlarının doğrulanması.
+
+
 

@@ -10,6 +10,7 @@
     "build": "next build",
     "start": "NODE_ENV=production node server.mjs",
     "lint": "next lint",
+    "test": "node --test test/mazeLevels.test.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

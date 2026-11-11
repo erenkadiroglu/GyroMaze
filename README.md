@@ -26,12 +26,12 @@ Masaüstü ekranda oluşturulan benzersiz oda kodunu telefonunuzla **QR Kod** ü
 
 ## ✨ Temel Özellikler
 
-- **⚡ Ultra Düşük Gecikmeli Senkronizasyon (<10ms):** NestJS ve Socket.io WebSocket altyapısı ile mobil sensör verilerinin masaüstü sahneye kesintisiz aktarımı.
-- **📱 QR Kod ile Anında Eşleşme:** Uygulama indirmeden veya hesap açmadan, yalnızca mobil tarayıcı ile QR kodu okutarak odaya bağlanma.
-- **🎮 Fizik Tabanlı 3B Simülasyon:** `@react-three/rapier` ile gerçekçi yerçekimi, sürtünme, momentum ve küre-duvar çarpışma fiziği.
-- **🧈 60 FPS Pürüzsüz Hareket (Lerp / Slerp):** Sensör gürültüsünü (jitter) filtreleyen matematiksel açısal enterpolasyon ve Framer Motion destekli arayüz animasyonları.
-- **🎨 Minimalist Bağımsız Stüdyo Estetiği:** TailwindCSS ile tasarlanmış piksel-mükemmel, modern ve karanlık mod odaklı kullanıcı arayüzü.
-- **🧩 Tip Güvenli Monorepo Mimarisi:** İstemci (`apps/client`) ve sunucu (`apps/server`) arasında `packages/shared` paketiyle paylaşılan uçtan uca TypeScript veri sözleşmeleri.
+- **⚡ Ultra Düşük Gecikmeli Senkronizasyon (<10ms):** NestJS, Socket.io ve özel `TCP_NODELAY` WebSocket Proxy (`server.mjs`) altyapısı ile mobil sensör verilerinin masaüstü sahneye kesintisiz aktarımı.
+- **📱 QR Kod veya 6 Haneli Oda Kodu ile Anında Eşleşme:** Uygulama indirmeden, mobil tarayıcıdan QR kodu okutarak veya 6 haneli Oda Kodunu girerek saniyeler içinde bağlanma ve oda değiştirme.
+- **🎮 Sıfır Zıplamalı (Zero-Bounce) 3B Küre Fiziği:** `@react-three/rapier` tabanlı sabit çarpıştırıcılar, eğim ivmesi, periyodik **Lazer Kapılar**, **Toplanabilir Enerji Kristalleri** ve **Portal Kilidi** mekanikleri.
+- **🛠️ Dahili 8×8 Harita Editörü & Küresel Skor Tablosu:** Tarayıcı üzerinden özel 3B labirent tasarlama, JSON dışa aktarma ve bölüm bazlı gerçek zamanlı liderlik tablosu.
+- **🔊 Prosedürel Web Audio Ses Motoru & Haptic Titreşim:** Harici ses dosyası gerektirmeyen gerçek zamanlı ses sentezleyici ve çarpışma/kristal/lazer anında mobil titreşim geri bildirimi.
+- **🧩 Tip Güvenli Monorepo ve Otomatik Test Paketi:** `packages/shared`, `apps/server` ve `apps/client` genelinde uçtan uca TypeScript doğrulaması ve `node --test` birim/geometri testleri.
 
 ---
 
