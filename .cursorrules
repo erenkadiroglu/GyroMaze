@@ -1,0 +1,24 @@
+# GyroMaze - Proje Kuralları ve Geliştirme Anayasası (.cursorrules)
+
+## 1. Proje Kimliği ve Dil Kuralları (ZORUNLU)
+- **Proje Adı:** GyroMaze
+- **Konsept:** Kullanıcının cep telefonunu jiroskop kontrolcüsü olarak kullanarak masaüstü ekranında gerçek zamanlı (<10ms gecikme) 3B labirent oyunu oynadığı çapraz cihaz (cross-device) web uygulaması.
+- **Proje Dili:** **TÜRKÇE**.
+  - Tüm kullanıcı arayüzü (UI) metinleri, `.md` dokümantasyon dosyaları, kod içi yorum satırları ve Git commit mesajları profesyonel Türkçe ile yazılmalıdır.
+
+## 2. Katı Git ve Kimlik Kuralları (KRİTİK)
+- Tüm commit, birleştirme (merge), push ve PR işlemleri yalnızca **Eren Kadiroğlu** adına yapılmalıdır.
+- **ASLA** AI bot isimleri, `Co-authored-by` etiketleri veya varsayılan AI kimlikleri kullanılmamalıdır.
+- Türkçe Conventional Commits formatı zorunludur (örn. `feat: socket bağlantısı eklendi`).
+
+## 3. Tasarım ve UI/UX Felsefesi
+- Piksel-mükemmel, modern, minimalist bağımsız oyun stüdyosu estetiği.
+- Yalnızca TailwindCSS ile stil verilmelidir; stilsiz varsayılan HTML elemanları kullanılmamalıdır.
+- 60fps akıcılık: DOM animasyonları için `framer-motion`, 3B sahne ve kamera geçişleri için `lerp` / `slerp` kullanılmalıdır.
+
+## 4. Mimari ve Teknoloji Yığını
+- **Monorepo:** NPM Workspaces (`apps/client`, `apps/server`, `packages/shared`)
+- **İstemci (`apps/client`):** Next.js (App Router), React 19, TypeScript, TailwindCSS, Zustand, `@react-three/fiber`, `@react-three/drei`, `@react-three/rapier`
+- **Sunucu (`apps/server`):** NestJS, TypeScript, Socket.io
+- **Paylaşılan (`packages/shared`):** Ortak TypeScript tip ve arayüz tanımları (`GyroData`, `RoomEvents`)
+- **Donanım API:** HTML5 Device Orientation API (Mobil)

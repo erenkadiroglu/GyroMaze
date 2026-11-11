@@ -1,0 +1,62 @@
+# GyroMaze - Proje Kuralları ve Geliştirme Anayasası (.clinerules)
+
+## 1. Proje Kimliği ve Dil Kuralları (ZORUNLU)
+- **Proje Adı:** GyroMaze
+- **Konsept:** Kullanıcının cep telefonunu jiroskop kontrolcüsü olarak kullanarak masaüstü ekranında gerçek zamanlı (<10ms gecikme) 3B labirent oyunu oynadığı çapraz cihaz (cross-device) web uygulaması.
+- **Proje Dili:** **TÜRKÇE**.
+  - Tüm kullanıcı arayüzü (UI) metinleri Türkçe olmalıdır.
+  - Tüm dokümantasyon dosyaları (`.md`) profesyonel Türkçe ile yazılmalıdır.
+  - Kod içerisindeki tüm açıklama satırları (comments) ve JSDoc/TSDoc blokları Türkçe olmalıdır.
+  - Tüm Git commit mesajları, PR başlıkları ve açıklamaları Türkçe olmalıdır.
+
+## 2. Katı Git ve Kimlik Kuralları (KRİTİK)
+- Bu projedeki tüm geliştirmeler yalnızca **Eren Kadiroğlu** adına yürütülmektedir.
+- **ASLA** yapay zeka bot isimleri, `Co-authored-by` etiketleri veya varsayılan AI kimlikleri kullanılmamalıdır.
+- Yerel Git yapılandırması:
+  - `user.name`: `"Eren Kadiroğlu"`
+  - `user.email`: Kullanıcının onayladığı yerel e-posta adresi.
+- **Commit Formatı:** Türkçe Conventional Commits standardı zorunludur:
+  - `feat: socket bağlantısı eklendi`
+  - `fix: jiroskop kalibrasyon sapması düzeltildi`
+  - `docs: mimari dokümantasyon güncellendi`
+  - `chore: monorepo çalışma alanı yapılandırıldı`
+  - `refactor: fizik motoru çarpışma katmanları iyileştirildi`
+  - `style: kontrolcü arayüzü geçiş animasyonları düzenlendi`
+
+## 3. Tasarım ve UI/UX Felsefesi
+- **Görsel Kalite:** Piksel-mükemmel (pixel-perfect), modern, karanlık mod odaklı ve minimalist bir bağımsız stüdyo (indie studio) kalitesi hedeflenmelidir.
+- **Stil Altyapısı:** Yalnızca **TailwindCSS** kullanılmalıdır. Asla ham/stilsiz varsayılan HTML elemanları teslim edilmemelidir.
+- **Animasyon ve Akıcılık (60 FPS):**
+  - DOM ve arayüz geçişlerinde **Framer Motion** kullanılmalıdır.
+  - 3B sahne, kamera ve labirent eğim geçişlerinde keskin sıçramalar yerine matematiksel sönümleme (**`lerp` / `slerp`**) uygulanmalıdır.
+
+## 4. Teknoloji Yığını ve Mimari (Monorepo)
+- **Paket Yöneticisi ve Strateji:** NPM Workspaces tabanlı Monorepo.
+- **`apps/client` (Önyüz & 3B Oyun Motoru):**
+  - Next.js (App Router), React 19, TypeScript
+  - TailwindCSS, Framer Motion
+  - Zustand (Durum yönetimi)
+  - `@react-three/fiber`, `@react-three/drei`, `@react-three/rapier` (Three.js + Rapier 3B fizik motoru)
+  - `socket.io-client` ve HTML5 Device Orientation API (Mobil jiroskop sensör okuma)
+- **`apps/server` (Gerçek Zamanlı Arka Uç):**
+  - NestJS, TypeScript
+  - Socket.io (`@nestjs/websockets`, `@nestjs/platform-socket.io`) ile <10ms senkronizasyon gecikmesi
+- **`packages/shared` (Ortak Veri Sözleşmeleri):**
+  - İstemci ve sunucu arasında paylaşılan saf TypeScript arayüzleri (`GyroData`, `RoomEvents`, `RoomState`, `PlayerDevice` vb.)
+
+## 5. Klasör Yapısı
+```text
+GyroMaze/
+├── .clinerules
+├── .cursorrules
+├── package.json
+├── README.md
+├── CONTRIBUTING.md
+├── docs/
+│   └── ARCHITECTURE.md
+├── apps/
+│   ├── client/
+│   └── server/
+└── packages/
+    └── shared/
+```

@@ -1,0 +1,26 @@
+{
+  "name": "gyromaze",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sıfır gecikmeli, çapraz cihaz (Mobil Jiroskop -> Masaüstü WebGL) 3B labirent oyunu monorepo çalışma alanı.",
+  "author": "Eren Kadiroğlu <154251984+erenkadiroglu@users.noreply.github.com>",
+  "license": "MIT",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:client": "npm run dev --workspace=@gyromaze/client",
+    "dev:server": "npm run start:dev --workspace=@gyromaze/server",
+    "build:shared": "npm run build --workspace=@gyromaze/shared",
+    "build:client": "npm run build --workspace=@gyromaze/client",
+    "build:server": "npm run build --workspace=@gyromaze/server",
+    "build": "npm run build:shared && npm run build:server && npm run build:client",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}
