@@ -1304,7 +1304,7 @@ export function MazeScene() {
           if (!isSoundMuted) {
             soundEngine.playLockedPortal();
           }
-          triggerHaptic('wall');
+          triggerHaptic('wall', winnerSlot);
           const remaining = Math.max(
             1,
             activeLevel.crystals.length - state.collectedCrystals.length,

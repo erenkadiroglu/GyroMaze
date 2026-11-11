@@ -116,6 +116,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Anlık Jiroskop Kalibrasyon Sıfırlama & Klavye Takılma Koruması (`useDeviceOrientation.ts`, `useKeyboardFallback.ts`):** Kalibrasyon anında EMA yumuşatma tamponu sıfırlanarak anında merkeze dönüş sağlandı (`±180°` açı sarma korumalı); overlay modalları açıkken veya pencere odağı kaybolduğunda (`blur`) basılı kalan klavye eksenleri otomatik sıfırlandı.
 - [x] **Mobil Süre Doldu Kartı, Dinamik Radar Ölçeği ve Çözülebilir Editör Haritası:** Mobil kontrolcüye `Time Attack` kaybı için **Süre doldu / Tekrar dene** kartı eklendi ve pasif ekranlardaki alt butonlar temizlendi; `AttitudeGauge.tsx` radarı tahta boyutuna göre dinamik ölçeklendi; `LevelEditorModal.tsx` rastgele üreticisi BFS çözülebilirlik doğrulaması ve güvenli JSON içe aktarma doğrulaması kazandı.
 
+## ✅ Faz 16: Akıllı LAN QR Yönlendirmesi, Mobil Ekran Kilidi (Wake Lock) ve Hedefli Portal Haptiği (Tamamlandı)
+
+- [x] **Yerel Ağ (LAN) QR Geri Dönüşü ve Akıllı Yuva Seçimi (`DesktopHUD.tsx`):** `ngrok` HTTPS tüneli olmadığında `localhost` / `127.0.0.1` QR bağlantısı sunucunun tespit ettiği `lanIp` adresine yönlendirilir, modalda aktif bağlantı yolu (HTTPS tüneli veya yerel Wi-Fi) belirtilir ve çok oyunculu modda 1. oyuncu bağlıyken modal açıldığında otomatik olarak 2. oyuncu yuvası seçilir.
+- [x] **Mobil Wake Lock, HTTP Güvenli Bağlam Uyarısı ve Yuva Değişimi Sıfırlaması (`controller/page.tsx`):** Aktif kontrol sırasında ekranın kararmasını önleyen `navigator.wakeLock` desteği (`visibilitychange` ile otomatik yenileme) eklendi; HTTP üzerinde açıldığında sensör kısıtlaması ve dokunmatik gimbal rehberi gösterilir; çok oyunculu yuva değişiminde artık eğim `0, 0` olarak temizlenir.
+- [x] **Kilitli Portal Haptik Hedeflemesi & Web Audio Güvenli Devam Etme (`MazeScene.tsx`, `soundEngine.ts`):** Kristaller toplanmadan hedefe çarpan ilgili oyuncuya özel `wall` titreşimi yönlendirildi ve tarayıcı otomatik oynatma kısıtlarında `AudioContext.resume()` hatalarının sessizce yakalanması sağlandı.
+
 
 
 

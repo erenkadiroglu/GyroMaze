@@ -48,6 +48,7 @@ import { Modal, IconButton, Button, Kbd, cx } from './primitives';
  */
 export function DesktopHUD() {
   const roomId = useGameStore((s) => s.roomId);
+  const lanIp = useGameStore((s) => s.lanIp);
   const tunnelUrl = useGameStore((s) => s.tunnelUrl);
   const isSocketConnected = useGameStore((s) => s.isSocketConnected);
   const isControllerPaired = useGameStore((s) => s.isControllerPaired);
@@ -97,7 +98,11 @@ export function DesktopHUD() {
   const [pairingSlot, setPairingSlot] = useState<1 | 2>(1);
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedRoomCode, setCopiedRoomCode] = useState(false);
-  const [browserOrigin, setBrowserOrigin] = useState('http://localhost:3000');
+  const [browserLocation, setBrowserLocation] = useState({
+    origin: 'http://localhost:3000',
+    hostname: 'localhost',
+    port: '3000',
+  });
   const [playerName, setPlayerName] = useState('Eren Kadiroğlu');
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
   const [selectedLeaderboardLevel, setSelectedLeaderboardLevel] = useState(1);
@@ -147,9 +152,27 @@ export function DesktopHUD() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setBrowserOrigin(window.location.origin);
+      setBrowserLocation({
+        origin: window.location.origin,
+        hostname: window.location.hostname,
+        port: window.location.port,
+      });
     }
   }, []);
+
+  useEffect(() => {
+    if (!isPairingModalOpen) return;
+    if (isMultiplayer && isControllerPaired && !isSecondControllerPaired) {
+      setPairingSlot(2);
+    } else if (!isMultiplayer || !isControllerPaired) {
+      setPairingSlot(1);
+    }
+  }, [
+    isPairingModalOpen,
+    isMultiplayer,
+    isControllerPaired,
+    isSecondControllerPaired,
+  ]);
 
   // Bölüm menüsü dışına tıklanınca veya Esc basılınca kapat
   useEffect(() => {
@@ -234,7 +257,19 @@ export function DesktopHUD() {
     toggleColorScheme,
   ]);
 
-  const activeBaseUrl = tunnelUrl || browserOrigin;
+  const isLocalLoopback =
+    browserLocation.hostname === 'localhost' ||
+    browserLocation.hostname === '127.0.0.1';
+  const lanFallbackUrl =
+    isLocalLoopback && lanIp
+      ? `http://${lanIp}${browserLocation.port ? `:${browserLocation.port}` : ''}`
+      : '';
+  const activeBaseUrl = tunnelUrl || lanFallbackUrl || browserLocation.origin;
+  const connectionRouteLabel = tunnelUrl
+    ? 'Güvenli HTTPS tüneli aktif (ngrok)'
+    : lanFallbackUrl
+      ? `Yerel Wi-Fi ağı (${lanIp}) • HTTP’de dokunmatik gimbal hazırdır`
+      : 'Geçerli tarayıcı adresi kullanılıyor';
   const controllerUrl = roomId
     ? `${activeBaseUrl}/controller?room=${roomId}${pairingSlot === 2 ? '&slot=2' : ''}`
     : `${activeBaseUrl}/controller`;
@@ -781,7 +816,11 @@ export function DesktopHUD() {
               />
             </div>
 
-            <div className="mt-4 flex w-full items-center justify-between rounded-xl border border-line bg-surface px-4 py-2.5">
+            <p className="mt-3 text-center text-[11px] font-medium text-muted">
+              {connectionRouteLabel}
+            </p>
+
+            <div className="mt-3 flex w-full items-center justify-between rounded-xl border border-line bg-surface px-4 py-2.5">
               <div>
                 <span className="block text-xs text-muted">Oda kodu</span>
                 <span className="gm-num text-xl font-semibold tracking-[0.2em] text-brass">

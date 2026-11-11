@@ -48,6 +48,7 @@ function MobileControllerContent() {
   playerSlotRef.current = playerSlot;
   const [isRoomEditorOpen, setIsRoomEditorOpen] = useState(!initialRoomParam);
   const [isTouchOverride, setIsTouchOverride] = useState(false);
+  const [isInsecureContext, setIsInsecureContext] = useState(false);
   const [sensitivityMultiplier, setSensitivityMultiplier] = useState<
     0.75 | 1 | 1.35
   >(1);
@@ -152,6 +153,12 @@ function MobileControllerContent() {
   }, [initialRoomParam]);
 
   useEffect(() => {
+    if (typeof window !== 'undefined' && !window.isSecureContext) {
+      setIsInsecureContext(true);
+    }
+  }, []);
+
+  useEffect(() => {
     if (isControllerPaired) {
       setIsRoomEditorOpen(false);
     }
@@ -161,6 +168,47 @@ function MobileControllerContent() {
     (permissionState === 'granted' || isTouchOverride) &&
     Boolean(activeRoomCode) &&
     !isRoomEditorOpen;
+
+  // Kontrolcü aktifken telefon ekranının kapanmasını Wake Lock API ile engelle
+  useEffect(() => {
+    if (!showGimbalSurface || typeof navigator === 'undefined') return;
+    const nav = navigator as Navigator & {
+      wakeLock?: {
+        request: (type: 'screen') => Promise<{ release: () => Promise<void> }>;
+      };
+    };
+    if (!nav.wakeLock) return;
+
+    let sentinel: { release: () => Promise<void> } | null = null;
+    let cancelled = false;
+
+    const acquireWakeLock = async () => {
+      try {
+        const lock = await nav.wakeLock!.request('screen');
+        if (cancelled) {
+          void lock.release().catch(() => {});
+        } else {
+          sentinel = lock;
+        }
+      } catch {
+        // Pil tasarrufu veya tarayıcı kısıtı varsa sessizce geç
+      }
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void acquireWakeLock();
+      }
+    };
+
+    void acquireWakeLock();
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      cancelled = true;
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      void sentinel?.release().catch(() => {});
+    };
+  }, [showGimbalSurface]);
 
   // 60 FPS GPU-hızlandırmalı mobil ufuk küresi ve 8Hz sayısal açı güncellemesi
   useEffect(() => {
@@ -539,6 +587,20 @@ function MobileControllerContent() {
               </p>
             </div>
 
+            {isInsecureContext && (
+              <p
+                role="note"
+                className="rounded-2xl border border-warn/30 bg-warn/10 px-3 py-2 text-left text-[11px] leading-relaxed text-warn"
+              >
+                Bu sayfa HTTP üzerinden açıldığı için mobil tarayıcı jiroskop
+                sensörlerini kısıtlayabilir. Sensör yanıt vermezse aşağıdaki{' '}
+                <strong className="font-semibold">
+                  Dokunmatik gimbal ile oyna
+                </strong>{' '}
+                seçeneğini kullan.
+              </p>
+            )}
+
             <button
               type="button"
               onClick={handleActivateSensors}
@@ -672,7 +734,12 @@ function MobileControllerContent() {
                 type="button"
                 role="radio"
                 aria-checked={playerSlot === 1}
-                onClick={() => setPlayerSlot(1)}
+                onClick={() => {
+                  if (playerSlot !== 1) {
+                    pushGyroSample(0, 0);
+                    setPlayerSlot(1);
+                  }
+                }}
                 className={cx(
                   'min-h-[38px] cursor-pointer rounded-xl text-xs font-semibold transition-colors',
                   playerSlot === 1
@@ -686,7 +753,12 @@ function MobileControllerContent() {
                 type="button"
                 role="radio"
                 aria-checked={playerSlot === 2}
-                onClick={() => setPlayerSlot(2)}
+                onClick={() => {
+                  if (playerSlot !== 2) {
+                    pushGyroSample(0, 0);
+                    setPlayerSlot(2);
+                  }
+                }}
                 className={cx(
                   'min-h-[38px] cursor-pointer rounded-xl text-xs font-semibold transition-colors',
                   playerSlot === 2

@@ -24,7 +24,7 @@ class SoundEngine {
       }
     }
     if (this.ctx && this.ctx.state === 'suspended') {
-      void this.ctx.resume();
+      void this.ctx.resume().catch(() => {});
     }
     return this.ctx;
   }
