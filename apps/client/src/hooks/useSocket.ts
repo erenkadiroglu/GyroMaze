@@ -8,10 +8,12 @@ import {
   GyroData,
   RoomErrorPayload,
   GameStatePayload,
+  ChangeLevelPayload,
   HapticPayload,
   LeaderboardEntry,
 } from '@gyromaze/shared';
 import { useGameStore } from '@/store/useGameStore';
+import { MAZE_LEVELS } from '@/components/scene/mazeLevels';
 
 /**
  * Hem yerel geliştirme ortamında (localhost:4000) hem de tek portlu HTTPS tünellerinde
@@ -55,6 +57,11 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
   const lastSentGammaRef = useRef<number>(999);
 
   const roomId = useGameStore((s) => s.roomId);
+  const gameStatus = useGameStore((s) => s.gameStatus);
+  const level = useGameStore((s) => s.level);
+  const customLevel = useGameStore((s) => s.customLevel);
+  const collectedCrystals = useGameStore((s) => s.collectedCrystals);
+  const isControllerPaired = useGameStore((s) => s.isControllerPaired);
   const hapticSignal = useGameStore((s) => s.hapticSignal);
   const pendingScoreSubmission = useGameStore((s) => s.pendingScoreSubmission);
   const setRoomId = useGameStore((s) => s.setRoomId);
@@ -69,6 +76,10 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
   const resetTransientGyro = useGameStore((s) => s.resetTransientGyro);
   const triggerBallReset = useGameStore((s) => s.triggerBallReset);
   const setGameStatus = useGameStore((s) => s.setGameStatus);
+  const setLevel = useGameStore((s) => s.setLevel);
+  const nextLevel = useGameStore((s) => s.nextLevel);
+  const prevLevel = useGameStore((s) => s.prevLevel);
+  const setRemoteProgress = useGameStore((s) => s.setRemoteProgress);
 
   useEffect(() => {
     const serverUrl = resolveSocketServerUrl();
@@ -163,6 +174,20 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
       socket.on(RoomEvents.GYRO_CALIBRATE, () => {
         resetTransientGyro();
       });
+
+      socket.on(
+        RoomEvents.GAME_CHANGE_LEVEL,
+        (payload: ChangeLevelPayload) => {
+          resetTransientGyro();
+          if (payload.direction === 'next') {
+            nextLevel();
+          } else if (payload.direction === 'prev') {
+            prevLevel();
+          } else if (typeof payload.level === 'number') {
+            setLevel(payload.level);
+          }
+        },
+      );
     } else if (role === 'controller') {
       socket.on(RoomEvents.GAME_HAPTIC, (payload: HapticPayload) => {
         if (typeof navigator === 'undefined' || !('vibrate' in navigator)) {
@@ -187,6 +212,9 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
           case 'laser':
             navigator.vibrate([90, 30, 90]);
             break;
+          case 'boost':
+            navigator.vibrate([30, 20, 40]);
+            break;
         }
       });
     }
@@ -197,7 +225,11 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
     });
 
     socket.on(RoomEvents.GAME_STATE_CHANGE, (payload: GameStatePayload) => {
-      setGameStatus(payload.status);
+      if (role === 'controller') {
+        setRemoteProgress(payload);
+      } else {
+        setGameStatus(payload.status);
+      }
     });
 
     socket.on(
@@ -225,6 +257,35 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
     resetTransientGyro,
     triggerBallReset,
     setGameStatus,
+    setLevel,
+    nextLevel,
+    prevLevel,
+    setRemoteProgress,
+  ]);
+
+  // Masaüstündeki bölüm, oyun durumu ve kristal ilerlemesini mobil kontrolcüye senkronize et
+  useEffect(() => {
+    if (role !== 'host' || !roomId || !isControllerPaired) return;
+    const currentLvl =
+      level === 99 && customLevel
+        ? customLevel
+        : (MAZE_LEVELS[(level - 1) % MAZE_LEVELS.length] ?? MAZE_LEVELS[0]);
+
+    socketRef.current?.emit(RoomEvents.GAME_STATE_CHANGE, {
+      roomId,
+      status: gameStatus,
+      level: currentLvl.id,
+      crystalsCollected: collectedCrystals.length,
+      crystalsTotal: currentLvl.crystals.length,
+    });
+  }, [
+    role,
+    roomId,
+    isControllerPaired,
+    gameStatus,
+    level,
+    customLevel,
+    collectedCrystals.length,
   ]);
 
   // Mobil kontrolcüde hedef oda kodu değiştiğinde mevcut soketi koparmadan anında yeni odaya katıl
@@ -303,10 +364,22 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
     socketRef.current.emit(RoomEvents.GAME_RESET_BALL);
   }, []);
 
+  const emitChangeLevel = useCallback(
+    (direction: 'next' | 'prev') => {
+      if (!socketRef.current?.connected || !targetRoomIdRef.current) return;
+      socketRef.current.emit(RoomEvents.GAME_CHANGE_LEVEL, {
+        roomId: targetRoomIdRef.current,
+        direction,
+      });
+    },
+    [],
+  );
+
   return {
     emitGyroUpdate,
     joinRoomByCode,
     emitCalibrate,
     emitResetBall,
+    emitChangeLevel,
   };
 }

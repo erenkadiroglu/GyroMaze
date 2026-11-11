@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import {
+  CameraMode,
   GameStatus,
   GyroData,
   HapticType,
@@ -55,6 +56,8 @@ interface GameStoreState {
   gameStatus: GameStatus;
   /** Aktif labirent seviyesi (1..5 standart, 99 özel harita) */
   level: number;
+  /** Masaüstü 3B sahne kamera bakış açısı modu */
+  cameraMode: CameraMode;
   /** Kullanıcının harita editöründe tasarladığı özel labirent tanımı */
   customLevel: MazeLevelDefinition | null;
   /** Milisaniye cinsinden anlık ağ gecikmesi */
@@ -71,6 +74,10 @@ interface GameStoreState {
   isSoundMuted: boolean;
   /** Mevcut bölümde toplanan enerji kristallerinin indeks listesi */
   collectedCrystals: number[];
+  /** Mobil kontrolcü ekranında gösterilen senkronize kristal sayısı */
+  remoteCrystalsCollected: number;
+  /** Mobil kontrolcü ekranında gösterilen toplam kristal hedefi */
+  remoteCrystalsTotal: number;
   /** Topu başlangıç noktasına ışınlamak için artırılan tetikleyici sayaç */
   resetCount: number;
   /** Mobil cihaza titreşim göndermek için tetiklenen sinyal */
@@ -91,6 +98,14 @@ interface GameStoreState {
   setLevel: (level: number) => void;
   setCustomLevel: (customLevel: MazeLevelDefinition) => void;
   nextLevel: () => void;
+  prevLevel: () => void;
+  cycleCameraMode: () => void;
+  setRemoteProgress: (payload: {
+    status: GameStatus;
+    level?: number;
+    crystalsCollected?: number;
+    crystalsTotal?: number;
+  }) => void;
   setLatencyMs: (ms: number) => void;
   setElapsedSeconds: (seconds: number) => void;
   recordLevelCompletion: (level: number, seconds: number) => void;
@@ -119,6 +134,7 @@ export const useGameStore = create<GameStoreState>((set) => ({
   isEditorOpen: false,
   gameStatus: 'waiting',
   level: 1,
+  cameraMode: 'isometric',
   customLevel: null,
   latencyMs: 0,
   elapsedSeconds: 0,
@@ -127,6 +143,8 @@ export const useGameStore = create<GameStoreState>((set) => ({
   pendingScoreSubmission: null,
   isSoundMuted: false,
   collectedCrystals: [],
+  remoteCrystalsCollected: 0,
+  remoteCrystalsTotal: 3,
   resetCount: 0,
   hapticSignal: null,
   errorMessage: null,
@@ -176,6 +194,28 @@ export const useGameStore = create<GameStoreState>((set) => ({
       elapsedSeconds: 0,
       collectedCrystals: [],
       resetCount: state.resetCount + 1,
+    })),
+  prevLevel: () =>
+    set((state) => ({
+      level: state.level === 99 || state.level <= 1 ? 5 : state.level - 1,
+      gameStatus: 'playing',
+      elapsedSeconds: 0,
+      collectedCrystals: [],
+      resetCount: state.resetCount + 1,
+    })),
+  cycleCameraMode: () =>
+    set((state) => {
+      const order: CameraMode[] = ['isometric', 'topdown', 'follow'];
+      const nextIdx = (order.indexOf(state.cameraMode) + 1) % order.length;
+      return { cameraMode: order[nextIdx] };
+    }),
+  setRemoteProgress: (payload) =>
+    set((state) => ({
+      gameStatus: payload.status,
+      level: payload.level ?? state.level,
+      remoteCrystalsCollected:
+        payload.crystalsCollected ?? state.remoteCrystalsCollected,
+      remoteCrystalsTotal: payload.crystalsTotal ?? state.remoteCrystalsTotal,
     })),
   setLatencyMs: (latencyMs) => set({ latencyMs }),
   setElapsedSeconds: (elapsedSeconds) => set({ elapsedSeconds }),

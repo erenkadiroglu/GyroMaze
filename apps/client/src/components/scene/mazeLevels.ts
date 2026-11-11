@@ -35,6 +35,16 @@ export interface LaserGateDefinition {
 }
 
 /**
+ * Küre üzerinden geçtiğinde ok yönünde kinetik ivme kazandıran hızlandırma rampası.
+ */
+export interface BoostPadDefinition {
+  /** [x, z] merkez koordinatları */
+  position: [number, number];
+  /** Normalize edilmiş [dx, dz] itiş yönü vektörü */
+  direction: [number, number];
+}
+
+/**
  * Bir labirent seviyesinin tüm geometrik ve oynanış verileri.
  */
 export interface MazeLevelDefinition {
@@ -50,6 +60,10 @@ export interface MazeLevelDefinition {
   crystals: [number, number][];
   /** Periyodik açılıp kapanan lazer enerji kapıları */
   laserGates: LaserGateDefinition[];
+  /** Kinetik hızlandırma rampaları */
+  boostPads?: BoostPadDefinition[];
+  /** [3 Yıldız Süre Sınırı (sn), 2 Yıldız Süre Sınırı (sn)] */
+  starThresholds?: [number, number];
 }
 
 const H = 0.75; // Duvar yüksekliği
@@ -83,6 +97,11 @@ export const MAZE_LEVELS: MazeLevelDefinition[] = [
       [4.0, -3.2],
     ],
     laserGates: [],
+    boostPads: [
+      { position: [-4.0, -1.2], direction: [0, 1] },
+      { position: [0.0, 2.2], direction: [0, -1] },
+    ],
+    starThresholds: [11.0, 17.0],
   },
   {
     id: 2,
@@ -116,6 +135,11 @@ export const MAZE_LEVELS: MazeLevelDefinition[] = [
         phaseOffset: 0,
       },
     ],
+    boostPads: [
+      { position: [-1.2, -4.5], direction: [1, 0] },
+      { position: [4.5, -1.5], direction: [0, 1] },
+    ],
+    starThresholds: [15.5, 23.0],
   },
   {
     id: 3,
@@ -157,6 +181,11 @@ export const MAZE_LEVELS: MazeLevelDefinition[] = [
         phaseOffset: 1.6,
       },
     ],
+    boostPads: [
+      { position: [-4.5, -1.5], direction: [0, 1] },
+      { position: [4.5, 3.0], direction: [0, -1] },
+    ],
+    starThresholds: [19.5, 28.0],
   },
   {
     id: 4,
@@ -199,6 +228,10 @@ export const MAZE_LEVELS: MazeLevelDefinition[] = [
         phaseOffset: 1.8,
       },
     ],
+    boostPads: [
+      { position: [1.2, -3.5], direction: [0, 1] },
+    ],
+    starThresholds: [18.0, 26.0],
   },
   {
     id: 5,
@@ -236,5 +269,10 @@ export const MAZE_LEVELS: MazeLevelDefinition[] = [
         phaseOffset: 0,
       },
     ],
+    boostPads: [
+      { position: [-4.6, 2.6], direction: [0, -1] },
+      { position: [4.6, 2.6], direction: [0, -1] },
+    ],
+    starThresholds: [22.0, 32.0],
   },
 ];

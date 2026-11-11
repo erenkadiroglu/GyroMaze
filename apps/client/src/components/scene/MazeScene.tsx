@@ -99,6 +99,16 @@ const _trailMaterial = new THREE.MeshBasicMaterial({
   transparent: true,
   opacity: 0.28,
 });
+const _boostBaseMaterial = new THREE.MeshBasicMaterial({
+  color: '#a855f7',
+  transparent: true,
+  opacity: 0.25,
+});
+const _boostArrowMaterial = new THREE.MeshStandardMaterial({
+  color: '#c084fc',
+  emissive: '#9333ea',
+  emissiveIntensity: 1.8,
+});
 
 const MAX_TILT_RADIANS = THREE.MathUtils.degToRad(24);
 const SLOPE_GRAVITY = 36.0;
@@ -113,11 +123,12 @@ interface MazeStageProps {
   onReachGoal: () => void;
   onFallIntoHole: () => void;
   onLaserHit: () => void;
+  onBoostHit: () => void;
   onWallHit: (speed: number) => void;
 }
 
 /**
- * Zıplamasız (Zero-Bounce), Enerji Kristalli, Lazer Kapılı ve Neon İz Efektli 3B Labirent Sahnesi.
+ * Zıplamasız (Zero-Bounce), Enerji Kristalli, Lazer Kapılı, Hızlandırma Rampalı ve Neon İz Efektli 3B Labirent Sahnesi.
  */
 function MazeStage({
   levelData,
@@ -127,6 +138,7 @@ function MazeStage({
   onReachGoal,
   onFallIntoHole,
   onLaserHit,
+  onBoostHit,
   onWallHit,
 }: MazeStageProps) {
   const ballBodyRef = useRef<RapierRigidBody | null>(null);
@@ -143,9 +155,11 @@ function MazeStage({
     })),
   );
   const lastWallSoundTimeRef = useRef<number>(0);
+  const lastBoostTimeRef = useRef<number>(0);
 
   const resetCount = useGameStore((s) => s.resetCount);
   const gameStatus = useGameStore((s) => s.gameStatus);
+  const cameraMode = useGameStore((s) => s.cameraMode);
 
   const halfBoard = levelData.boardSize / 2;
   const wallHeight = 0.85;
@@ -332,6 +346,34 @@ function MazeStage({
         }
       }
 
+      // Hızlandırma Rampaları (Boost Pads) Kontrolü
+      const boostPads = levelData.boostPads;
+      if (
+        boostPads &&
+        isInteractive &&
+        elapsed - lastBoostTimeRef.current > 0.45
+      ) {
+        for (let i = 0; i < boostPads.length; i++) {
+          const pad = boostPads[i];
+          const dx = pos.x - pad.position[0];
+          const dz = pos.z - pad.position[1];
+          if (dx * dx + dz * dz < 0.34) {
+            lastBoostTimeRef.current = elapsed;
+            const curV = ballBodyRef.current.linvel();
+            ballBodyRef.current.setLinvel(
+              {
+                x: curV.x + pad.direction[0] * 7.2,
+                y: 0,
+                z: curV.z + pad.direction[1] * 7.2,
+              },
+              true,
+            );
+            onBoostHit();
+            break;
+          }
+        }
+      }
+
       // Periyodik Lazer Kapıları Kontrolü
       for (let i = 0; i < levelData.laserGates.length; i++) {
         const gate = levelData.laserGates[i];
@@ -363,14 +405,32 @@ function MazeStage({
           }
         }
       }
+
+      // 3. Seçili Kamera Moduna Göre Dinamik Kamera Konumlandırma
+      if (cameraMode === 'topdown') {
+        _cameraTargetPos.set(
+          -clampedRoll * 1.2,
+          18.2,
+          0.6 + clampedPitch * 1.2,
+        );
+        _cameraLookAt.set(0, 0, 0);
+      } else if (cameraMode === 'follow') {
+        _cameraTargetPos.set(
+          pos.x * 0.62 - clampedRoll * 1.8,
+          10.8,
+          pos.z * 0.62 + 6.8 + clampedPitch * 1.5,
+        );
+        _cameraLookAt.set(pos.x * 0.52, 0, pos.z * 0.52);
+      } else {
+        _cameraTargetPos.set(
+          -clampedRoll * 2.4,
+          14.5,
+          10.2 + clampedPitch * 2.0,
+        );
+        _cameraLookAt.set(0, 0, 0);
+      }
     }
 
-    // 3. Kameraya hafif paralaks takibi uygula
-    _cameraTargetPos.set(
-      -clampedRoll * 2.4,
-      14.5,
-      10.2 + clampedPitch * 2.0,
-    );
     state.camera.position.lerp(
       _cameraTargetPos,
       1 - Math.exp(-10 * safeDelta),
@@ -534,6 +594,34 @@ function MazeStage({
             >
               <octahedronGeometry args={[0.28, 0]} />
             </mesh>
+          );
+        })}
+
+        {/* Kinetik Hızlandırma Rampaları (Boost Pads) */}
+        {(levelData.boostPads ?? []).map((pad, idx) => {
+          const [bx, bz] = pad.position;
+          const [dx, dz] = pad.direction;
+          const yawAngle = Math.atan2(dx, dz);
+          return (
+            <group
+              key={`boost-${levelData.id}-${idx}`}
+              position={[bx, 0.02, bz]}
+              rotation={[0, yawAngle, 0]}
+            >
+              <mesh
+                rotation={[-Math.PI / 2, 0, 0]}
+                material={_boostBaseMaterial}
+              >
+                <planeGeometry args={[0.85, 1.1]} />
+              </mesh>
+              <mesh
+                position={[0, 0.02, 0.12]}
+                rotation={[Math.PI / 2, 0, 0]}
+                material={_boostArrowMaterial}
+              >
+                <coneGeometry args={[0.24, 0.48, 3]} />
+              </mesh>
+            </group>
           );
         })}
 
@@ -719,6 +807,13 @@ export function MazeScene() {
     triggerBallReset();
   }, [isSoundMuted, triggerHaptic, triggerBallReset]);
 
+  const handleBoostHit = useCallback(() => {
+    if (!isSoundMuted) {
+      soundEngine.playBoostPad();
+    }
+    triggerHaptic('boost');
+  }, [isSoundMuted, triggerHaptic]);
+
   const handleWallHit = useCallback(
     (speed: number) => {
       if (!isSoundMuted) {
@@ -764,6 +859,7 @@ export function MazeScene() {
             onReachGoal={handleReachGoal}
             onFallIntoHole={handleFallIntoHole}
             onLaserHit={handleLaserHit}
+            onBoostHit={handleBoostHit}
             onWallHit={handleWallHit}
           />
         </Physics>

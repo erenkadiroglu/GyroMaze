@@ -173,6 +173,30 @@ class SoundEngine {
     osc.start(now);
     osc.stop(now + 0.11);
   }
+
+  /**
+   * Hızlandırma rampası (Boost Pad) üzerinden geçildiğinde yükselen kinetik sentez sesi üretir.
+   */
+  public playBoostPad(): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(280, now);
+    osc.frequency.exponentialRampToValueAtTime(920, now + 0.16);
+
+    gain.gain.setValueAtTime(0.16, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.19);
+  }
 }
 
 export const soundEngine = new SoundEngine();

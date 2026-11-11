@@ -60,5 +60,13 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Harita Geometrisi ve Fizik Doğrulama Testleri (`apps/client/test/mazeLevels.test.mjs`):** 5 bölümün tamamında başlangıç/hedef noktası, iç duvarlar, enerji kristalleri ve tuzak delikleri arasında çarpışma veya sıkışma olmadığını doğrulayan matematiksel test paketi.
 - [x] **Ortam Şablonu (`.env.example`) ve Kök Test Komutu (`npm test`):** Tek komutla tüm çalışma alanlarının doğrulanması.
 
+## ✅ Faz 7: Çift Yönlü Mobil Oyun Kumandası, Hızlandırma Rampaları ve Kamera Modları (Tamamlandı)
+
+- [x] **Çift Yönlü Mobil Konsol Deneyimi (`GAME_CHANGE_LEVEL` & `GAME_STATE_CHANGE`):** Masaüstündeki aktif bölüm, kristal ilerlemesi (`2/3`) ve bölüm zafer durumu gerçek zamanlı olarak telefon ekranına yansıtıldı; oyuncu masaüstü faresine dokunmadan doğrudan telefondan **Önceki / Sonraki Bölüm** geçişi yapabilir.
+- [x] **Kinetik Hızlandırma Rampaları (`boostPads`):** Koridorlara yerleştirilen yönlü neon hızlandırma rampaları, `playBoostPad` ses sentezleyicisi ve mobil titreşim (`boost`) geri bildirimi.
+- [x] **3 Kamera Bakış Açısı Modu (`İzometrik`, `Üstten`, `Takip`):** Üst HUD üzerinden tek tıkla klasik izometrik açı, tam dikey speedrun açısı veya bilyeyi dinamik takip eden sinematik kamera arasında geçiş.
+- [x] **3 Yıldızlı Performans Sistemi (`starThresholds`):** Bölüm tamamlama süresine göre 1–3 yıldız derecelendirmesi.
+
+
 
 

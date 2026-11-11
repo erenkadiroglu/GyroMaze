@@ -14,6 +14,7 @@ import {
   JoinRoomPayload,
   GyroUpdatePayload,
   GameStatePayload,
+  ChangeLevelPayload,
   HapticPayload,
   SubmitScorePayload,
 } from '@gyromaze/shared';
@@ -203,7 +204,7 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   /**
-   * Oyun durumu değişimlerini (playing, paused, won) odadaki tüm cihazlara senkronize eder.
+   * Oyun durumu değişimlerini (playing, paused, won, level, kristal sayısı) odadaki tüm cihazlara senkronize eder.
    */
   @SubscribeMessage(RoomEvents.GAME_STATE_CHANGE)
   public handleGameStateChange(
@@ -217,6 +218,28 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     this.server.to(roomId).emit(RoomEvents.GAME_STATE_CHANGE, payload);
+  }
+
+  /**
+   * Mobil kontrolcüden gelen bölüm değiştirme isteğini masaüstü sahnesine iletir.
+   */
+  @SubscribeMessage(RoomEvents.GAME_CHANGE_LEVEL)
+  public handleChangeLevel(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: ChangeLevelPayload,
+  ): void {
+    const membership = this.roomService.getMembership(client.id);
+    const roomId = membership?.roomId ?? payload?.roomId;
+    if (!roomId) {
+      return;
+    }
+
+    const room = this.roomService.getRoom(roomId);
+    if (room) {
+      this.server
+        .to(room.hostSocketId)
+        .emit(RoomEvents.GAME_CHANGE_LEVEL, payload);
+    }
   }
 
   /**

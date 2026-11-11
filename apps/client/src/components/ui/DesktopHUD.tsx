@@ -23,6 +23,8 @@ import {
   Unlock,
   Wrench,
   Medal,
+  Camera,
+  Star,
   X,
   Send,
 } from 'lucide-react';
@@ -49,6 +51,8 @@ export function DesktopHUD() {
   const gameStatus = useGameStore((s) => s.gameStatus);
   const setGameStatus = useGameStore((s) => s.setGameStatus);
   const level = useGameStore((s) => s.level);
+  const cameraMode = useGameStore((s) => s.cameraMode);
+  const cycleCameraMode = useGameStore((s) => s.cycleCameraMode);
   const customLevel = useGameStore((s) => s.customLevel);
   const setLevel = useGameStore((s) => s.setLevel);
   const nextLevel = useGameStore((s) => s.nextLevel);
@@ -83,6 +87,21 @@ export function DesktopHUD() {
   const currentBestTime = bestTimes[currentLevelInfo.id];
   const totalCrystals = currentLevelInfo.crystals.length;
   const isPortalUnlocked = collectedCrystals.length >= totalCrystals;
+  const [threeStarLimit, twoStarLimit] = currentLevelInfo.starThresholds ?? [
+    15, 24,
+  ];
+  const earnedStars =
+    elapsedSeconds <= threeStarLimit
+      ? 3
+      : elapsedSeconds <= twoStarLimit
+        ? 2
+        : 1;
+  const cameraModeLabel =
+    cameraMode === 'isometric'
+      ? 'İzometrik'
+      : cameraMode === 'topdown'
+        ? 'Üstten'
+        : 'Takip';
 
   useEffect(() => {
     setScoreSubmitted(false);
@@ -351,6 +370,17 @@ export function DesktopHUD() {
                 <span className="text-xs font-medium text-rose-300">Kopuk</span>
               </>
             )}
+          </button>
+
+          {/* Kamera Açısı Değiştirme Butonu */}
+          <button
+            type="button"
+            onClick={cycleCameraMode}
+            className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-zinc-800/80 bg-zinc-900/75 px-3 py-2 text-xs font-medium text-zinc-200 transition hover:border-zinc-700 hover:bg-zinc-800/90 active:scale-95"
+            title="Kamera Bakış Açısını Değiştir (İzometrik / Üstten / Takip)"
+          >
+            <Camera className="h-3.5 w-3.5 text-purple-400" />
+            <span>{cameraModeLabel}</span>
           </button>
 
           {/* Harita Editörü Butonu */}
@@ -713,6 +743,24 @@ export function DesktopHUD() {
               <h2 className="mt-1 text-2xl font-semibold text-zinc-100">
                 {currentLevelInfo.title} Tamamlandı!
               </h2>
+
+              {/* 3 Yıldızlı Performans Derecesi */}
+              <div className="mt-3 flex items-center justify-center gap-2">
+                {[1, 2, 3].map((starIdx) => (
+                  <Star
+                    key={starIdx}
+                    className={`h-6 w-6 ${
+                      starIdx <= earnedStars
+                        ? 'fill-amber-400 text-amber-400'
+                        : 'text-zinc-700'
+                    }`}
+                  />
+                ))}
+              </div>
+              <p className="mt-1 text-[11px] text-zinc-400">
+                3 Yıldız Hedefi: &le; {threeStarLimit.toFixed(1)}sn
+              </p>
+
               <p className="mt-2 text-sm text-zinc-400">
                 Labirenti{' '}
                 <strong className="font-mono text-emerald-300">

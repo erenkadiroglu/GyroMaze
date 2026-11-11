@@ -36,7 +36,13 @@ export type HapticType =
   | 'goal'
   | 'calibrate'
   | 'crystal'
-  | 'laser';
+  | 'laser'
+  | 'boost';
+
+/**
+ *Masaüstü 3B sahne kamera bakış açısı modu.
+ */
+export type CameraMode = 'isometric' | 'topdown' | 'follow';
 
 /**
  * Küresel skor tablosundaki (Leaderboard) tek bir rekor kaydı.
@@ -89,6 +95,8 @@ export enum RoomEvents {
   GAME_RESET_BALL = 'game:reset_ball',
   /** Masaüstündeki fiziksel etkileşimleri (çarpma, delik, zafer) mobil titreşime iletme */
   GAME_HAPTIC = 'game:haptic',
+  /** Mobil kontrolcüden sonraki bölüme geçme veya belirli bir bölümü seçme isteği */
+  GAME_CHANGE_LEVEL = 'game:change_level',
   /** Bölüm tamamlandığında sunucu skor tablosuna süre kaydetme */
   LEADERBOARD_SUBMIT = 'leaderboard:submit',
   /** Güncel skor tablosunun tüm istemcilere yayınlanması */
@@ -136,6 +144,17 @@ export interface GyroUpdatePayload {
 export interface GameStatePayload {
   roomId: string;
   status: GameStatus;
+  level?: number;
+  crystalsCollected?: number;
+  crystalsTotal?: number;
+}
+
+/**
+ * Mobil kontrolcüden masaüstüne gönderilen bölüm değiştirme isteği.
+ */
+export interface ChangeLevelPayload {
+  roomId: string;
+  direction?: 'next' | 'prev';
   level?: number;
 }
 

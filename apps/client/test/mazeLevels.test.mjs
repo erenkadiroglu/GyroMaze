@@ -88,4 +88,24 @@ describe('MAZE_LEVELS — 3B Harita Geometrisi, Engel Konumları ve Fizik Doğru
       }
     }
   });
+
+  it('hızlandırma rampaları (boostPads) ve 3 yıldız süre hedefleri (starThresholds) geçerli olmalıdır', () => {
+    for (const level of MAZE_LEVELS) {
+      assert.ok(Array.isArray(level.boostPads) && level.boostPads.length >= 1);
+      assert.ok(Array.isArray(level.starThresholds));
+      assert.ok(level.starThresholds[0] < level.starThresholds[1]);
+
+      for (const pad of level.boostPads) {
+        const [bx, bz] = pad.position;
+        for (const wall of level.innerWalls) {
+          const dist = distancePointToWall(bx, bz, wall);
+          assert.ok(
+            dist > BALL_RADIUS,
+            `Bölüm ${level.id}: Hızlandırma rampası [${bx}, ${bz}] bir duvarla çakışıyor`,
+          );
+        }
+      }
+    }
+  });
 });
+

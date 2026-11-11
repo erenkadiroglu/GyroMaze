@@ -13,6 +13,10 @@ import {
   Hand,
   KeyRound,
   ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  Gem,
+  Trophy,
   X,
 } from 'lucide-react';
 import { GyroData } from '@gyromaze/shared';
@@ -36,6 +40,12 @@ function MobileControllerContent() {
 
   const isSocketConnected = useGameStore((s) => s.isSocketConnected);
   const isControllerPaired = useGameStore((s) => s.isControllerPaired);
+  const gameStatus = useGameStore((s) => s.gameStatus);
+  const level = useGameStore((s) => s.level);
+  const remoteCrystalsCollected = useGameStore(
+    (s) => s.remoteCrystalsCollected,
+  );
+  const remoteCrystalsTotal = useGameStore((s) => s.remoteCrystalsTotal);
   const errorMessage = useGameStore((s) => s.errorMessage);
   const setErrorMessage = useGameStore((s) => s.setErrorMessage);
 
@@ -70,11 +80,16 @@ function MobileControllerContent() {
     timestamp: 0,
   });
 
-  const { emitGyroUpdate, joinRoomByCode, emitCalibrate, emitResetBall } =
-    useSocket({
-      role: 'controller',
-      targetRoomId: activeRoomCode || null,
-    });
+  const {
+    emitGyroUpdate,
+    joinRoomByCode,
+    emitCalibrate,
+    emitResetBall,
+    emitChangeLevel,
+  } = useSocket({
+    role: 'controller',
+    targetRoomId: activeRoomCode || null,
+  });
 
   /**
    * Sensör veya dokunmatik gimbal verisini ağa gönderir ve rAF tamponuna yazar.
@@ -320,6 +335,65 @@ function MobileControllerContent() {
             className="shrink-0 rounded-lg bg-rose-500/20 px-2.5 py-1 text-[11px] font-semibold text-rose-200"
           >
             Yeni Kod Gir
+          </button>
+        </div>
+      )}
+
+      {/* Canlı Bölüm, Kristal Durumu ve Hızlı Bölüm Geçiş Çubuğu (Eşleştiğinde Aktif) */}
+      {isControllerPaired && !isRoomEditorOpen && (
+        <div className="mt-2.5 flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900 px-3 py-2">
+          <button
+            type="button"
+            onClick={() => emitChangeLevel('prev')}
+            className="flex cursor-pointer items-center gap-1 rounded-xl border border-zinc-800 bg-zinc-950 px-2.5 py-1.5 text-[11px] font-medium text-zinc-300 active:scale-95"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+            <span>Önceki</span>
+          </button>
+
+          <div className="flex items-center gap-2.5 text-xs">
+            <span className="font-mono font-bold text-emerald-400">
+              {level === 99 ? 'ÖZEL' : `BÖLÜM 0${level}`}
+            </span>
+            <span className="text-zinc-700">•</span>
+            <span className="flex items-center gap-1 font-mono text-sky-400">
+              <Gem className="h-3.5 w-3.5" />
+              {remoteCrystalsCollected}/{remoteCrystalsTotal}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => emitChangeLevel('next')}
+            className="flex cursor-pointer items-center gap-1 rounded-xl border border-zinc-800 bg-zinc-950 px-2.5 py-1.5 text-[11px] font-medium text-zinc-300 active:scale-95"
+          >
+            <span>Sonraki</span>
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Bölüm Tamamlandığında Telefondan Tek Dokunuşla Sonraki Bölüme Geçiş Kartı */}
+      {isControllerPaired && gameStatus === 'won' && !isRoomEditorOpen && (
+        <div className="mt-2.5 flex items-center justify-between gap-3 rounded-2xl border border-emerald-500/40 bg-emerald-950/60 px-4 py-3">
+          <div className="flex items-center gap-2.5">
+            <Trophy className="h-5 w-5 shrink-0 text-amber-400" />
+            <div>
+              <p className="text-xs font-semibold text-emerald-300">
+                Bölüm Tamamlandı!
+              </p>
+              <p className="text-[11px] text-zinc-300">
+                Masaüstüne dokunmadan devam edin
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => emitChangeLevel('next')}
+            className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl bg-emerald-500 px-3.5 py-2 text-xs font-semibold text-zinc-950 active:scale-95"
+          >
+            <span>Sonraki Bölüm</span>
+            <ArrowRight className="h-3.5 w-3.5" />
           </button>
         </div>
       )}
