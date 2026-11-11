@@ -103,6 +103,14 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Sadeleştirilmiş Kokpit HUD ve Yapay Ufuk Göstergesi (`AttitudeGauge.tsx`, `DesktopHUD.tsx`):** Kalabalığı ortadan kaldıran iki kapsüllü üst çubuk (bölüm açılır menüsü + en fazla iki ana eylem), sol altta 60 FPS doğrudan DOM transformlarıyla çalışan **Yapay Ufuk Göstergesi (Attitude Indicator)** + kompakt 2B radar ve sağ altta klavye kısayollu hızlı araç çubuğu.
 - [x] **Süreye Karşı (`time_attack`) Modu ve 4 Bilye Kaplaması (`BallSkin`):** Ayarlar çekmecesi üzerinden geri sayımlı **Süreye Karşı** oyun akışı (`won` / `lost` durumları) ve 1. oyuncu bilyesi için *Krom*, *Zümrüt*, *Plazma* ve *Kızıl* materyal kaplamaları eklendi.
 
+## ✅ Faz 14: Sistem Denetimi, Çok Oyunculu Fizik Paritesi, Gerçek RTT Ölçümü ve Zamanlayıcı Düzeltmeleri (Tamamlandı)
+
+- [x] **Süre Sıfırlama ve Overlay Duraklatma (`DesktopHUD.tsx`, `MazeScene.tsx`):** Deliğe düşüldüğünde veya `R` ile sıfırlandığında `resetCount` tepkisiyle bölüm sayacı sıfırdan başlatıldı; Eşleştirme, Ayarlar, Editör veya Skor Tablosu açıkken hem 3B Rapier fizik simülasyonu hem de `Time Attack` sayacı güvenle duraklatılır.
+- [x] **2. Oyuncu Tam Etkileşim Paritesi ve Adil Sıfırlama (`MazeScene.tsx`):** Paylaşılan `processBallInteractions` yardımcısı sayesinde çok oyunculu modda 2. oyuncu bilyesi de hızlandırma rampaları, ışınlanma portalları, periyodik lazerler ve hareketli engellerle 1. oyuncuyla birebir aynı kurallarda etkileşir; çok oyunculu modda yalnızca tuzağa düşen bilye başlangıca döner.
+- [x] **60 FPS Tekrar Tetiklenme Koruması & Re-Render Optimizasyonu:** Kristal toplama ve hedef portalı kontrolleri senkron `useGameStore.getState()` korumasıyla aynı karede çift ses/titreşim üretimini ve 10Hz sayaç kaynaklı gereksiz 3B sahne yeniden renderlarını önler.
+- [x] **Saat Sapmasız Gerçek RTT Ping ve Senkronizasyon İyileştirmeleri (`ROOM_PING`, `useSocket.ts`, `controller/page.tsx`):** Telefon–masaüstü sistem saati farkından etkilenen yapay ping yerine WebSocket onaylı (`room:ping`) gerçek ağ gidiş-dönüş gecikmesi (`RTT ms`) ölçümü eklendi; ayrılan oyuncu yuvasına göre izole jiroskop sıfırlama (`resetTransientGyro(slot)`), `ROOM_PAIRED` anında durum snapshot gönderimi ve mobil manuel bağlantıda çift `ROOM_JOIN` tekrarı giderildi.
+
+
 
 
 

@@ -275,8 +275,11 @@ function MobileControllerContent() {
       return;
     }
     setErrorMessage(null);
-    setActiveRoomCode(cleaned);
-    joinRoomByCode(cleaned);
+    if (cleaned === activeRoomCode) {
+      joinRoomByCode(cleaned);
+    } else {
+      setActiveRoomCode(cleaned);
+    }
     setIsRoomEditorOpen(false);
   };
 

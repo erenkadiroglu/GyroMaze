@@ -267,4 +267,12 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const updated = this.roomService.submitScore(payload);
     this.server.emit(RoomEvents.LEADERBOARD_UPDATE, updated);
   }
+
+  /**
+   * Masaüstü istemcisinin gerçek ağ gecikmesini (RTT) ölçmesi için anlık onay döner.
+   */
+  @SubscribeMessage(RoomEvents.ROOM_PING)
+  public handlePing(): number {
+    return Date.now();
+  }
 }

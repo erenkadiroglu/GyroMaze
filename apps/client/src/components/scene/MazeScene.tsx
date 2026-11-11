@@ -157,8 +157,8 @@ interface MazeStageProps {
   ghostPath?: Array<[number, number]>;
   onCollectCrystal: (idx: number) => void;
   onReachGoal: (runPath: Array<[number, number]>, winnerSlot?: 1 | 2) => void;
-  onFallIntoHole: () => void;
-  onLaserHit: () => void;
+  onFallIntoHole: (slot: 1 | 2) => void;
+  onLaserHit: (slot: 1 | 2) => void;
   onBoostHit: () => void;
   onTeleportHit: () => void;
   onWallHit: (speed: number) => void;
@@ -200,13 +200,22 @@ function MazeStage({
   const runPathRef = useRef<Array<[number, number]>>([]);
   const runElapsedRef = useRef<number>(0);
   const lastSampleTimeRef = useRef<number>(0);
-  const lastWallSoundTimeRef = useRef<number>(0);
-  const lastBoostTimeRef = useRef<number>(0);
-  const lastTeleportTimeRef = useRef<number>(0);
-  const lastMovingHitTimeRef = useRef<number>(0);
+  const lastWallSoundTimeRef = useRef<{ 1: number; 2: number }>({ 1: 0, 2: 0 });
+  const lastBoostTimeRef = useRef<{ 1: number; 2: number }>({ 1: 0, 2: 0 });
+  const lastTeleportTimeRef = useRef<{ 1: number; 2: number }>({ 1: 0, 2: 0 });
+  const lastMovingHitTimeRef = useRef<{ 1: number; 2: number }>({ 1: 0, 2: 0 });
+  const lastHazardResetTimeRef = useRef<{ 1: number; 2: number }>({
+    1: 0,
+    2: 0,
+  });
+  const lastHoleHitMsRef = useRef<{ 1: number; 2: number }>({ 1: 0, 2: 0 });
 
   const resetCount = useGameStore((s) => s.resetCount);
   const gameStatus = useGameStore((s) => s.gameStatus);
+  const isPairingModalOpen = useGameStore((s) => s.isPairingModalOpen);
+  const isSettingsOpen = useGameStore((s) => s.isSettingsOpen);
+  const isEditorOpen = useGameStore((s) => s.isEditorOpen);
+  const isLeaderboardOpen = useGameStore((s) => s.isLeaderboardOpen);
   const cameraMode = useGameStore((s) => s.cameraMode);
   const boardTheme = useGameStore((s) => s.boardTheme);
   const colorScheme = useGameStore((s) => s.colorScheme);
@@ -314,6 +323,24 @@ function MazeStage({
     [halfBoard, levelData.boardSize],
   );
 
+  const resetSingleBall = useCallback(
+    (body: RapierRigidBody | null, slot: 1 | 2) => {
+      if (!body) return;
+      const [sx, , sz] = levelData.startPosition;
+      const targetX = slot === 2 ? sx + 0.42 : sx;
+      body.setTranslation({ x: targetX, y: BALL_RADIUS, z: sz }, true);
+      body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+      if (slot === 1) {
+        for (let i = 0; i < TRAIL_COUNT; i++) {
+          trailHistoryRef.current[i].x = sx;
+          trailHistoryRef.current[i].z = sz;
+        }
+      }
+    },
+    [levelData.startPosition],
+  );
+
   const resetBallAndBoard = useCallback(() => {
     _currentQuat.identity();
     if (visualTiltGroupRef.current) {
@@ -323,44 +350,185 @@ function MazeStage({
     runPathRef.current = [[Number(sx.toFixed(2)), Number(sz.toFixed(2))]];
     runElapsedRef.current = 0;
     lastSampleTimeRef.current = 0;
-    for (let i = 0; i < TRAIL_COUNT; i++) {
-      trailHistoryRef.current[i].x = sx;
-      trailHistoryRef.current[i].z = sz;
-    }
-    if (ballBodyRef.current) {
-      ballBodyRef.current.setTranslation(
-        { x: sx, y: BALL_RADIUS, z: sz },
-        true,
-      );
-      ballBodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
-      ballBodyRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
-    }
-    if (ball2BodyRef.current) {
-      ball2BodyRef.current.setTranslation(
-        { x: sx + 0.42, y: BALL_RADIUS, z: sz },
-        true,
-      );
-      ball2BodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
-      ball2BodyRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
-    }
-  }, [levelData.startPosition]);
+    resetSingleBall(ballBodyRef.current, 1);
+    resetSingleBall(ball2BodyRef.current, 2);
+  }, [levelData.startPosition, resetSingleBall]);
 
   useEffect(() => {
     resetBallAndBoard();
   }, [resetCount, levelData.id, resetBallAndBoard]);
 
-  const handleBallCollision = useCallback(() => {
-    if (!ballBodyRef.current) return;
-    const now = performance.now();
-    if (now - lastWallSoundTimeRef.current < 95) return;
+  const handleBallCollision = useCallback(
+    (slot: 1 | 2) => {
+      const body = slot === 2 ? ball2BodyRef.current : ballBodyRef.current;
+      if (!body) return;
+      const now = performance.now();
+      if (now - lastWallSoundTimeRef.current[slot] < 95) return;
 
-    const vel = ballBodyRef.current.linvel();
-    const speed = Math.hypot(vel.x, vel.z);
-    if (speed > 1.3) {
-      lastWallSoundTimeRef.current = now;
-      onWallHit(speed);
-    }
-  }, [onWallHit]);
+      const vel = body.linvel();
+      const speed = Math.hypot(vel.x, vel.z);
+      if (speed > 1.3) {
+        lastWallSoundTimeRef.current[slot] = now;
+        onWallHit(speed);
+      }
+    },
+    [onWallHit],
+  );
+
+  const processBallInteractions = useCallback(
+    (
+      body: RapierRigidBody,
+      pos: { x: number; z: number },
+      slot: 1 | 2,
+      elapsed: number,
+      isInteractive: boolean,
+    ) => {
+      // Enerji Kristali Toplama Kontrolü (Senkron store okuma ile çift tetiklenme engelli)
+      const liveCollected = useGameStore.getState().collectedCrystals;
+      for (let i = 0; i < levelData.crystals.length; i++) {
+        if (!liveCollected.includes(i)) {
+          const [cx, cz] = levelData.crystals[i];
+          const dx = pos.x - cx;
+          const dz = pos.z - cz;
+          if (dx * dx + dz * dz < 0.42) {
+            onCollectCrystal(i);
+          }
+        }
+      }
+
+      if (!isInteractive) return;
+
+      // Hızlandırma Rampaları (Boost Pads) Kontrolü
+      const boostPads = levelData.boostPads;
+      if (boostPads && elapsed - lastBoostTimeRef.current[slot] > 0.45) {
+        for (let i = 0; i < boostPads.length; i++) {
+          const pad = boostPads[i];
+          const dx = pos.x - pad.position[0];
+          const dz = pos.z - pad.position[1];
+          if (dx * dx + dz * dz < 0.34) {
+            lastBoostTimeRef.current[slot] = elapsed;
+            const curV = body.linvel();
+            body.setLinvel(
+              {
+                x: curV.x + pad.direction[0] * 7.2,
+                y: 0,
+                z: curV.z + pad.direction[1] * 7.2,
+              },
+              true,
+            );
+            onBoostHit();
+            break;
+          }
+        }
+      }
+
+      // Çift Yönlü Kuantum Işınlanma Portalları (Teleporters) Kontrolü
+      const teleporters = levelData.teleporters;
+      if (teleporters && elapsed - lastTeleportTimeRef.current[slot] > 0.9) {
+        for (let i = 0; i < teleporters.length; i++) {
+          const pair = teleporters[i];
+          const dEntrySq =
+            (pos.x - pair.entry[0]) ** 2 + (pos.z - pair.entry[1]) ** 2;
+          const dExitSq =
+            (pos.x - pair.exit[0]) ** 2 + (pos.z - pair.exit[1]) ** 2;
+
+          let dest: [number, number] | null = null;
+          if (dEntrySq < 0.24) {
+            dest = pair.exit;
+          } else if (dExitSq < 0.24) {
+            dest = pair.entry;
+          }
+
+          if (dest) {
+            lastTeleportTimeRef.current[slot] = elapsed;
+            body.setTranslation({ x: dest[0], y: BALL_RADIUS, z: dest[1] }, true);
+            if (slot === 1) {
+              for (let t = 0; t < TRAIL_COUNT; t++) {
+                trailHistoryRef.current[t].x = dest[0];
+                trailHistoryRef.current[t].z = dest[1];
+              }
+            }
+            onTeleportHit();
+            break;
+          }
+        }
+      }
+
+      // Periyodik Lazer Kapıları Kontrolü
+      if (elapsed - lastHazardResetTimeRef.current[slot] > 0.35) {
+        for (let i = 0; i < levelData.laserGates.length; i++) {
+          const gate = levelData.laserGates[i];
+          const cycleTime = (elapsed + gate.phaseOffset) % gate.periodSeconds;
+          // Döngünün %52'sinde aktif, %48'inde güvenli geçiş için kapalı
+          const isLaserActive = cycleTime < gate.periodSeconds * 0.52;
+          if (!isLaserActive) continue;
+
+          const [gx, gz] = gate.position;
+          const halfLen = gate.length / 2;
+          const hitThreshold = BALL_RADIUS + 0.08;
+          const hit =
+            gate.axis === 'x'
+              ? Math.abs(pos.z - gz) < hitThreshold &&
+                Math.abs(pos.x - gx) < halfLen
+              : Math.abs(pos.x - gx) < hitThreshold &&
+                Math.abs(pos.z - gz) < halfLen;
+
+          if (hit) {
+            lastHazardResetTimeRef.current[slot] = elapsed;
+            onLaserHit(slot);
+            if (isMultiplayer) {
+              resetSingleBall(body, slot);
+            } else {
+              resetBallAndBoard();
+            }
+            break;
+          }
+        }
+      }
+
+      // Hareketli Devriye Engelleri (Moving Kinetic Obstacles) Kontrolü
+      const movingObstacles = levelData.movingObstacles ?? [];
+      if (
+        movingObstacles.length > 0 &&
+        elapsed - lastMovingHitTimeRef.current[slot] > 0.25
+      ) {
+        for (let i = 0; i < movingObstacles.length; i++) {
+          const obs = movingObstacles[i];
+          const offset =
+            Math.sin(elapsed * obs.speed + obs.phaseOffset) * obs.amplitude;
+          const ox = obs.axis === 'x' ? obs.center[0] + offset : obs.center[0];
+          const oz = obs.axis === 'z' ? obs.center[1] + offset : obs.center[1];
+          const dx = pos.x - ox;
+          const dz = pos.z - oz;
+          const distSq = dx * dx + dz * dz;
+          const minDist = BALL_RADIUS + 0.38;
+          if (distSq < minDist * minDist) {
+            lastMovingHitTimeRef.current[slot] = elapsed;
+            const dist = Math.max(0.05, Math.sqrt(distSq));
+            const nx = dx / dist;
+            const nz = dz / dist;
+            body.setLinvel({ x: nx * 6.8, y: 0, z: nz * 6.8 }, true);
+            onWallHit(5.5);
+          }
+        }
+      }
+    },
+    [
+      levelData.crystals,
+      levelData.boostPads,
+      levelData.teleporters,
+      levelData.laserGates,
+      levelData.movingObstacles,
+      isMultiplayer,
+      onCollectCrystal,
+      onBoostHit,
+      onTeleportHit,
+      onLaserHit,
+      onWallHit,
+      resetSingleBall,
+      resetBallAndBoard,
+    ],
+  );
 
   useFrame((state, delta) => {
     const safeDelta = Math.min(delta, 0.05);
@@ -379,7 +547,37 @@ function MazeStage({
       }
     }
 
-    const isInteractive = gameStatus === 'playing' || gameStatus === 'waiting';
+    // Lazer ışınlarının görünürlüğünü kare başına bir kez güncelle
+    for (let i = 0; i < levelData.laserGates.length; i++) {
+      const gate = levelData.laserGates[i];
+      const beamMesh = laserBeamMeshesRef.current[i];
+      if (beamMesh) {
+        const cycleTime = (elapsed + gate.phaseOffset) % gate.periodSeconds;
+        beamMesh.visible = cycleTime < gate.periodSeconds * 0.52;
+      }
+    }
+
+    // Hareketli devriye engellerinin görsel konumunu kare başına bir kez güncelle
+    const movingObstacles = levelData.movingObstacles ?? [];
+    for (let i = 0; i < movingObstacles.length; i++) {
+      const obs = movingObstacles[i];
+      const mesh = movingObstacleMeshesRef.current[i];
+      if (mesh) {
+        const offset =
+          Math.sin(elapsed * obs.speed + obs.phaseOffset) * obs.amplitude;
+        const ox = obs.axis === 'x' ? obs.center[0] + offset : obs.center[0];
+        const oz = obs.axis === 'z' ? obs.center[1] + offset : obs.center[1];
+        mesh.position.set(ox, 0.36, oz);
+        mesh.rotation.y += safeDelta * 1.8;
+      }
+    }
+
+    const isInteractive =
+      (gameStatus === 'playing' || gameStatus === 'waiting') &&
+      !isPairingModalOpen &&
+      !isSettingsOpen &&
+      !isEditorOpen &&
+      !isLeaderboardOpen;
 
     const rawPitchRad = isInteractive
       ? THREE.MathUtils.degToRad(transientGyro.beta)
@@ -442,7 +640,7 @@ function MazeStage({
       }
 
       // 10Hz Hayalet Yarışçı (Ghost Replay) Kaydı ve Canlı Oynatımı
-      if (gameStatus === 'playing') {
+      if (gameStatus === 'playing' && isInteractive) {
         runElapsedRef.current += safeDelta;
         if (
           runElapsedRef.current - lastSampleTimeRef.current >= 0.1 &&
@@ -497,150 +695,16 @@ function MazeStage({
         }
       }
 
-      // Enerji Kristali Toplama Kontrolü (Mesafe karesi < 0.42)
-      for (let i = 0; i < levelData.crystals.length; i++) {
-        if (!collectedCrystals.includes(i)) {
-          const [cx, cz] = levelData.crystals[i];
-          const dx = pos.x - cx;
-          const dz = pos.z - cz;
-          if (dx * dx + dz * dz < 0.42) {
-            onCollectCrystal(i);
-          }
-        }
-      }
+      // 1. Oyuncu kristal, rampa, portal, lazer ve hareketli engel etkileşimleri
+      processBallInteractions(
+        ballBodyRef.current,
+        pos,
+        1,
+        elapsed,
+        isInteractive,
+      );
 
-      // Hızlandırma Rampaları (Boost Pads) Kontrolü
-      const boostPads = levelData.boostPads;
-      if (
-        boostPads &&
-        isInteractive &&
-        elapsed - lastBoostTimeRef.current > 0.45
-      ) {
-        for (let i = 0; i < boostPads.length; i++) {
-          const pad = boostPads[i];
-          const dx = pos.x - pad.position[0];
-          const dz = pos.z - pad.position[1];
-          if (dx * dx + dz * dz < 0.34) {
-            lastBoostTimeRef.current = elapsed;
-            const curV = ballBodyRef.current.linvel();
-            ballBodyRef.current.setLinvel(
-              {
-                x: curV.x + pad.direction[0] * 7.2,
-                y: 0,
-                z: curV.z + pad.direction[1] * 7.2,
-              },
-              true,
-            );
-            onBoostHit();
-            break;
-          }
-        }
-      }
-
-      // Çift Yönlü Kuantum Işınlanma Portalları (Teleporters) Kontrolü
-      const teleporters = levelData.teleporters;
-      if (
-        teleporters &&
-        isInteractive &&
-        elapsed - lastTeleportTimeRef.current > 0.9
-      ) {
-        for (let i = 0; i < teleporters.length; i++) {
-          const pair = teleporters[i];
-          const dEntrySq =
-            (pos.x - pair.entry[0]) ** 2 + (pos.z - pair.entry[1]) ** 2;
-          const dExitSq =
-            (pos.x - pair.exit[0]) ** 2 + (pos.z - pair.exit[1]) ** 2;
-
-          let dest: [number, number] | null = null;
-          if (dEntrySq < 0.24) {
-            dest = pair.exit;
-          } else if (dExitSq < 0.24) {
-            dest = pair.entry;
-          }
-
-          if (dest) {
-            lastTeleportTimeRef.current = elapsed;
-            ballBodyRef.current.setTranslation(
-              { x: dest[0], y: BALL_RADIUS, z: dest[1] },
-              true,
-            );
-            for (let t = 0; t < TRAIL_COUNT; t++) {
-              trailHistoryRef.current[t].x = dest[0];
-              trailHistoryRef.current[t].z = dest[1];
-            }
-            onTeleportHit();
-            break;
-          }
-        }
-      }
-
-      // Periyodik Lazer Kapıları Kontrolü
-      for (let i = 0; i < levelData.laserGates.length; i++) {
-        const gate = levelData.laserGates[i];
-        const cycleTime = (elapsed + gate.phaseOffset) % gate.periodSeconds;
-        // Döngünün %52'sinde aktif, %48'inde güvenli geçiş için kapalı
-        const isLaserActive = cycleTime < gate.periodSeconds * 0.52;
-
-        const beamMesh = laserBeamMeshesRef.current[i];
-        if (beamMesh) {
-          beamMesh.visible = isLaserActive;
-        }
-
-        if (isLaserActive && isInteractive) {
-          const [gx, gz] = gate.position;
-          const halfLen = gate.length / 2;
-          const hitThreshold = BALL_RADIUS + 0.08;
-
-          const hit =
-            gate.axis === 'x'
-              ? Math.abs(pos.z - gz) < hitThreshold &&
-                Math.abs(pos.x - gx) < halfLen
-              : Math.abs(pos.x - gx) < hitThreshold &&
-                Math.abs(pos.z - gz) < halfLen;
-
-          if (hit) {
-            onLaserHit();
-            resetBallAndBoard();
-            break;
-          }
-        }
-      }
-
-      // Hareketli Devriye Engelleri (Moving Kinetic Obstacles) Kontrolü
-      const movingObstacles = levelData.movingObstacles ?? [];
-      for (let i = 0; i < movingObstacles.length; i++) {
-        const obs = movingObstacles[i];
-        const offset =
-          Math.sin(elapsed * obs.speed + obs.phaseOffset) * obs.amplitude;
-        const ox = obs.axis === 'x' ? obs.center[0] + offset : obs.center[0];
-        const oz = obs.axis === 'z' ? obs.center[1] + offset : obs.center[1];
-
-        const mesh = movingObstacleMeshesRef.current[i];
-        if (mesh) {
-          mesh.position.set(ox, 0.36, oz);
-          mesh.rotation.y += safeDelta * 1.8;
-        }
-
-        if (isInteractive && elapsed - lastMovingHitTimeRef.current > 0.25) {
-          const dx = pos.x - ox;
-          const dz = pos.z - oz;
-          const distSq = dx * dx + dz * dz;
-          const minDist = BALL_RADIUS + 0.38;
-          if (distSq < minDist * minDist) {
-            lastMovingHitTimeRef.current = elapsed;
-            const dist = Math.max(0.05, Math.sqrt(distSq));
-            const nx = dx / dist;
-            const nz = dz / dist;
-            ballBodyRef.current.setLinvel(
-              { x: nx * 6.8, y: 0, z: nz * 6.8 },
-              true,
-            );
-            onWallHit(5.5);
-          }
-        }
-      }
-
-      // Çok Oyunculu (2. Oyuncu - Altın Bilye) Fizik, Kristal, Tuzak ve Hedef Kontrolü
+      // Çok Oyunculu (2. Oyuncu - Altın Bilye) Fizik ve Tam Etkileşim Paritesi
       if (isMultiplayer && ball2BodyRef.current) {
         const p2PitchRad = THREE.MathUtils.clamp(
           isInteractive ? THREE.MathUtils.degToRad(transientGyroP2.beta) : 0,
@@ -685,20 +749,21 @@ function MazeStage({
             (vel2.x / BALL_RADIUS) * safeDelta;
         }
 
-        // 2. Oyuncu kristal toplama
-        for (let i = 0; i < levelData.crystals.length; i++) {
-          if (!collectedCrystals.includes(i)) {
-            const [cx, cz] = levelData.crystals[i];
-            if ((pos2.x - cx) ** 2 + (pos2.z - cz) ** 2 < 0.42) {
-              onCollectCrystal(i);
-            }
-          }
-        }
+        // 2. Oyuncu için tüm kristal, rampa, portal, lazer ve hareketli engel kontrolleri
+        processBallInteractions(
+          ball2BodyRef.current,
+          pos2,
+          2,
+          elapsed,
+          isInteractive,
+        );
 
         // 2. Oyuncu hedef portalı kontrolü
-        const [gx, , gz] = levelData.goalPosition;
-        if ((pos2.x - gx) ** 2 + (pos2.z - gz) ** 2 < 0.48) {
-          onReachGoal(runPathRef.current, 2);
+        if (isInteractive) {
+          const [gx, , gz] = levelData.goalPosition;
+          if ((pos2.x - gx) ** 2 + (pos2.z - gz) ** 2 < 0.48) {
+            onReachGoal(runPathRef.current, 2);
+          }
         }
       } else if (visualBall2MeshRef.current) {
         visualBall2MeshRef.current.visible = false;
@@ -761,7 +826,11 @@ function MazeStage({
           args={[0.4, 0.46]}
           position={levelData.goalPosition}
           sensor
-          onIntersectionEnter={() => onReachGoal(runPathRef.current, 1)}
+          onIntersectionEnter={(payload) => {
+            const slot =
+              payload.other.rigidBodyObject?.name === 'ball-p2' ? 2 : 1;
+            onReachGoal(runPathRef.current, slot);
+          }}
         />
 
         {/* Tuzak Delikleri (Void Holes) Sensörleri */}
@@ -771,9 +840,36 @@ function MazeStage({
             args={[0.4, (hole.radius ?? 0.42) * 0.68]}
             position={[hole.position[0], 0.25, hole.position[1]]}
             sensor
-            onIntersectionEnter={() => {
-              onFallIntoHole();
-              resetBallAndBoard();
+            onIntersectionEnter={(payload) => {
+              const state = useGameStore.getState();
+              if (
+                state.gameStatus !== 'playing' &&
+                state.gameStatus !== 'waiting'
+              ) {
+                return;
+              }
+              if (
+                state.isPairingModalOpen ||
+                state.isSettingsOpen ||
+                state.isEditorOpen ||
+                state.isLeaderboardOpen
+              ) {
+                return;
+              }
+              const slot: 1 | 2 =
+                payload.other.rigidBodyObject?.name === 'ball-p2' ? 2 : 1;
+              const nowMs = performance.now();
+              if (nowMs - lastHoleHitMsRef.current[slot] < 350) return;
+              lastHoleHitMsRef.current[slot] = nowMs;
+              onFallIntoHole(slot);
+              if (isMultiplayer) {
+                resetSingleBall(
+                  slot === 2 ? ball2BodyRef.current : ballBodyRef.current,
+                  slot,
+                );
+              } else {
+                resetBallAndBoard();
+              }
             }}
           />
         ))}
@@ -782,6 +878,7 @@ function MazeStage({
       {/* 1. Oyuncu Dinamik Fizik Küresi (Y ekseni kilitli -> Sıfır Zıplama!) */}
       <RigidBody
         ref={ballBodyRef}
+        name="ball-p1"
         type="dynamic"
         colliders={false}
         position={[
@@ -794,7 +891,7 @@ function MazeStage({
         restitution={0.22}
         friction={0.08}
         ccd={true}
-        onCollisionEnter={handleBallCollision}
+        onCollisionEnter={() => handleBallCollision(1)}
       >
         <BallCollider args={[BALL_RADIUS]} />
       </RigidBody>
@@ -803,6 +900,7 @@ function MazeStage({
       {isMultiplayer && (
         <RigidBody
           ref={ball2BodyRef}
+          name="ball-p2"
           type="dynamic"
           colliders={false}
           position={[
@@ -815,7 +913,7 @@ function MazeStage({
           restitution={0.22}
           friction={0.08}
           ccd={true}
-          onCollisionEnter={handleBallCollision}
+          onCollisionEnter={() => handleBallCollision(2)}
         >
           <BallCollider args={[BALL_RADIUS]} />
         </RigidBody>
@@ -1133,8 +1231,6 @@ function MazeStage({
 export function MazeScene() {
   const level = useGameStore((s) => s.level);
   const customLevel = useGameStore((s) => s.customLevel);
-  const gameStatus = useGameStore((s) => s.gameStatus);
-  const elapsedSeconds = useGameStore((s) => s.elapsedSeconds);
   const isSoundMuted = useGameStore((s) => s.isSoundMuted);
   const collectedCrystals = useGameStore((s) => s.collectedCrystals);
   const ghostPaths = useGameStore((s) => s.ghostPaths);
@@ -1161,7 +1257,10 @@ export function MazeScene() {
 
   const handleCollectCrystal = useCallback(
     (idx: number) => {
-      const nextCount = collectedCrystals.length + 1;
+      const liveCollected = useGameStore.getState().collectedCrystals;
+      if (liveCollected.includes(idx)) return;
+
+      const nextCount = liveCollected.length + 1;
       if (!isSoundMuted) {
         soundEngine.playCrystalPickup(nextCount);
       }
@@ -1177,7 +1276,6 @@ export function MazeScene() {
     },
     [
       isSoundMuted,
-      collectedCrystals.length,
       activeLevel.crystals.length,
       triggerHaptic,
       collectCrystal,
@@ -1187,7 +1285,19 @@ export function MazeScene() {
 
   const handleReachGoal = useCallback(
     (runPath: Array<[number, number]>, winnerSlot: 1 | 2 = 1) => {
-      if (!isGoalUnlocked) {
+      const state = useGameStore.getState();
+      if (
+        state.isPairingModalOpen ||
+        state.isSettingsOpen ||
+        state.isEditorOpen ||
+        state.isLeaderboardOpen
+      ) {
+        return;
+      }
+
+      const goalUnlocked =
+        state.collectedCrystals.length >= activeLevel.crystals.length;
+      if (!goalUnlocked) {
         const now = performance.now();
         if (now - lastLockedWarnTimeRef.current > 1300) {
           lastLockedWarnTimeRef.current = now;
@@ -1197,7 +1307,7 @@ export function MazeScene() {
           triggerHaptic('wall');
           const remaining = Math.max(
             1,
-            activeLevel.crystals.length - collectedCrystals.length,
+            activeLevel.crystals.length - state.collectedCrystals.length,
           );
           showHudNotification(
             `🔒 Portal Kilitli! Önce kalan ${remaining} enerji kristalini toplayın.`,
@@ -1206,48 +1316,59 @@ export function MazeScene() {
         }
         return;
       }
-      if (gameStatus !== 'won' && gameStatus !== 'lost') {
+
+      if (state.gameStatus !== 'won' && state.gameStatus !== 'lost') {
         if (!isSoundMuted) {
           soundEngine.playVictory();
         }
         triggerHaptic('goal');
         recordLevelCompletion(
           activeLevel.id,
-          elapsedSeconds,
+          state.elapsedSeconds,
           runPath,
           winnerSlot,
         );
       }
     },
     [
-      isGoalUnlocked,
-      gameStatus,
       isSoundMuted,
       triggerHaptic,
       recordLevelCompletion,
       activeLevel.id,
       activeLevel.crystals.length,
-      collectedCrystals.length,
-      elapsedSeconds,
       showHudNotification,
     ],
   );
 
-  const handleFallIntoHole = useCallback(() => {
-    if (!isSoundMuted) {
-      soundEngine.playHoleFall();
-    }
-    triggerHaptic('hole');
-    triggerBallReset();
-  }, [isSoundMuted, triggerHaptic, triggerBallReset]);
+  const handleFallIntoHole = useCallback(
+    (slot: 1 | 2) => {
+      if (!isSoundMuted) {
+        soundEngine.playHoleFall();
+      }
+      triggerHaptic('hole');
+      if (!useGameStore.getState().isMultiplayer) {
+        triggerBallReset();
+      } else {
+        showHudNotification(`Oyuncu ${slot} boşluğa düştü`, 'warn');
+      }
+    },
+    [isSoundMuted, triggerHaptic, triggerBallReset, showHudNotification],
+  );
 
-  const handleLaserHit = useCallback(() => {
-    if (!isSoundMuted) {
-      soundEngine.playLaserZap();
-    }
-    triggerHaptic('laser');
-    triggerBallReset();
-  }, [isSoundMuted, triggerHaptic, triggerBallReset]);
+  const handleLaserHit = useCallback(
+    (slot: 1 | 2) => {
+      if (!isSoundMuted) {
+        soundEngine.playLaserZap();
+      }
+      triggerHaptic('laser');
+      if (!useGameStore.getState().isMultiplayer) {
+        triggerBallReset();
+      } else {
+        showHudNotification(`Oyuncu ${slot} lazere çarptı`, 'warn');
+      }
+    },
+    [isSoundMuted, triggerHaptic, triggerBallReset, showHudNotification],
+  );
 
   const handleBoostHit = useCallback(() => {
     if (!isSoundMuted) {

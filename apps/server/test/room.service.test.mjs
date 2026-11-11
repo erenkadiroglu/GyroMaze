@@ -1,5 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { RoomEvents } from '@gyromaze/shared';
 import { RoomService } from '../dist/gateway/room.service.js';
 
 describe('RoomService — Oda Yönetimi, 6 Haneli Kod Eşleşmesi ve Skor Tablosu Testleri', () => {
@@ -106,6 +107,29 @@ describe('RoomService — Oda Yönetimi, 6 Haneli Kod Eşleşmesi ve Skor Tablos
       assert.equal(p2Res.room.isSecondControllerConnected, true);
       assert.equal(p2Res.room.secondControllerSocketId, 'phone-p2');
     }
+  });
+
+  it('çok oyunculu odadan 2. kontrolcü ayrıldığında 1. oyuncunun bağlantısı korunmalıdır', async () => {
+    const service = new RoomService();
+    const room = await service.createRoom('host-coop');
+
+    service.joinRoom(room.roomId, 'phone-p1', 1);
+    service.joinRoom(room.roomId, 'phone-p2', 2);
+
+    const p2Leave = service.removeSocket('phone-p2');
+    assert.ok(p2Leave);
+    assert.equal(p2Leave.disconnectedRole, 'controller');
+    assert.equal(p2Leave.remainingRoom?.isControllerConnected, true);
+    assert.equal(p2Leave.remainingRoom?.isSecondControllerConnected, false);
+
+    const p1Leave = service.removeSocket('phone-p1');
+    assert.ok(p1Leave);
+    assert.equal(p1Leave.remainingRoom?.isControllerConnected, false);
+    assert.equal(p1Leave.remainingRoom?.isSecondControllerConnected, false);
+  });
+
+  it('RTT gecikme ölçümü için ROOM_PING olayı tanımlı olmalıdır', () => {
+    assert.equal(RoomEvents.ROOM_PING, 'room:ping');
   });
 });
 

@@ -106,6 +106,8 @@ export enum RoomEvents {
   ROOM_HOST_DISCONNECTED = 'room:host_disconnected',
   /** Oda bulunamadığında veya dolu olduğunda */
   ROOM_ERROR = 'room:error',
+  /** Ağ gecikmesini (RTT) ölçmek için hafif ping olayı */
+  ROOM_PING = 'room:ping',
   /** Mobil cihazdan sunucuya gönderilen anlık jiroskop verisi */
   GYRO_UPDATE = 'gyro:update',
   /** Sunucudan masaüstü sahneye aktarılan senkronize jiroskop verisi */

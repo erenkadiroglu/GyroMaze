@@ -58,8 +58,11 @@ export function DesktopHUD() {
   const setPairingModalOpen = useGameStore((s) => s.setPairingModalOpen);
   const isLeaderboardOpen = useGameStore((s) => s.isLeaderboardOpen);
   const setLeaderboardOpen = useGameStore((s) => s.setLeaderboardOpen);
+  const isEditorOpen = useGameStore((s) => s.isEditorOpen);
   const setEditorOpen = useGameStore((s) => s.setEditorOpen);
+  const isSettingsOpen = useGameStore((s) => s.isSettingsOpen);
   const setSettingsOpen = useGameStore((s) => s.setSettingsOpen);
+  const resetCount = useGameStore((s) => s.resetCount);
 
   const gameStatus = useGameStore((s) => s.gameStatus);
   const setGameStatus = useGameStore((s) => s.setGameStatus);
@@ -116,6 +119,8 @@ export function DesktopHUD() {
   const timeAttackLimit = Math.max(14, Math.round(twoStarLimit * 1.15));
   const timeRemaining = Math.max(0, timeAttackLimit - elapsedSeconds);
   const isTimeAttack = gameMode === 'time_attack';
+  const isAnyOverlayOpen =
+    isPairingModalOpen || isSettingsOpen || isEditorOpen || isLeaderboardOpen;
 
   const earnedStars =
     elapsedSeconds <= threeStarLimit
@@ -170,8 +175,9 @@ export function DesktopHUD() {
 
   // Oyun içi süre ve Süreye Karşı (Time Attack) geri sayımı
   useEffect(() => {
-    if (gameStatus !== 'playing') return;
-    const start = performance.now() - elapsedSeconds * 1000;
+    if (gameStatus !== 'playing' || isAnyOverlayOpen) return;
+    const baseElapsed = useGameStore.getState().elapsedSeconds;
+    const start = performance.now() - baseElapsed * 1000;
     const interval = window.setInterval(() => {
       const elapsed = Number(((performance.now() - start) / 1000).toFixed(1));
       if (isTimeAttack && elapsed >= timeAttackLimit) {
@@ -190,6 +196,8 @@ export function DesktopHUD() {
   }, [
     gameStatus,
     level,
+    resetCount,
+    isAnyOverlayOpen,
     isTimeAttack,
     timeAttackLimit,
     isSoundMuted,
@@ -201,9 +209,10 @@ export function DesktopHUD() {
   // Global klavye kısayolları (R: Sıfırla, C: Kamera, M: Ses, L: Gece/Gündüz)
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      if (isAnyOverlayOpen) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       const tag = (e.target as HTMLElement | null)?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
       const key = e.key.toLowerCase();
       if (key === 'r') {
         triggerBallReset();
@@ -218,6 +227,7 @@ export function DesktopHUD() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [
+    isAnyOverlayOpen,
     triggerBallReset,
     cycleCameraMode,
     toggleSoundMuted,

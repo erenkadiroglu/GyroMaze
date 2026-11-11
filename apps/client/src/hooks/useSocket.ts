@@ -59,7 +59,6 @@ export function useSocket({
   const playerSlotRef = useRef<1 | 2>(playerSlot);
   playerSlotRef.current = playerSlot;
 
-  const lastLatencyUpdateRef = useRef<number>(0);
   const lastEmitTimeRef = useRef<number>(0);
   const lastSentBetaRef = useRef<number>(999);
   const lastSentGammaRef = useRef<number>(999);
@@ -69,7 +68,11 @@ export function useSocket({
   const level = useGameStore((s) => s.level);
   const customLevel = useGameStore((s) => s.customLevel);
   const collectedCrystals = useGameStore((s) => s.collectedCrystals);
+  const isSocketConnected = useGameStore((s) => s.isSocketConnected);
   const isControllerPaired = useGameStore((s) => s.isControllerPaired);
+  const isSecondControllerPaired = useGameStore(
+    (s) => s.isSecondControllerPaired,
+  );
   const hapticSignal = useGameStore((s) => s.hapticSignal);
   const pendingScoreSubmission = useGameStore((s) => s.pendingScoreSubmission);
   const setRoomId = useGameStore((s) => s.setRoomId);
@@ -145,6 +148,16 @@ export function useSocket({
           Boolean(room.isControllerConnected || room.isSecondControllerConnected),
         );
         setSecondControllerPaired(Boolean(room.isSecondControllerConnected));
+        // Yeni veya yeniden bağlanan her kontrolcüye mevcut masaüstü durumunu anında gönder
+        const snap = useGameStore.getState();
+        const currentLvl = getMazeLevel(snap.level, snap.customLevel);
+        socket.emit(RoomEvents.GAME_STATE_CHANGE, {
+          roomId: room.roomId,
+          status: snap.gameStatus,
+          level: currentLvl.id,
+          crystalsCollected: snap.collectedCrystals.length,
+          crystalsTotal: currentLvl.crystals.length,
+        });
       } else {
         setControllerPaired(true);
       }
@@ -172,11 +185,22 @@ export function useSocket({
           setSecondControllerPaired(
             Boolean(remainingRoom.isSecondControllerConnected),
           );
+          // Yalnızca ayrılan oyuncunun geçici jiroskop tamponunu sıfırla
+          if (
+            !remainingRoom.isControllerConnected &&
+            !remainingRoom.isSecondControllerConnected
+          ) {
+            resetTransientGyro();
+          } else if (!remainingRoom.isControllerConnected) {
+            resetTransientGyro(1);
+          } else if (!remainingRoom.isSecondControllerConnected) {
+            resetTransientGyro(2);
+          }
         } else {
           setControllerPaired(false);
           setSecondControllerPaired(false);
+          resetTransientGyro();
         }
-        resetTransientGyro();
       },
     );
 
@@ -195,16 +219,6 @@ export function useSocket({
     if (role === 'host') {
       socket.on(RoomEvents.GYRO_SYNC, (data: GyroData) => {
         updateTransientGyro(data);
-
-        const now = Date.now();
-        if (now - lastLatencyUpdateRef.current > 300) {
-          lastLatencyUpdateRef.current = now;
-          const estimatedLatency = Math.max(
-            1,
-            Math.min(99, Math.abs(now - data.timestamp)),
-          );
-          setLatencyMs(estimatedLatency);
-        }
       });
 
       socket.on(RoomEvents.GYRO_CALIBRATE, () => {
@@ -289,7 +303,7 @@ export function useSocket({
     setTunnelUrl,
     setSocketConnected,
     setControllerPaired,
-    setLatencyMs,
+    setSecondControllerPaired,
     setErrorMessage,
     setLeaderboard,
     updateTransientGyro,
@@ -318,11 +332,31 @@ export function useSocket({
     role,
     roomId,
     isControllerPaired,
+    isSecondControllerPaired,
     gameStatus,
     level,
     customLevel,
     collectedCrystals.length,
   ]);
+
+  // Cihaz saati farkından bağımsız gerçek gidiş-dönüş (RTT) gecikme ölçümü
+  useEffect(() => {
+    if (role !== 'host' || !isSocketConnected) return;
+
+    const measurePing = () => {
+      const sock = socketRef.current;
+      if (!sock?.connected) return;
+      const sentAt = performance.now();
+      sock.emit(RoomEvents.ROOM_PING, () => {
+        const rtt = Math.max(1, Math.min(999, Math.round(performance.now() - sentAt)));
+        setLatencyMs(rtt);
+      });
+    };
+
+    measurePing();
+    const timer = window.setInterval(measurePing, 2000);
+    return () => window.clearInterval(timer);
+  }, [role, isSocketConnected, setLatencyMs]);
 
   // Mobil kontrolcüde hedef oda kodu veya oyuncu yuvası değiştiğinde mevcut soketi koparmadan anında katıl
   useEffect(() => {

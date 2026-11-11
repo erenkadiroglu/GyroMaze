@@ -227,7 +227,7 @@ interface GameStoreState {
   triggerHaptic: (type: HapticType) => void;
   setErrorMessage: (message: string | null) => void;
   updateTransientGyro: (data: GyroData) => void;
-  resetTransientGyro: () => void;
+  resetTransientGyro: (slot?: 1 | 2) => void;
 }
 
 /**
@@ -303,6 +303,9 @@ export const useGameStore = create<GameStoreState>()(
   setSecondControllerPaired: (isSecondControllerPaired) =>
     set((state) => ({
       isSecondControllerPaired,
+      isPairingModalOpen: isSecondControllerPaired
+        ? false
+        : state.isPairingModalOpen,
       isMultiplayer: isSecondControllerPaired ? true : state.isMultiplayer,
     })),
   toggleMultiplayer: () =>
@@ -520,15 +523,20 @@ export const useGameStore = create<GameStoreState>()(
     }
   },
 
-  resetTransientGyro: () => {
-    transientGyro.alpha = 0;
-    transientGyro.beta = 0;
-    transientGyro.gamma = 0;
-    transientGyro.timestamp = Date.now();
-    transientGyroP2.alpha = 0;
-    transientGyroP2.beta = 0;
-    transientGyroP2.gamma = 0;
-    transientGyroP2.timestamp = Date.now();
+  resetTransientGyro: (slot) => {
+    const now = Date.now();
+    if (slot !== 2) {
+      transientGyro.alpha = 0;
+      transientGyro.beta = 0;
+      transientGyro.gamma = 0;
+      transientGyro.timestamp = now;
+    }
+    if (slot !== 1) {
+      transientGyroP2.alpha = 0;
+      transientGyroP2.beta = 0;
+      transientGyroP2.gamma = 0;
+      transientGyroP2.timestamp = now;
+    }
   },
     }),
     {
