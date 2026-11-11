@@ -105,6 +105,18 @@ describe('MAZE_LEVELS — 3B Harita Geometrisi, Engel Konumları ve Fizik Doğru
           );
         }
       }
+
+      for (const tp of level.teleporters ?? []) {
+        for (const [tx, tz] of [tp.entry, tp.exit]) {
+          for (const wall of level.innerWalls) {
+            const dist = distancePointToWall(tx, tz, wall);
+            assert.ok(
+              dist > BALL_RADIUS,
+              `Bölüm ${level.id}: Kuantum portal [${tx}, ${tz}] bir duvarla çakışıyor`,
+            );
+          }
+        }
+      }
     }
   });
 });

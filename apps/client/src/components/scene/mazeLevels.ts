@@ -45,6 +45,16 @@ export interface BoostPadDefinition {
 }
 
 /**
+ * Küreyi giriş noktasından çıkış noktasına (veya tersine) anında ışınlayan kuantum portal çifti.
+ */
+export interface TeleporterPairDefinition {
+  /** 1. Portal [x, z] koordinatları */
+  entry: [number, number];
+  /** 2. Portal [x, z] koordinatları */
+  exit: [number, number];
+}
+
+/**
  * Bir labirent seviyesinin tüm geometrik ve oynanış verileri.
  */
 export interface MazeLevelDefinition {
@@ -62,6 +72,8 @@ export interface MazeLevelDefinition {
   laserGates: LaserGateDefinition[];
   /** Kinetik hızlandırma rampaları */
   boostPads?: BoostPadDefinition[];
+  /** Çift yönlü kuantum ışınlanma portalları */
+  teleporters?: TeleporterPairDefinition[];
   /** [3 Yıldız Süre Sınırı (sn), 2 Yıldız Süre Sınırı (sn)] */
   starThresholds?: [number, number];
 }
@@ -185,6 +197,7 @@ export const MAZE_LEVELS: MazeLevelDefinition[] = [
       { position: [-4.5, -1.5], direction: [0, 1] },
       { position: [4.5, 3.0], direction: [0, -1] },
     ],
+    teleporters: [{ entry: [-1.5, 4.0], exit: [1.5, -4.0] }],
     starThresholds: [19.5, 28.0],
   },
   {
@@ -231,6 +244,7 @@ export const MAZE_LEVELS: MazeLevelDefinition[] = [
     boostPads: [
       { position: [1.2, -3.5], direction: [0, 1] },
     ],
+    teleporters: [{ entry: [-3.8, -3.5], exit: [3.8, 3.5] }],
     starThresholds: [18.0, 26.0],
   },
   {
@@ -273,6 +287,7 @@ export const MAZE_LEVELS: MazeLevelDefinition[] = [
       { position: [-4.6, 2.6], direction: [0, -1] },
       { position: [4.6, 2.6], direction: [0, -1] },
     ],
+    teleporters: [{ entry: [-4.6, -1.2], exit: [4.6, -1.2] }],
     starThresholds: [22.0, 32.0],
   },
 ];

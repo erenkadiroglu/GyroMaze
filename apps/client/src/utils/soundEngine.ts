@@ -197,6 +197,31 @@ class SoundEngine {
     osc.start(now);
     osc.stop(now + 0.19);
   }
+
+  /**
+   * Kuantum ışınlanma portalından (Wormhole Teleporter) geçildiğinde uzay-zaman bükülme sesi üretir.
+   */
+  public playTeleport(): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(340, now);
+    osc.frequency.exponentialRampToValueAtTime(1180, now + 0.14);
+    osc.frequency.exponentialRampToValueAtTime(620, now + 0.24);
+
+    gain.gain.setValueAtTime(0.18, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.26);
+  }
 }
 
 export const soundEngine = new SoundEngine();

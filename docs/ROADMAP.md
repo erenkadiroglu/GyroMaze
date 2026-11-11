@@ -67,6 +67,13 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **3 Kamera Bakış Açısı Modu (`İzometrik`, `Üstten`, `Takip`):** Üst HUD üzerinden tek tıkla klasik izometrik açı, tam dikey speedrun açısı veya bilyeyi dinamik takip eden sinematik kamera arasında geçiş.
 - [x] **3 Yıldızlı Performans Sistemi (`starThresholds`):** Bölüm tamamlama süresine göre 1–3 yıldız derecelendirmesi.
 
+## ✅ Faz 8: Kuantum Işınlanma Portalları, 3B Görsel Atmosfer Temaları ve Editör Genişletmesi (Tamamlandı)
+
+- [x] **Çift Yönlü Kuantum Işınlanma Portalları (`teleporters`):** Bölüm 3, 4 ve 5'e yerleştirilen solucan deliği portalları; bilyenin momentumunu koruyarak iki nokta arasında anında ışınlanması, `playTeleport` ses sentezleyicisi ve `teleport` mobil titreşim deseni.
+- [x] **3B Görsel Atmosfer Temaları (`Zümrüt`, `Siberpunk`, `Kızıl Kor`):** Üst HUD üzerinden gerçek zamanlı değiştirilebilen zemin, iç/dış duvar ve neon bilye izi renk paletleri.
+- [x] **Harita Editörü Hız Rampası Desteği (`LevelEditorModal.tsx`):** Özel harita tasarımcısına hızlandırma rampası (`▲`) yerleştirme aracı eklendi.
+
+
 
 
 

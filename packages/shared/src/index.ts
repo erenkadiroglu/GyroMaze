@@ -37,12 +37,18 @@ export type HapticType =
   | 'calibrate'
   | 'crystal'
   | 'laser'
-  | 'boost';
+  | 'boost'
+  | 'teleport';
 
 /**
- *Masaüstü 3B sahne kamera bakış açısı modu.
+ * Masaüstü 3B sahne kamera bakış açısı modu.
  */
 export type CameraMode = 'isometric' | 'topdown' | 'follow';
+
+/**
+ * 3B Labirent sahnesi görsel atmosfer ve ışıklandırma teması.
+ */
+export type BoardTheme = 'emerald' | 'cyberpunk' | 'crimson';
 
 /**
  * Küresel skor tablosundaki (Leaderboard) tek bir rekor kaydı.

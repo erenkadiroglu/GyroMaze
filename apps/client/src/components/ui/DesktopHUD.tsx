@@ -24,6 +24,7 @@ import {
   Wrench,
   Medal,
   Camera,
+  Palette,
   Star,
   X,
   Send,
@@ -53,6 +54,8 @@ export function DesktopHUD() {
   const level = useGameStore((s) => s.level);
   const cameraMode = useGameStore((s) => s.cameraMode);
   const cycleCameraMode = useGameStore((s) => s.cycleCameraMode);
+  const boardTheme = useGameStore((s) => s.boardTheme);
+  const cycleBoardTheme = useGameStore((s) => s.cycleBoardTheme);
   const customLevel = useGameStore((s) => s.customLevel);
   const setLevel = useGameStore((s) => s.setLevel);
   const nextLevel = useGameStore((s) => s.nextLevel);
@@ -102,6 +105,12 @@ export function DesktopHUD() {
       : cameraMode === 'topdown'
         ? 'Üstten'
         : 'Takip';
+  const boardThemeLabel =
+    boardTheme === 'emerald'
+      ? 'Zümrüt'
+      : boardTheme === 'cyberpunk'
+        ? 'Siberpunk'
+        : 'Kızıl Kor';
 
   useEffect(() => {
     setScoreSubmitted(false);
@@ -381,6 +390,17 @@ export function DesktopHUD() {
           >
             <Camera className="h-3.5 w-3.5 text-purple-400" />
             <span>{cameraModeLabel}</span>
+          </button>
+
+          {/* 3B Atmosfer Teması Değiştirme Butonu */}
+          <button
+            type="button"
+            onClick={cycleBoardTheme}
+            className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-zinc-800/80 bg-zinc-900/75 px-3 py-2 text-xs font-medium text-zinc-200 transition hover:border-zinc-700 hover:bg-zinc-800/90 active:scale-95"
+            title="3B Sahne Atmosfer Temasını Değiştir (Zümrüt / Siberpunk / Kızıl Kor)"
+          >
+            <Palette className="h-3.5 w-3.5 text-pink-400" />
+            <span>{boardThemeLabel}</span>
           </button>
 
           {/* Harita Editörü Butonu */}

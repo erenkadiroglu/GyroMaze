@@ -109,6 +109,16 @@ const _boostArrowMaterial = new THREE.MeshStandardMaterial({
   emissive: '#9333ea',
   emissiveIntensity: 1.8,
 });
+const _teleporterRingMaterial = new THREE.MeshStandardMaterial({
+  color: '#22d3ee',
+  emissive: '#06b6d4',
+  emissiveIntensity: 1.9,
+});
+const _teleporterCoreMaterial = new THREE.MeshBasicMaterial({
+  color: '#67e8f9',
+  transparent: true,
+  opacity: 0.32,
+});
 
 const MAX_TILT_RADIANS = THREE.MathUtils.degToRad(24);
 const SLOPE_GRAVITY = 36.0;
@@ -124,11 +134,12 @@ interface MazeStageProps {
   onFallIntoHole: () => void;
   onLaserHit: () => void;
   onBoostHit: () => void;
+  onTeleportHit: () => void;
   onWallHit: (speed: number) => void;
 }
 
 /**
- * Zıplamasız (Zero-Bounce), Enerji Kristalli, Lazer Kapılı, Hızlandırma Rampalı ve Neon İz Efektli 3B Labirent Sahnesi.
+ * Zıplamasız (Zero-Bounce), Enerji Kristalli, Lazer Kapılı, Hızlandırma Rampalı, Kuantum Portallı ve Neon İz Efektli 3B Labirent Sahnesi.
  */
 function MazeStage({
   levelData,
@@ -139,6 +150,7 @@ function MazeStage({
   onFallIntoHole,
   onLaserHit,
   onBoostHit,
+  onTeleportHit,
   onWallHit,
 }: MazeStageProps) {
   const ballBodyRef = useRef<RapierRigidBody | null>(null);
@@ -156,10 +168,32 @@ function MazeStage({
   );
   const lastWallSoundTimeRef = useRef<number>(0);
   const lastBoostTimeRef = useRef<number>(0);
+  const lastTeleportTimeRef = useRef<number>(0);
 
   const resetCount = useGameStore((s) => s.resetCount);
   const gameStatus = useGameStore((s) => s.gameStatus);
   const cameraMode = useGameStore((s) => s.cameraMode);
+  const boardTheme = useGameStore((s) => s.boardTheme);
+
+  // Seçilen 3B görsel temaya göre paylaşılan materyal renklerini güncelle
+  useEffect(() => {
+    if (boardTheme === 'cyberpunk') {
+      _boardMaterial.color.set('#0f1026');
+      _outerWallMaterial.color.set('#1e1b4b');
+      _innerWallMaterial.color.set('#312e81');
+      _trailMaterial.color.set('#f472b6');
+    } else if (boardTheme === 'crimson') {
+      _boardMaterial.color.set('#1c1214');
+      _outerWallMaterial.color.set('#3f1d24');
+      _innerWallMaterial.color.set('#57242c');
+      _trailMaterial.color.set('#fb923c');
+    } else {
+      _boardMaterial.color.set('#18181b');
+      _outerWallMaterial.color.set('#27272a');
+      _innerWallMaterial.color.set('#3f3f46');
+      _trailMaterial.color.set('#38bdf8');
+    }
+  }, [boardTheme]);
 
   const halfBoard = levelData.boardSize / 2;
   const wallHeight = 0.85;
@@ -369,6 +403,43 @@ function MazeStage({
               true,
             );
             onBoostHit();
+            break;
+          }
+        }
+      }
+
+      // Çift Yönlü Kuantum Işınlanma Portalları (Teleporters) Kontrolü
+      const teleporters = levelData.teleporters;
+      if (
+        teleporters &&
+        isInteractive &&
+        elapsed - lastTeleportTimeRef.current > 0.9
+      ) {
+        for (let i = 0; i < teleporters.length; i++) {
+          const pair = teleporters[i];
+          const dEntrySq =
+            (pos.x - pair.entry[0]) ** 2 + (pos.z - pair.entry[1]) ** 2;
+          const dExitSq =
+            (pos.x - pair.exit[0]) ** 2 + (pos.z - pair.exit[1]) ** 2;
+
+          let dest: [number, number] | null = null;
+          if (dEntrySq < 0.24) {
+            dest = pair.exit;
+          } else if (dExitSq < 0.24) {
+            dest = pair.entry;
+          }
+
+          if (dest) {
+            lastTeleportTimeRef.current = elapsed;
+            ballBodyRef.current.setTranslation(
+              { x: dest[0], y: BALL_RADIUS, z: dest[1] },
+              true,
+            );
+            for (let t = 0; t < TRAIL_COUNT; t++) {
+              trailHistoryRef.current[t].x = dest[0];
+              trailHistoryRef.current[t].z = dest[1];
+            }
+            onTeleportHit();
             break;
           }
         }
@@ -625,6 +696,30 @@ function MazeStage({
           );
         })}
 
+        {/* Çift Yönlü Kuantum Işınlanma Portalları (Teleporters) */}
+        {(levelData.teleporters ?? []).map((pair, idx) =>
+          [pair.entry, pair.exit].map(([tx, tz], subIdx) => (
+            <group
+              key={`teleporter-${levelData.id}-${idx}-${subIdx}`}
+              position={[tx, 0.025, tz]}
+            >
+              <mesh
+                rotation={[-Math.PI / 2, 0, 0]}
+                material={_teleporterRingMaterial}
+              >
+                <ringGeometry args={[0.28, 0.44, 24]} />
+              </mesh>
+              <mesh
+                rotation={[-Math.PI / 2, 0, 0]}
+                position={[0, -0.005, 0]}
+                material={_teleporterCoreMaterial}
+              >
+                <circleGeometry args={[0.28, 20]} />
+              </mesh>
+            </group>
+          )),
+        )}
+
         {/* Periyodik Lazer Kapılar */}
         {levelData.laserGates.map((gate, idx) => {
           const [gx, gz] = gate.position;
@@ -814,6 +909,13 @@ export function MazeScene() {
     triggerHaptic('boost');
   }, [isSoundMuted, triggerHaptic]);
 
+  const handleTeleportHit = useCallback(() => {
+    if (!isSoundMuted) {
+      soundEngine.playTeleport();
+    }
+    triggerHaptic('teleport');
+  }, [isSoundMuted, triggerHaptic]);
+
   const handleWallHit = useCallback(
     (speed: number) => {
       if (!isSoundMuted) {
@@ -860,6 +962,7 @@ export function MazeScene() {
             onFallIntoHole={handleFallIntoHole}
             onLaserHit={handleLaserHit}
             onBoostHit={handleBoostHit}
+            onTeleportHit={handleTeleportHit}
             onWallHit={handleWallHit}
           />
         </Physics>

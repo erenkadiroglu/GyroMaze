@@ -22,6 +22,7 @@ import {
   WallDefinition,
   VoidHoleDefinition,
   LaserGateDefinition,
+  BoostPadDefinition,
 } from '@/components/scene/mazeLevels';
 
 type CellTool =
@@ -29,6 +30,7 @@ type CellTool =
   | 'hole'
   | 'crystal'
   | 'laser'
+  | 'boost'
   | 'start'
   | 'goal'
   | 'erase';
@@ -116,6 +118,7 @@ export function LevelEditorModal() {
     const voidHoles: VoidHoleDefinition[] = [];
     const crystals: [number, number][] = [];
     const laserGates: LaserGateDefinition[] = [];
+    const boostPads: BoostPadDefinition[] = [];
 
     for (let r = 0; r < GRID_SIZE; r++) {
       for (let c = 0; c < GRID_SIZE; c++) {
@@ -146,6 +149,11 @@ export function LevelEditorModal() {
             periodSeconds: 3.2,
             phaseOffset: (r + c) * 0.4,
           });
+        } else if (cell === 'boost') {
+          boostPads.push({
+            position: [wx, wz],
+            direction: [0, 1],
+          });
         }
       }
     }
@@ -161,6 +169,7 @@ export function LevelEditorModal() {
       voidHoles,
       crystals,
       laserGates,
+      boostPads,
     };
   };
 
@@ -209,6 +218,12 @@ export function LevelEditorModal() {
       label: 'Lazer Kapı',
       colorClass: 'border-pink-500/50 bg-pink-500/20 text-pink-300',
       icon: <Zap className="h-3.5 w-3.5" />,
+    },
+    {
+      id: 'boost',
+      label: 'Hız Rampası',
+      colorClass: 'border-purple-500/50 bg-purple-500/20 text-purple-300',
+      icon: <Play className="h-3.5 w-3.5" />,
     },
     {
       id: 'start',
@@ -363,6 +378,10 @@ export function LevelEditorModal() {
                         cellStyle =
                           'border-pink-500 bg-pink-500/30 text-pink-200';
                         label = '⚡';
+                      } else if (cell === 'boost') {
+                        cellStyle =
+                          'border-purple-500 bg-purple-500/30 text-purple-200';
+                        label = '▲';
                       } else if (cell === 'start') {
                         cellStyle =
                           'border-cyan-400 bg-cyan-500/30 text-cyan-200 font-bold';

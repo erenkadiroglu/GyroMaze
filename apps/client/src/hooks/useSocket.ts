@@ -215,6 +215,9 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
           case 'boost':
             navigator.vibrate([30, 20, 40]);
             break;
+          case 'teleport':
+            navigator.vibrate([20, 40, 20, 40, 60]);
+            break;
         }
       });
     }

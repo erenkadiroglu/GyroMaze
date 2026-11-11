@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import {
+  BoardTheme,
   CameraMode,
   GameStatus,
   GyroData,
@@ -58,6 +59,8 @@ interface GameStoreState {
   level: number;
   /** Masaüstü 3B sahne kamera bakış açısı modu */
   cameraMode: CameraMode;
+  /** 3B Labirent sahnesi görsel atmosfer teması */
+  boardTheme: BoardTheme;
   /** Kullanıcının harita editöründe tasarladığı özel labirent tanımı */
   customLevel: MazeLevelDefinition | null;
   /** Milisaniye cinsinden anlık ağ gecikmesi */
@@ -100,6 +103,7 @@ interface GameStoreState {
   nextLevel: () => void;
   prevLevel: () => void;
   cycleCameraMode: () => void;
+  cycleBoardTheme: () => void;
   setRemoteProgress: (payload: {
     status: GameStatus;
     level?: number;
@@ -135,6 +139,7 @@ export const useGameStore = create<GameStoreState>((set) => ({
   gameStatus: 'waiting',
   level: 1,
   cameraMode: 'isometric',
+  boardTheme: 'emerald',
   customLevel: null,
   latencyMs: 0,
   elapsedSeconds: 0,
@@ -208,6 +213,12 @@ export const useGameStore = create<GameStoreState>((set) => ({
       const order: CameraMode[] = ['isometric', 'topdown', 'follow'];
       const nextIdx = (order.indexOf(state.cameraMode) + 1) % order.length;
       return { cameraMode: order[nextIdx] };
+    }),
+  cycleBoardTheme: () =>
+    set((state) => {
+      const order: BoardTheme[] = ['emerald', 'cyberpunk', 'crimson'];
+      const nextIdx = (order.indexOf(state.boardTheme) + 1) % order.length;
+      return { boardTheme: order[nextIdx] };
     }),
   setRemoteProgress: (payload) =>
     set((state) => ({
