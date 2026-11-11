@@ -13,6 +13,7 @@ import {
 interface SocketMembership {
   roomId: string;
   role: 'host' | 'controller';
+  playerSlot?: 1 | 2;
 }
 
 interface NgrokTunnelResponse {
@@ -147,6 +148,8 @@ export class RoomService {
       hostSocketId,
       controllerSocketId: null,
       isControllerConnected: false,
+      secondControllerSocketId: null,
+      isSecondControllerConnected: false,
       createdAt: Date.now(),
       lanIp: this.detectLanIp(),
       tunnelUrl,
@@ -165,6 +168,7 @@ export class RoomService {
   public joinRoom(
     rawRoomId: string,
     controllerSocketId: string,
+    playerSlot?: 1 | 2,
   ):
     | {
         ok: true;
@@ -196,22 +200,44 @@ export class RoomService {
 
     this.removeSocket(controllerSocketId);
 
-    // Odada önceki sekmeden kalma eski bir kontrolcü soketi varsa üyeliğini düşür
     let replacedControllerSocketId: string | undefined;
-    if (
-      room.controllerSocketId &&
-      room.controllerSocketId !== controllerSocketId
-    ) {
-      replacedControllerSocketId = room.controllerSocketId;
-      this.socketMembership.delete(room.controllerSocketId);
-    }
 
-    room.controllerSocketId = controllerSocketId;
-    room.isControllerConnected = true;
-    this.socketMembership.set(controllerSocketId, {
-      roomId,
-      role: 'controller',
-    });
+    if (playerSlot === 2) {
+      if (
+        room.secondControllerSocketId &&
+        room.secondControllerSocketId !== controllerSocketId
+      ) {
+        replacedControllerSocketId = room.secondControllerSocketId;
+        this.socketMembership.delete(room.secondControllerSocketId);
+      }
+      room.secondControllerSocketId = controllerSocketId;
+      room.isSecondControllerConnected = true;
+      this.socketMembership.set(controllerSocketId, {
+        roomId,
+        role: 'controller',
+        playerSlot: 2,
+      });
+    } else {
+      // Odada önceki sekmeden kalma eski bir 1. kontrolcü soketi varsa üyeliğini düşür
+      if (
+        room.controllerSocketId &&
+        room.controllerSocketId !== controllerSocketId
+      ) {
+        replacedControllerSocketId = room.controllerSocketId;
+        this.socketMembership.delete(room.controllerSocketId);
+      }
+
+      room.controllerSocketId = controllerSocketId;
+      room.isControllerConnected = true;
+      const membership: SocketMembership = {
+        roomId,
+        role: 'controller',
+      };
+      if (playerSlot === 1) {
+        membership.playerSlot = 1;
+      }
+      this.socketMembership.set(controllerSocketId, membership);
+    }
 
     return {
       ok: true,
@@ -258,14 +284,25 @@ export class RoomService {
       if (room.controllerSocketId) {
         this.socketMembership.delete(room.controllerSocketId);
       }
+      if (room.secondControllerSocketId) {
+        this.socketMembership.delete(room.secondControllerSocketId);
+      }
       this.rooms.delete(membership.roomId);
       return {
         roomId: membership.roomId,
         disconnectedRole: 'host',
       };
     } else {
-      room.controllerSocketId = null;
-      room.isControllerConnected = false;
+      if (
+        membership.playerSlot === 2 ||
+        room.secondControllerSocketId === socketId
+      ) {
+        room.secondControllerSocketId = null;
+        room.isSecondControllerConnected = false;
+      } else {
+        room.controllerSocketId = null;
+        room.isControllerConnected = false;
+      }
       return {
         roomId: membership.roomId,
         disconnectedRole: 'controller',

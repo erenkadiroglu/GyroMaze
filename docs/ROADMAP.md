@@ -92,6 +92,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Harita Editörü Geliştirmeleri (`LevelEditorModal.tsx`):** Özel harita tasarımcısına **Hareketli Devriye Engeli (`↔`)** yerleştirme aracı ve tek tıkla 8×8 ızgarayı dengeli engellerle dolduran **Rastgele (`Shuffle`)** harita üretici eklendi.
 - [x] **Mimari ve Proje Dokümantasyonu (`README.md`, `docs/ARCHITECTURE.md`):** Sonsuz prosedürel bölüm motoru, aydınlık/karanlık mod, sıfır zıplamalı fizik mimarisi ve klavye kısayolları tüm proje belgelerine işlendi.
 
+## ✅ Faz 12: Oyun & Fizik Ayarları Modalı ve Çok Oyunculu (2 Oyuncu — 1v1 & Co-op) Modu (Tamamlandı)
+
+- [x] **Oyun, Fizik ve Görsel Ayarlar Modalı (`SettingsModal.tsx`):** Masaüstü HUD üzerinden bilye yerçekimi ivmesini (`gravityScale`: `0.5x – 1.8x`), tabla eğim tepki hızını (`tiltResponsiveness`: `0.5x – 1.8x`), Web Audio ses efekti seviyesini (`soundVolume`: `0% – 100%`) ve görsel katmanları (`Bilye Kuyruk İzi`, `3B Hayalet Yarışçı`, `2B Canlı Radar`) anlık olarak özelleştirme imkanı.
+- [x] **Çok Oyunculu (2 Oyuncu — 1v1 & Co-op) Modu (`playerSlot: 1 | 2`):** Aynı 6 haneli oda koduna 2 farklı telefonun (`Oyuncu 1 - Ana Bilye` ve `Oyuncu 2 - Altın Bilye`) veya masaüstünde `WASD` (1. Oyuncu) + `Yön Tuşları` (2. Oyuncu) kombinasyonunun aynı anda bağlanarak kristalleri ortaklaşa toplaması ve hedef portala yarışması.
+
 
 
 

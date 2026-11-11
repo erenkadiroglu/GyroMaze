@@ -29,6 +29,24 @@ export const transientGyro: GyroData & {
   ballSpeed: 0,
 };
 
+/**
+ * Çok oyunculu (2 Oyuncu - 1v1 / Co-op) modda 2. oyuncunun (2. telefon veya yön tuşları)
+ * yüksek frekanslı jiroskop ve bilye durum referansı.
+ */
+export const transientGyroP2: GyroData & {
+  ballX: number;
+  ballZ: number;
+  ballSpeed: number;
+} = {
+  alpha: 0,
+  beta: 0,
+  gamma: 0,
+  timestamp: 0,
+  ballX: -3.6,
+  ballZ: -4.2,
+  ballSpeed: 0,
+};
+
 const BEST_TIMES_STORAGE_KEY = 'gyromaze_best_times_v1';
 const GHOST_PATHS_STORAGE_KEY = 'gyromaze_ghost_paths_v1';
 
@@ -74,6 +92,26 @@ interface GameStoreState {
   isLeaderboardOpen: boolean;
   /** Harita editörü modalının açık olup olmadığı */
   isEditorOpen: boolean;
+  /** Oyun ve fizik ayarları modalının açık olup olmadığı */
+  isSettingsOpen: boolean;
+  /** Çok oyunculu (2 Oyuncu - 1v1 / Co-op) modun aktif olup olmadığı */
+  isMultiplayer: boolean;
+  /** 2. mobil kontrolcünün odaya bağlı olup olmadığı */
+  isSecondControllerPaired: boolean;
+  /** Çok oyunculu modda bölümü ilk tamamlayan oyuncu (1 veya 2) */
+  winnerPlayer: 1 | 2 | null;
+  /** Fizik yerçekimi / ivme ölçeği (28: Yavaş, 36: Standart, 46: Turbo) */
+  gravityScale: number;
+  /** Eğim tepki katsayısı (18: Yumuşak, 32: Standart, 48: Anında) */
+  tiltResponsiveness: number;
+  /** Ses motoru ses şiddeti (0.25 .. 1.0) */
+  soundVolume: number;
+  /** Bilye neon hareket izi görünürlüğü */
+  showTrail: boolean;
+  /** 3B Hayalet yarışçı (Ghost Replay) görünürlüğü */
+  showGhost: boolean;
+  /** Alt 2B mini-harita radarı görünürlüğü */
+  showMiniMap: boolean;
   /** Mevcut oyun durumu */
   gameStatus: GameStatus;
   /** Aktif labirent seviyesi (1..5 standart, 99 özel harita) */
@@ -129,6 +167,19 @@ interface GameStoreState {
   setPairingModalOpen: (open: boolean) => void;
   setLeaderboardOpen: (open: boolean) => void;
   setEditorOpen: (open: boolean) => void;
+  setSettingsOpen: (open: boolean) => void;
+  setSecondControllerPaired: (paired: boolean) => void;
+  toggleMultiplayer: () => void;
+  updateSettings: (
+    partial: Partial<{
+      gravityScale: number;
+      tiltResponsiveness: number;
+      soundVolume: number;
+      showTrail: boolean;
+      showGhost: boolean;
+      showMiniMap: boolean;
+    }>,
+  ) => void;
   setGameStatus: (status: GameStatus) => void;
   setLevel: (level: number) => void;
   setCustomLevel: (customLevel: MazeLevelDefinition) => void;
@@ -153,6 +204,7 @@ interface GameStoreState {
     level: number,
     seconds: number,
     runPath?: Array<[number, number]>,
+    winnerPlayer?: 1 | 2,
   ) => void;
   setLeaderboard: (entries: LeaderboardEntry[]) => void;
   submitLeaderboardScore: (payload: SubmitScorePayload) => void;
@@ -177,6 +229,16 @@ export const useGameStore = create<GameStoreState>((set) => ({
   isPairingModalOpen: true,
   isLeaderboardOpen: false,
   isEditorOpen: false,
+  isSettingsOpen: false,
+  isMultiplayer: false,
+  isSecondControllerPaired: false,
+  winnerPlayer: null,
+  gravityScale: 36,
+  tiltResponsiveness: 32,
+  soundVolume: 1,
+  showTrail: true,
+  showGhost: true,
+  showMiniMap: true,
   gameStatus: 'waiting',
   level: 1,
   cameraMode: 'isometric',
@@ -217,10 +279,27 @@ export const useGameStore = create<GameStoreState>((set) => ({
   setPairingModalOpen: (isPairingModalOpen) => set({ isPairingModalOpen }),
   setLeaderboardOpen: (isLeaderboardOpen) => set({ isLeaderboardOpen }),
   setEditorOpen: (isEditorOpen) => set({ isEditorOpen }),
+  setSettingsOpen: (isSettingsOpen) => set({ isSettingsOpen }),
+  setSecondControllerPaired: (isSecondControllerPaired) =>
+    set((state) => ({
+      isSecondControllerPaired,
+      isMultiplayer: isSecondControllerPaired ? true : state.isMultiplayer,
+    })),
+  toggleMultiplayer: () =>
+    set((state) => ({
+      isMultiplayer: !state.isMultiplayer,
+      winnerPlayer: null,
+      resetCount: state.resetCount + 1,
+      elapsedSeconds: 0,
+      collectedCrystals: [],
+      gameStatus: 'playing',
+    })),
+  updateSettings: (partial) => set((state) => ({ ...state, ...partial })),
   setGameStatus: (gameStatus) => set({ gameStatus }),
   setLevel: (level) =>
     set((state) => ({
       level,
+      winnerPlayer: null,
       gameStatus: 'playing',
       elapsedSeconds: 0,
       collectedCrystals: [],
@@ -230,6 +309,7 @@ export const useGameStore = create<GameStoreState>((set) => ({
     set((state) => ({
       customLevel,
       level: 99,
+      winnerPlayer: null,
       isEditorOpen: false,
       gameStatus: 'playing',
       elapsedSeconds: 0,
@@ -239,6 +319,7 @@ export const useGameStore = create<GameStoreState>((set) => ({
   nextLevel: () =>
     set((state) => ({
       level: state.level === 99 ? 1 : state.level + 1,
+      winnerPlayer: null,
       gameStatus: 'playing',
       elapsedSeconds: 0,
       collectedCrystals: [],
@@ -247,6 +328,7 @@ export const useGameStore = create<GameStoreState>((set) => ({
   prevLevel: () =>
     set((state) => ({
       level: state.level === 99 || state.level <= 1 ? 1 : state.level - 1,
+      winnerPlayer: null,
       gameStatus: 'playing',
       elapsedSeconds: 0,
       collectedCrystals: [],
@@ -316,7 +398,7 @@ export const useGameStore = create<GameStoreState>((set) => ({
     })),
   setLatencyMs: (latencyMs) => set({ latencyMs }),
   setElapsedSeconds: (elapsedSeconds) => set({ elapsedSeconds }),
-  recordLevelCompletion: (level, seconds, runPath) =>
+  recordLevelCompletion: (level, seconds, runPath, winnerPlayer = 1) =>
     set((state) => {
       const currentBest = state.bestTimes[level];
       const nextBestTimes = { ...state.bestTimes };
@@ -345,6 +427,7 @@ export const useGameStore = create<GameStoreState>((set) => ({
       }
       return {
         gameStatus: 'won',
+        winnerPlayer: state.isMultiplayer ? winnerPlayer : null,
         bestTimes: nextBestTimes,
         ghostPaths: nextGhostPaths,
       };
@@ -366,6 +449,7 @@ export const useGameStore = create<GameStoreState>((set) => ({
   triggerBallReset: () =>
     set((state) => ({
       resetCount: state.resetCount + 1,
+      winnerPlayer: null,
       gameStatus: 'playing',
       elapsedSeconds: 0,
       collectedCrystals: [],
@@ -377,10 +461,17 @@ export const useGameStore = create<GameStoreState>((set) => ({
   setErrorMessage: (errorMessage) => set({ errorMessage }),
 
   updateTransientGyro: (data) => {
-    transientGyro.alpha = data.alpha;
-    transientGyro.beta = data.beta;
-    transientGyro.gamma = data.gamma;
-    transientGyro.timestamp = data.timestamp;
+    if (data.playerSlot === 2) {
+      transientGyroP2.alpha = data.alpha;
+      transientGyroP2.beta = data.beta;
+      transientGyroP2.gamma = data.gamma;
+      transientGyroP2.timestamp = data.timestamp;
+    } else {
+      transientGyro.alpha = data.alpha;
+      transientGyro.beta = data.beta;
+      transientGyro.gamma = data.gamma;
+      transientGyro.timestamp = data.timestamp;
+    }
   },
 
   resetTransientGyro: () => {
@@ -388,5 +479,9 @@ export const useGameStore = create<GameStoreState>((set) => ({
     transientGyro.beta = 0;
     transientGyro.gamma = 0;
     transientGyro.timestamp = Date.now();
+    transientGyroP2.alpha = 0;
+    transientGyroP2.beta = 0;
+    transientGyroP2.gamma = 0;
+    transientGyroP2.timestamp = Date.now();
   },
 }));

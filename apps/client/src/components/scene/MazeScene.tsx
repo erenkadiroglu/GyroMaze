@@ -11,7 +11,11 @@ import {
   RapierRigidBody,
 } from '@react-three/rapier';
 import * as THREE from 'three';
-import { useGameStore, transientGyro } from '@/store/useGameStore';
+import {
+  useGameStore,
+  transientGyro,
+  transientGyroP2,
+} from '@/store/useGameStore';
 import { getMazeLevel, MazeLevelDefinition } from './mazeLevels';
 import { soundEngine } from '@/utils/soundEngine';
 
@@ -133,6 +137,13 @@ const _movingObstacleMaterial = new THREE.MeshStandardMaterial({
   roughness: 0.25,
   metalness: 0.65,
 });
+const _ball2Material = new THREE.MeshStandardMaterial({
+  color: '#f59e0b',
+  emissive: '#d97706',
+  emissiveIntensity: 0.45,
+  metalness: 0.88,
+  roughness: 0.16,
+});
 
 const MAX_TILT_RADIANS = THREE.MathUtils.degToRad(24);
 const SLOPE_GRAVITY = 36.0;
@@ -145,7 +156,7 @@ interface MazeStageProps {
   collectedCrystals: number[];
   ghostPath?: Array<[number, number]>;
   onCollectCrystal: (idx: number) => void;
-  onReachGoal: (runPath: Array<[number, number]>) => void;
+  onReachGoal: (runPath: Array<[number, number]>, winnerSlot?: 1 | 2) => void;
   onFallIntoHole: () => void;
   onLaserHit: () => void;
   onBoostHit: () => void;
@@ -170,8 +181,10 @@ function MazeStage({
   onWallHit,
 }: MazeStageProps) {
   const ballBodyRef = useRef<RapierRigidBody | null>(null);
+  const ball2BodyRef = useRef<RapierRigidBody | null>(null);
   const visualTiltGroupRef = useRef<THREE.Group | null>(null);
   const visualBallMeshRef = useRef<THREE.Mesh | null>(null);
+  const visualBall2MeshRef = useRef<THREE.Mesh | null>(null);
   const ghostBallMeshRef = useRef<THREE.Mesh | null>(null);
   const goalRingRef = useRef<THREE.Mesh | null>(null);
   const crystalMeshesRef = useRef<Array<THREE.Mesh | null>>([]);
@@ -197,6 +210,11 @@ function MazeStage({
   const cameraMode = useGameStore((s) => s.cameraMode);
   const boardTheme = useGameStore((s) => s.boardTheme);
   const colorScheme = useGameStore((s) => s.colorScheme);
+  const isMultiplayer = useGameStore((s) => s.isMultiplayer);
+  const gravityScale = useGameStore((s) => s.gravityScale);
+  const tiltResponsiveness = useGameStore((s) => s.tiltResponsiveness);
+  const showTrail = useGameStore((s) => s.showTrail);
+  const showGhost = useGameStore((s) => s.showGhost);
   const isLightBoard = colorScheme === 'light' || boardTheme === 'daylight';
 
   // Seçilen 3B görsel temaya ve Aydınlık/Karanlık moda göre paylaşılan materyal renklerini güncelle
@@ -299,6 +317,14 @@ function MazeStage({
       ballBodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
       ballBodyRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
     }
+    if (ball2BodyRef.current) {
+      ball2BodyRef.current.setTranslation(
+        { x: sx + 0.42, y: BALL_RADIUS, z: sz },
+        true,
+      );
+      ball2BodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      ball2BodyRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
+    }
   }, [levelData.startPosition]);
 
   useEffect(() => {
@@ -358,8 +384,8 @@ function MazeStage({
     _targetEuler.set(clampedPitch, 0, clampedRoll, 'XYZ');
     _targetQuat.setFromEuler(_targetEuler);
 
-    // 1. Yüksek tepkisellik katsayısı (32) ile anında eğim tepkisi
-    const slerpAlpha = 1 - Math.exp(-32 * safeDelta);
+    // 1. Seçilen tepkisellik katsayısı (tiltResponsiveness) ile anında eğim tepkisi
+    const slerpAlpha = 1 - Math.exp(-tiltResponsiveness * safeDelta);
     _currentQuat.slerp(_targetQuat, slerpAlpha);
     _currentEuler.setFromQuaternion(_currentQuat, 'XYZ');
 
@@ -370,8 +396,8 @@ function MazeStage({
     // 2. Fizik küresine eğim ivmesi, kristal toplama, lazer kontrolü ve neon iz güncellemesi
     if (ballBodyRef.current) {
       if (isInteractive) {
-        const accelX = -SLOPE_GRAVITY * Math.sin(_currentEuler.z);
-        const accelZ = SLOPE_GRAVITY * Math.sin(_currentEuler.x);
+        const accelX = -gravityScale * Math.sin(_currentEuler.z);
+        const accelZ = gravityScale * Math.sin(_currentEuler.x);
 
         const currentVel = ballBodyRef.current.linvel();
         const damping = Math.exp(-0.55 * safeDelta);
@@ -411,7 +437,12 @@ function MazeStage({
           ]);
         }
 
-        if (ghostBallMeshRef.current && ghostPath && ghostPath.length > 1) {
+        if (
+          ghostBallMeshRef.current &&
+          showGhost &&
+          ghostPath &&
+          ghostPath.length > 1
+        ) {
           const exactIdx = runElapsedRef.current * 10;
           const idx0 = Math.min(ghostPath.length - 1, Math.floor(exactIdx));
           const idx1 = Math.min(ghostPath.length - 1, idx0 + 1);
@@ -422,6 +453,8 @@ function MazeStage({
             ghostPath[idx0][1] + (ghostPath[idx1][1] - ghostPath[idx0][1]) * frac;
           ghostBallMeshRef.current.visible = idx0 < ghostPath.length - 1;
           ghostBallMeshRef.current.position.set(gx, BALL_RADIUS, gz);
+        } else if (ghostBallMeshRef.current) {
+          ghostBallMeshRef.current.visible = false;
         }
       } else if (ghostBallMeshRef.current) {
         ghostBallMeshRef.current.visible = false;
@@ -439,6 +472,7 @@ function MazeStage({
       for (let i = 0; i < TRAIL_COUNT; i++) {
         const trailMesh = trailMeshesRef.current[i];
         if (trailMesh) {
+          trailMesh.visible = showTrail;
           trailMesh.position.set(history[i].x, 0.025, history[i].z);
           const scale = Math.max(0.15, 1 - i / (TRAIL_COUNT + 1));
           trailMesh.scale.set(scale, scale, 1);
@@ -588,6 +622,70 @@ function MazeStage({
         }
       }
 
+      // Çok Oyunculu (2. Oyuncu - Altın Bilye) Fizik, Kristal, Tuzak ve Hedef Kontrolü
+      if (isMultiplayer && ball2BodyRef.current) {
+        const p2PitchRad = THREE.MathUtils.clamp(
+          isInteractive ? THREE.MathUtils.degToRad(transientGyroP2.beta) : 0,
+          -MAX_TILT_RADIANS,
+          MAX_TILT_RADIANS,
+        );
+        const p2RollRad = THREE.MathUtils.clamp(
+          isInteractive ? -THREE.MathUtils.degToRad(transientGyroP2.gamma) : 0,
+          -MAX_TILT_RADIANS,
+          MAX_TILT_RADIANS,
+        );
+
+        if (isInteractive) {
+          const ax2 = -gravityScale * Math.sin(p2RollRad);
+          const az2 = gravityScale * Math.sin(p2PitchRad);
+          const v2 = ball2BodyRef.current.linvel();
+          const damp = Math.exp(-0.55 * safeDelta);
+          ball2BodyRef.current.setLinvel(
+            {
+              x: (v2.x + ax2 * safeDelta) * damp,
+              y: 0,
+              z: (v2.z + az2 * safeDelta) * damp,
+            },
+            true,
+          );
+        } else {
+          ball2BodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+        }
+
+        const pos2 = ball2BodyRef.current.translation();
+        const vel2 = ball2BodyRef.current.linvel();
+        transientGyroP2.ballX = pos2.x;
+        transientGyroP2.ballZ = pos2.z;
+        transientGyroP2.ballSpeed = Math.hypot(vel2.x, vel2.z);
+
+        if (visualBall2MeshRef.current) {
+          visualBall2MeshRef.current.visible = true;
+          visualBall2MeshRef.current.position.set(pos2.x, BALL_RADIUS, pos2.z);
+          visualBall2MeshRef.current.rotation.x +=
+            (vel2.z / BALL_RADIUS) * safeDelta;
+          visualBall2MeshRef.current.rotation.z -=
+            (vel2.x / BALL_RADIUS) * safeDelta;
+        }
+
+        // 2. Oyuncu kristal toplama
+        for (let i = 0; i < levelData.crystals.length; i++) {
+          if (!collectedCrystals.includes(i)) {
+            const [cx, cz] = levelData.crystals[i];
+            if ((pos2.x - cx) ** 2 + (pos2.z - cz) ** 2 < 0.42) {
+              onCollectCrystal(i);
+            }
+          }
+        }
+
+        // 2. Oyuncu hedef portalı kontrolü
+        const [gx, , gz] = levelData.goalPosition;
+        if ((pos2.x - gx) ** 2 + (pos2.z - gz) ** 2 < 0.48) {
+          onReachGoal(runPathRef.current, 2);
+        }
+      } else if (visualBall2MeshRef.current) {
+        visualBall2MeshRef.current.visible = false;
+      }
+
       // 3. Seçili Kamera Moduna Göre Dinamik Kamera Konumlandırma
       if (cameraMode === 'topdown') {
         _cameraTargetPos.set(
@@ -645,7 +743,7 @@ function MazeStage({
           args={[0.4, 0.46]}
           position={levelData.goalPosition}
           sensor
-          onIntersectionEnter={() => onReachGoal(runPathRef.current)}
+          onIntersectionEnter={() => onReachGoal(runPathRef.current, 1)}
         />
 
         {/* Tuzak Delikleri (Void Holes) Sensörleri */}
@@ -663,7 +761,7 @@ function MazeStage({
         ))}
       </RigidBody>
 
-      {/* Dinamik Fizik Küresi (Y ekseni kilitli -> Sıfır Zıplama!) */}
+      {/* 1. Oyuncu Dinamik Fizik Küresi (Y ekseni kilitli -> Sıfır Zıplama!) */}
       <RigidBody
         ref={ballBodyRef}
         type="dynamic"
@@ -682,6 +780,28 @@ function MazeStage({
       >
         <BallCollider args={[BALL_RADIUS]} />
       </RigidBody>
+
+      {/* Çok Oyunculu Modda 2. Oyuncu Dinamik Fizik Küresi */}
+      {isMultiplayer && (
+        <RigidBody
+          ref={ball2BodyRef}
+          type="dynamic"
+          colliders={false}
+          position={[
+            levelData.startPosition[0] + 0.42,
+            BALL_RADIUS,
+            levelData.startPosition[2],
+          ]}
+          enabledTranslations={[true, false, true]}
+          enabledRotations={[false, false, false]}
+          restitution={0.22}
+          friction={0.08}
+          ccd={true}
+          onCollisionEnter={handleBallCollision}
+        >
+          <BallCollider args={[BALL_RADIUS]} />
+        </RigidBody>
+      )}
 
       {/* 2. GÖRSEL 3B SAHNE GRUBU */}
       <group ref={visualTiltGroupRef}>
@@ -956,7 +1076,7 @@ function MazeStage({
           <sphereGeometry args={[BALL_RADIUS * 0.92, 20, 20]} />
         </mesh>
 
-        {/* Görsel Metal Bilye */}
+        {/* 1. Oyuncu Görsel Metal Bilye */}
         <mesh
           ref={visualBallMeshRef}
           position={[
@@ -965,6 +1085,21 @@ function MazeStage({
             levelData.startPosition[2],
           ]}
           material={_ballMaterial}
+          castShadow
+        >
+          <sphereGeometry args={[BALL_RADIUS, 32, 32]} />
+        </mesh>
+
+        {/* Çok Oyunculu 2. Oyuncu Görsel Altın Bilye */}
+        <mesh
+          ref={visualBall2MeshRef}
+          visible={false}
+          position={[
+            levelData.startPosition[0] + 0.42,
+            BALL_RADIUS,
+            levelData.startPosition[2],
+          ]}
+          material={_ball2Material}
           castShadow
         >
           <sphereGeometry args={[BALL_RADIUS, 32, 32]} />
@@ -1033,7 +1168,7 @@ export function MazeScene() {
   );
 
   const handleReachGoal = useCallback(
-    (runPath: Array<[number, number]>) => {
+    (runPath: Array<[number, number]>, winnerSlot: 1 | 2 = 1) => {
       if (!isGoalUnlocked) {
         const now = performance.now();
         if (now - lastLockedWarnTimeRef.current > 1300) {
@@ -1058,7 +1193,12 @@ export function MazeScene() {
           soundEngine.playVictory();
         }
         triggerHaptic('goal');
-        recordLevelCompletion(activeLevel.id, elapsedSeconds, runPath);
+        recordLevelCompletion(
+          activeLevel.id,
+          elapsedSeconds,
+          runPath,
+          winnerSlot,
+        );
       }
     },
     [

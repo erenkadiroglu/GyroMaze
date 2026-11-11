@@ -105,7 +105,11 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
-    const result = this.roomService.joinRoom(payload.roomId, client.id);
+    const result = this.roomService.joinRoom(
+      payload.roomId,
+      client.id,
+      payload.playerSlot,
+    );
     if (!result.ok) {
       client.emit(RoomEvents.ROOM_ERROR, result.error);
       return;
@@ -149,9 +153,11 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
-    this.server
-      .to(room.hostSocketId)
-      .volatile.emit(RoomEvents.GYRO_SYNC, payload.data);
+    const slot = membership?.playerSlot ?? payload.data.playerSlot ?? 1;
+    this.server.to(room.hostSocketId).volatile.emit(RoomEvents.GYRO_SYNC, {
+      ...payload.data,
+      playerSlot: slot,
+    });
   }
 
   /**
@@ -199,6 +205,11 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (room?.controllerSocketId) {
       this.server
         .to(room.controllerSocketId)
+        .volatile.emit(RoomEvents.GAME_HAPTIC, payload);
+    }
+    if (room?.secondControllerSocketId) {
+      this.server
+        .to(room.secondControllerSocketId)
         .volatile.emit(RoomEvents.GAME_HAPTIC, payload);
     }
   }

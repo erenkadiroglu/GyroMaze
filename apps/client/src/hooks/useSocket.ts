@@ -41,15 +41,23 @@ interface UseSocketOptions {
   role: 'host' | 'controller';
   /** Mobil kontrolcü için bağlanılacak hedef oda kodu */
   targetRoomId?: string | null;
+  /** Çok oyunculu modda mobil kontrolcünün oyuncu yuvası (1 veya 2) */
+  playerSlot?: 1 | 2;
 }
 
 /**
  * Masaüstü ve mobil istemciler için sıfır gecikmeli (<10ms) saf WebSocket bağlantı hook'u.
  */
-export function useSocket({ role, targetRoomId }: UseSocketOptions) {
+export function useSocket({
+  role,
+  targetRoomId,
+  playerSlot = 1,
+}: UseSocketOptions) {
   const socketRef = useRef<Socket | null>(null);
   const targetRoomIdRef = useRef<string | null>(targetRoomId ?? null);
   targetRoomIdRef.current = targetRoomId ?? null;
+  const playerSlotRef = useRef<1 | 2>(playerSlot);
+  playerSlotRef.current = playerSlot;
 
   const lastLatencyUpdateRef = useRef<number>(0);
   const lastEmitTimeRef = useRef<number>(0);
@@ -69,6 +77,9 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
   const setTunnelUrl = useGameStore((s) => s.setTunnelUrl);
   const setSocketConnected = useGameStore((s) => s.setSocketConnected);
   const setControllerPaired = useGameStore((s) => s.setControllerPaired);
+  const setSecondControllerPaired = useGameStore(
+    (s) => s.setSecondControllerPaired,
+  );
   const setLatencyMs = useGameStore((s) => s.setLatencyMs);
   const setErrorMessage = useGameStore((s) => s.setErrorMessage);
   const setLeaderboard = useGameStore((s) => s.setLeaderboard);
@@ -105,6 +116,7 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
       } else if (role === 'controller' && targetRoomIdRef.current) {
         socket.emit(RoomEvents.ROOM_JOIN, {
           roomId: targetRoomIdRef.current,
+          playerSlot: playerSlotRef.current,
         });
       }
     });
@@ -121,13 +133,21 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
       if (room.lanIp) setLanIp(room.lanIp);
       if (room.tunnelUrl) setTunnelUrl(room.tunnelUrl);
       setControllerPaired(room.isControllerConnected);
+      setSecondControllerPaired(Boolean(room.isSecondControllerConnected));
     });
 
     socket.on(RoomEvents.ROOM_PAIRED, (room: RoomState) => {
       setRoomId(room.roomId);
       if (room.lanIp) setLanIp(room.lanIp);
       if (room.tunnelUrl) setTunnelUrl(room.tunnelUrl);
-      setControllerPaired(true);
+      if (role === 'host') {
+        setControllerPaired(
+          Boolean(room.isControllerConnected || room.isSecondControllerConnected),
+        );
+        setSecondControllerPaired(Boolean(room.isSecondControllerConnected));
+      } else {
+        setControllerPaired(true);
+      }
       setErrorMessage(null);
 
       if (
@@ -139,10 +159,26 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
       }
     });
 
-    socket.on(RoomEvents.ROOM_CONTROLLER_DISCONNECTED, () => {
-      setControllerPaired(false);
-      resetTransientGyro();
-    });
+    socket.on(
+      RoomEvents.ROOM_CONTROLLER_DISCONNECTED,
+      (remainingRoom?: RoomState) => {
+        if (role === 'host' && remainingRoom) {
+          setControllerPaired(
+            Boolean(
+              remainingRoom.isControllerConnected ||
+                remainingRoom.isSecondControllerConnected,
+            ),
+          );
+          setSecondControllerPaired(
+            Boolean(remainingRoom.isSecondControllerConnected),
+          );
+        } else {
+          setControllerPaired(false);
+          setSecondControllerPaired(false);
+        }
+        resetTransientGyro();
+      },
+    );
 
     socket.on(RoomEvents.ROOM_HOST_DISCONNECTED, () => {
       setControllerPaired(false);
@@ -288,14 +324,17 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
     collectedCrystals.length,
   ]);
 
-  // Mobil kontrolcüde hedef oda kodu değiştiğinde mevcut soketi koparmadan anında yeni odaya katıl
+  // Mobil kontrolcüde hedef oda kodu veya oyuncu yuvası değiştiğinde mevcut soketi koparmadan anında katıl
   useEffect(() => {
     if (role !== 'controller' || !targetRoomId) return;
     if (socketRef.current?.connected) {
       setErrorMessage(null);
-      socketRef.current.emit(RoomEvents.ROOM_JOIN, { roomId: targetRoomId });
+      socketRef.current.emit(RoomEvents.ROOM_JOIN, {
+        roomId: targetRoomId,
+        playerSlot,
+      });
     }
-  }, [role, targetRoomId, setErrorMessage]);
+  }, [role, targetRoomId, playerSlot, setErrorMessage]);
 
   useEffect(() => {
     if (role !== 'host' || !hapticSignal || !roomId) return;
@@ -345,11 +384,14 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
    * Mobil kontrolcünün soket bağlantısını koparmadan yeni bir 6 haneli oda koduna katılmasını sağlar.
    */
   const joinRoomByCode = useCallback(
-    (code: string) => {
+    (code: string, slot: 1 | 2 = playerSlotRef.current) => {
       const normalized = code.trim().toUpperCase();
       if (!normalized || !socketRef.current?.connected) return;
       setErrorMessage(null);
-      socketRef.current.emit(RoomEvents.ROOM_JOIN, { roomId: normalized });
+      socketRef.current.emit(RoomEvents.ROOM_JOIN, {
+        roomId: normalized,
+        playerSlot: slot,
+      });
     },
     [setErrorMessage],
   );

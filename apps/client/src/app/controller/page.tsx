@@ -34,9 +34,13 @@ function MobileControllerContent() {
   const searchParams = useSearchParams();
   const initialRoomParam =
     searchParams.get('room')?.trim().toUpperCase() ?? '';
+  const initialSlotParam = searchParams.get('slot') === '2' ? 2 : 1;
 
   const [manualRoomInput, setManualRoomInput] = useState(initialRoomParam);
   const [activeRoomCode, setActiveRoomCode] = useState(initialRoomParam);
+  const [playerSlot, setPlayerSlot] = useState<1 | 2>(initialSlotParam);
+  const playerSlotRef = useRef<1 | 2>(initialSlotParam);
+  playerSlotRef.current = playerSlot;
   const [isRoomEditorOpen, setIsRoomEditorOpen] = useState(!initialRoomParam);
   const [isTouchOverride, setIsTouchOverride] = useState(false);
   const [sensitivityMultiplier, setSensitivityMultiplier] = useState<
@@ -99,6 +103,7 @@ function MobileControllerContent() {
   } = useSocket({
     role: 'controller',
     targetRoomId: activeRoomCode || null,
+    playerSlot,
   });
 
   /**
@@ -117,6 +122,7 @@ function MobileControllerContent() {
       liveGyroRef.current.beta = scaledBeta;
       liveGyroRef.current.gamma = scaledGamma;
       liveGyroRef.current.timestamp = now;
+      liveGyroRef.current.playerSlot = playerSlotRef.current;
 
       if (activeRoomCodeRef.current && isControllerPairedRef.current) {
         emitGyroUpdate(activeRoomCodeRef.current, liveGyroRef.current);
@@ -668,6 +674,38 @@ function MobileControllerContent() {
                   {item.label}
                 </button>
               ))}
+            </div>
+
+            {/* Çok Oyunculu Oyuncu Seçici (Oyuncu 1 Zümrüt / Oyuncu 2 Altın) */}
+            <div
+              className={`mt-2 grid w-60 grid-cols-2 gap-1.5 rounded-2xl border p-1 ${cardClass}`}
+            >
+              <button
+                type="button"
+                onClick={() => setPlayerSlot(1)}
+                className={`cursor-pointer rounded-xl py-1.5 text-[11px] font-semibold ${
+                  playerSlot === 1
+                    ? 'bg-emerald-500 text-zinc-950'
+                    : isLight
+                      ? 'text-slate-500'
+                      : 'text-zinc-400'
+                }`}
+              >
+                Oyuncu 1 (Ana)
+              </button>
+              <button
+                type="button"
+                onClick={() => setPlayerSlot(2)}
+                className={`cursor-pointer rounded-xl py-1.5 text-[11px] font-semibold ${
+                  playerSlot === 2
+                    ? 'bg-amber-500 text-zinc-950'
+                    : isLight
+                      ? 'text-slate-500'
+                      : 'text-zinc-400'
+                }`}
+              >
+                Oyuncu 2 (Altın)
+              </button>
             </div>
           </div>
         )}

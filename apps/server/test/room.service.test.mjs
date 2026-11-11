@@ -90,5 +90,22 @@ describe('RoomService — Oda Yönetimi, 6 Haneli Kod Eşleşmesi ve Skor Tablos
     assert.equal(level1Scores[0].timeSeconds, 7.3);
     assert.equal(level1Scores[0].playerName, 'Eren Kadiroğlu');
   });
+
+  it('aynı odaya 1. Oyuncu ve 2. Oyuncu (Çok Oyunculu Mod) aynı anda bağlanabilmelidir', async () => {
+    const service = new RoomService();
+    const room = await service.createRoom('host-multi');
+
+    const p1Res = service.joinRoom(room.roomId, 'phone-p1', 1);
+    const p2Res = service.joinRoom(room.roomId, 'phone-p2', 2);
+
+    assert.equal(p1Res.ok, true);
+    assert.equal(p2Res.ok, true);
+    if (p2Res.ok) {
+      assert.equal(p2Res.room.isControllerConnected, true);
+      assert.equal(p2Res.room.controllerSocketId, 'phone-p1');
+      assert.equal(p2Res.room.isSecondControllerConnected, true);
+      assert.equal(p2Res.room.secondControllerSocketId, 'phone-p2');
+    }
+  });
 });
 

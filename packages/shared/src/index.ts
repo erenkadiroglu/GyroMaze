@@ -11,6 +11,8 @@ export interface GyroData {
   gamma: number;
   /** Gecikme ölçümü için paketin üretildiği milisaniye cinsinden zaman damgası */
   timestamp: number;
+  /** Çok oyunculu modda veriyi gönderen oyuncu yuvası (1 veya 2) */
+  playerSlot?: 1 | 2;
 }
 
 /**
@@ -122,10 +124,14 @@ export interface RoomState {
   roomId: string;
   /** Masaüstü (Host) soket kimliği */
   hostSocketId: string;
-  /** Mobil kontrolcü soket kimliği (bağlı değilse null) */
+  /** 1. Mobil kontrolcü soket kimliği (bağlı değilse null) */
   controllerSocketId: string | null;
-  /** Mobil kontrolcünün odaya bağlı olup olmadığını belirtir */
+  /** 1. Mobil kontrolcünün odaya bağlı olup olmadığını belirtir */
   isControllerConnected: boolean;
+  /** Çok oyunculu modda 2. Mobil kontrolcü soket kimliği */
+  secondControllerSocketId?: string | null;
+  /** 2. Mobil kontrolcünün odaya bağlı olup olmadığını belirtir */
+  isSecondControllerConnected?: boolean;
   /** Odanın oluşturulma zamanı (ms) */
   createdAt: number;
   /** Mobil cihazların QR kod ile doğrudan bağlanabilmesi için sunucunun yerel ağ (LAN) IPv4 adresi */
@@ -139,6 +145,7 @@ export interface RoomState {
  */
 export interface JoinRoomPayload {
   roomId: string;
+  playerSlot?: 1 | 2;
 }
 
 /**

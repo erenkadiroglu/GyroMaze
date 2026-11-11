@@ -31,13 +31,20 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
+  Sliders,
+  Users,
   X,
   Send,
 } from 'lucide-react';
-import { useGameStore, transientGyro } from '@/store/useGameStore';
+import {
+  useGameStore,
+  transientGyro,
+  transientGyroP2,
+} from '@/store/useGameStore';
 import { getMazeLevel } from '@/components/scene/mazeLevels';
 import { soundEngine } from '@/utils/soundEngine';
 import { LevelEditorModal } from './LevelEditorModal';
+import { SettingsModal } from './SettingsModal';
 
 /**
  * Masaüstü 3B oyun ekranı üzerinde yer alan minimalist HUD,
@@ -79,6 +86,14 @@ export function DesktopHUD() {
   const isSoundMuted = useGameStore((s) => s.isSoundMuted);
   const toggleSoundMuted = useGameStore((s) => s.toggleSoundMuted);
   const triggerBallReset = useGameStore((s) => s.triggerBallReset);
+  const isMultiplayer = useGameStore((s) => s.isMultiplayer);
+  const toggleMultiplayer = useGameStore((s) => s.toggleMultiplayer);
+  const isSecondControllerPaired = useGameStore(
+    (s) => s.isSecondControllerPaired,
+  );
+  const winnerPlayer = useGameStore((s) => s.winnerPlayer);
+  const showMiniMap = useGameStore((s) => s.showMiniMap);
+  const setSettingsOpen = useGameStore((s) => s.setSettingsOpen);
 
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedRoomCode, setCopiedRoomCode] = useState(false);
@@ -93,6 +108,7 @@ export function DesktopHUD() {
   const rollTextRef = useRef<HTMLSpanElement | null>(null);
   const speedTextRef = useRef<HTMLSpanElement | null>(null);
   const miniMapBallRef = useRef<HTMLDivElement | null>(null);
+  const miniMapBall2Ref = useRef<HTMLDivElement | null>(null);
 
   const currentLevelInfo = getMazeLevel(level, customLevel);
   const isLight = colorScheme === 'light' || boardTheme === 'daylight';
@@ -191,6 +207,11 @@ export function DesktopHUD() {
         const rx = ((transientGyro.ballX + 6) / 12) * 36;
         const rz = ((transientGyro.ballZ + 6) / 12) * 36;
         miniMapBallRef.current.style.transform = `translate3d(${rx.toFixed(1)}px, ${rz.toFixed(1)}px, 0)`;
+      }
+      if (miniMapBall2Ref.current) {
+        const rx2 = ((transientGyroP2.ballX + 6) / 12) * 36;
+        const rz2 = ((transientGyroP2.ballZ + 6) / 12) * 36;
+        miniMapBall2Ref.current.style.transform = `translate3d(${rx2.toFixed(1)}px, ${rz2.toFixed(1)}px, 0)`;
       }
 
       if (now - lastTextTime >= 100) {
@@ -585,6 +606,36 @@ export function DesktopHUD() {
             <span>{boardThemeLabel}</span>
           </button>
 
+          {/* 1 Oyuncu / 2 Oyuncu (Çok Oyunculu) Hızlı Geçiş Butonu */}
+          <button
+            type="button"
+            onClick={toggleMultiplayer}
+            className={`flex cursor-pointer items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition active:scale-95 ${
+              isMultiplayer
+                ? 'border-amber-500/50 bg-amber-500/15 text-amber-400'
+                : btnClass
+            }`}
+            title="Tek Oyunculu / 2 Oyunculu (1v1 & Co-op) Mod Değiştir"
+          >
+            <Users className="h-3.5 w-3.5 text-amber-500" />
+            <span>
+              {isMultiplayer
+                ? `2 Oyuncu${isSecondControllerPaired ? ' (2 Tel)' : ''}`
+                : '1 Oyuncu'}
+            </span>
+          </button>
+
+          {/* Oyun ve Fizik Ayarları Modalı Butonu */}
+          <button
+            type="button"
+            onClick={() => setSettingsOpen(true)}
+            className={`flex cursor-pointer items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium transition active:scale-95 ${btnClass}`}
+            title="Oyun, Fizik, Hassasiyet ve Görsel Ayarlar"
+          >
+            <Sliders className="h-3.5 w-3.5 text-emerald-500" />
+            <span>Ayarlar</span>
+          </button>
+
           {/* Harita Editörü Butonu */}
           <button
             type="button"
@@ -756,45 +807,54 @@ export function DesktopHUD() {
           </div>
 
           {/* 60 FPS Canlı 2B Radar / Mini-Harita */}
-          <div
-            className={`relative h-10 w-10 overflow-hidden rounded-lg border ${
-              isLight
-                ? 'border-slate-300 bg-slate-100'
-                : 'border-zinc-700 bg-zinc-950'
-            }`}
-            title="Canlı 2B Labirent Radarı (Yeşil: Hedef, Mavi: Kristal, Beyaz/Siyah: Bilye)"
-          >
-            {/* Hedef Noktası */}
+          {showMiniMap && (
             <div
-              style={{
-                left: `${((currentLevelInfo.goalPosition[0] + 6) / 12) * 100}%`,
-                top: `${((currentLevelInfo.goalPosition[2] + 6) / 12) * 100}%`,
-              }}
-              className={`absolute h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full ${
-                isPortalUnlocked ? 'bg-emerald-500' : 'bg-amber-500'
+              className={`relative h-10 w-10 overflow-hidden rounded-lg border ${
+                isLight
+                  ? 'border-slate-300 bg-slate-100'
+                  : 'border-zinc-700 bg-zinc-950'
               }`}
-            />
-            {/* Kalan Kristaller */}
-            {currentLevelInfo.crystals.map(([cx, cz], idx) =>
-              collectedCrystals.includes(idx) ? null : (
+              title="Canlı 2B Labirent Radarı (Yeşil: Hedef, Mavi: Kristal, Beyaz/Siyah: 1. Bilye, Altın: 2. Bilye)"
+            >
+              {/* Hedef Noktası */}
+              <div
+                style={{
+                  left: `${((currentLevelInfo.goalPosition[0] + 6) / 12) * 100}%`,
+                  top: `${((currentLevelInfo.goalPosition[2] + 6) / 12) * 100}%`,
+                }}
+                className={`absolute h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full ${
+                  isPortalUnlocked ? 'bg-emerald-500' : 'bg-amber-500'
+                }`}
+              />
+              {/* Kalan Kristaller */}
+              {currentLevelInfo.crystals.map(([cx, cz], idx) =>
+                collectedCrystals.includes(idx) ? null : (
+                  <div
+                    key={`radar-c-${idx}`}
+                    style={{
+                      left: `${((cx + 6) / 12) * 100}%`,
+                      top: `${((cz + 6) / 12) * 100}%`,
+                    }}
+                    className="absolute h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-400"
+                  />
+                ),
+              )}
+              {/* Canlı 1. Oyuncu Bilye Konumu */}
+              <div
+                ref={miniMapBallRef}
+                className={`absolute top-0 left-0 h-2 w-2 rounded-full shadow-sm will-change-transform ${
+                  isLight ? 'bg-slate-900' : 'bg-white'
+                }`}
+              />
+              {/* Canlı 2. Oyuncu (Altın Bilye) Konumu */}
+              {isMultiplayer && (
                 <div
-                  key={`radar-c-${idx}`}
-                  style={{
-                    left: `${((cx + 6) / 12) * 100}%`,
-                    top: `${((cz + 6) / 12) * 100}%`,
-                  }}
-                  className="absolute h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-400"
+                  ref={miniMapBall2Ref}
+                  className="absolute top-0 left-0 h-2 w-2 rounded-full bg-amber-400 shadow-sm will-change-transform"
                 />
-              ),
-            )}
-            {/* Canlı Bilye Konumu */}
-            <div
-              ref={miniMapBallRef}
-              className={`absolute top-0 left-0 h-2 w-2 rounded-full shadow-sm will-change-transform ${
-                isLight ? 'bg-slate-900' : 'bg-white'
-              }`}
-            />
-          </div>
+              )}
+            </div>
+          )}
         </div>
 
         {!isControllerPaired && (
@@ -803,16 +863,27 @@ export function DesktopHUD() {
           >
             <Keyboard className="h-4 w-4 text-sky-500" />
             <span className={isLight ? 'text-slate-600' : 'text-zinc-400'}>
-              Masaüstü Test: <strong>WASD / Yön Tuşları</strong> eğim verir •{' '}
-              <strong>R</strong> Sıfırla • <strong>L</strong> Mod •{' '}
-              <strong>C</strong> Kamera
+              {isMultiplayer ? (
+                <>
+                  <strong>2 Oyuncu:</strong> 1. Bilye <strong>WASD</strong> • 2.
+                  Bilye <strong>Yön Tuşları</strong> • <strong>R</strong>{' '}
+                  Sıfırla
+                </>
+              ) : (
+                <>
+                  Masaüstü Test: <strong>WASD / Yön Tuşları</strong> eğim verir
+                  • <strong>R</strong> Sıfırla • <strong>L</strong> Mod •{' '}
+                  <strong>C</strong> Kamera
+                </>
+              )}
             </span>
           </div>
         )}
       </footer>
 
-      {/* HARİTA EDİTÖRÜ MODALI */}
+      {/* HARİTA EDİTÖRÜ VE OYUN AYARLARI MODALLARI */}
       <LevelEditorModal />
+      <SettingsModal />
 
       {/* KÜRESEL SKOR TABLOSU (LEADERBOARD) MODALI */}
       <AnimatePresence>
@@ -1079,6 +1150,17 @@ export function DesktopHUD() {
               <h2 className="mt-1 text-2xl font-semibold text-zinc-100">
                 {currentLevelInfo.title} Tamamlandı!
               </h2>
+
+              {isMultiplayer && winnerPlayer && (
+                <div className="mx-auto mt-2.5 inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/15 px-3.5 py-1 text-xs font-semibold text-amber-300">
+                  <Users className="h-3.5 w-3.5" />
+                  <span>
+                    🏆 {winnerPlayer}. Oyuncu (
+                    {winnerPlayer === 1 ? 'Ana Bilye' : 'Altın Bilye'}) Hedefe
+                    Ulaştı!
+                  </span>
+                </div>
+              )}
 
               {/* 3 Yıldızlı Performans Derecesi */}
               <div className="mt-3 flex items-center justify-center gap-2">
