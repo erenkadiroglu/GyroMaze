@@ -618,7 +618,7 @@ export function generateProceduralLevel(levelId: number): MazeLevelDefinition {
   const generated: MazeLevelDefinition = {
     id: levelId,
     title: `Bölüm ${paddedNum} — ${sectorName} #${tierRoman}`,
-    subtitle: `Sonsuz Prosedürel Sektör • ${crystalCount} Kristal • Kademe ${tierRoman}`,
+    subtitle: `${crystalCount} kristali topla, kademe ${tierRoman} portalına ulaş`,
     boardSize: 12,
     startPosition: [cellCoord(startC), 0.34, cellCoord(startR)],
     goalPosition: [cellCoord(goalC), 0.35, cellCoord(goalR)],

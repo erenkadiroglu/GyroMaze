@@ -1,15 +1,119 @@
 @import "tailwindcss";
 
-:root {
+/*
+ * GyroMaze tasarım belirteçleri (design tokens).
+ * Renkler `data-scheme` özniteliğine göre değişir; Tailwind sınıfları
+ * (bg-surface, text-muted, border-line, text-brass ...) bu değişkenleri okur.
+ * Ayrıntılar: docs/DESIGN.md
+ */
+@theme inline {
+  --color-base: var(--gm-base);
+  --color-surface: var(--gm-surface);
+  --color-surface-2: var(--gm-surface-2);
+  --color-line: var(--gm-line);
+  --color-fg: var(--gm-fg);
+  --color-muted: var(--gm-muted);
+  --color-brass: var(--gm-brass);
+  --color-brass-fg: var(--gm-brass-fg);
+  --color-signal: var(--gm-signal);
+  --color-ok: var(--gm-ok);
+  --color-warn: var(--gm-warn);
+  --color-danger: var(--gm-danger);
+
+  --font-sans: var(--font-barlow), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-barlow-condensed), var(--font-barlow), ui-sans-serif,
+    sans-serif;
+}
+
+:root,
+[data-scheme="dark"] {
   color-scheme: dark;
+  --gm-base: #0f1a2b;
+  --gm-surface: #16233a;
+  --gm-surface-2: #1d2c46;
+  --gm-line: #2b3b57;
+  --gm-fg: #eaf0f8;
+  --gm-muted: #8c9db8;
+  --gm-brass: #d9a441;
+  --gm-brass-fg: #1a1406;
+  --gm-signal: #5bc0eb;
+  --gm-ok: #4fc59b;
+  --gm-warn: #f28c38;
+  --gm-danger: #ef6461;
+}
+
+[data-scheme="light"] {
+  color-scheme: light;
+  --gm-base: #e9eef5;
+  --gm-surface: #ffffff;
+  --gm-surface-2: #f2f5f9;
+  --gm-line: #cbd5e3;
+  --gm-fg: #142033;
+  --gm-muted: #5d6b82;
+  --gm-brass: #a87414;
+  --gm-brass-fg: #ffffff;
+  --gm-signal: #1c7fb0;
+  --gm-ok: #1f8f68;
+  --gm-warn: #c2621a;
+  --gm-danger: #c53b38;
+}
+
+html,
+body {
+  background-color: var(--gm-base);
+  color: var(--gm-fg);
 }
 
 body {
-  background-color: #09090b;
-  color: #fafafa;
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-sans);
   overflow: hidden;
   user-select: none;
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
 }
 
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+/* Görünür klavye odağı: tüm etkileşimli öğelerde pirinç halka */
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--gm-brass);
+  outline-offset: 2px;
+}
+
+/* Yarı saydam HUD yüzeyi */
+.gm-panel {
+  background-color: color-mix(in oklab, var(--gm-surface) 86%, transparent);
+  border: 1px solid color-mix(in oklab, var(--gm-line) 85%, transparent);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+}
+
+/* Sayısal göstergeler için sabit genişlikli rakamlar */
+.gm-num {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+/* İnce kaydırma çubuğu */
+.gm-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--gm-line) transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

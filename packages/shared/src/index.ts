@@ -27,7 +27,7 @@ export interface CalibrationOffset {
 /**
  * Oyunun anlık durumunu temsil eden durum tipi.
  */
-export type GameStatus = 'waiting' | 'ready' | 'playing' | 'paused' | 'won';
+export type GameStatus = 'waiting' | 'ready' | 'playing' | 'paused' | 'won' | 'lost';
 
 /**
  * Mobil cihazda tetiklenecek titreşim (Haptic Feedback) tipi.
@@ -56,6 +56,16 @@ export type BoardTheme = 'emerald' | 'cyberpunk' | 'crimson' | 'daylight';
  * Uygulama genel arayüz ve 3B sahne aydınlık/karanlık renk modu.
  */
 export type ColorScheme = 'dark' | 'light';
+
+/**
+ * 1. Oyuncu bilyesinin 3B materyal ve ışık kaplama (Skin) tipi.
+ */
+export type BallSkin = 'chrome' | 'emerald' | 'plasma' | 'crimson';
+
+/**
+ * Oyun akış modu (Standart en hızlı süre veya Geri Sayımlı Time Attack).
+ */
+export type GameMode = 'standard' | 'time_attack';
 
 /**
  * Küresel skor tablosundaki (Leaderboard) tek bir rekor kaydı.

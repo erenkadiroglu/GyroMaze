@@ -210,6 +210,7 @@ function MazeStage({
   const cameraMode = useGameStore((s) => s.cameraMode);
   const boardTheme = useGameStore((s) => s.boardTheme);
   const colorScheme = useGameStore((s) => s.colorScheme);
+  const ballSkin = useGameStore((s) => s.ballSkin);
   const isMultiplayer = useGameStore((s) => s.isMultiplayer);
   const gravityScale = useGameStore((s) => s.gravityScale);
   const tiltResponsiveness = useGameStore((s) => s.tiltResponsiveness);
@@ -217,7 +218,7 @@ function MazeStage({
   const showGhost = useGameStore((s) => s.showGhost);
   const isLightBoard = colorScheme === 'light' || boardTheme === 'daylight';
 
-  // Seçilen 3B görsel temaya ve Aydınlık/Karanlık moda göre paylaşılan materyal renklerini güncelle
+  // Seçilen 3B görsel temaya, Aydınlık/Karanlık moda ve Bilye Kaplamasına (Skin) göre paylaşılan materyal renklerini güncelle
   useEffect(() => {
     if (isLightBoard) {
       _boardMaterial.color.set('#ffffff');
@@ -225,7 +226,6 @@ function MazeStage({
       _boardMaterial.metalness = 0.08;
       _outerWallMaterial.color.set('#475569');
       _innerWallMaterial.color.set('#64748b');
-      _ballMaterial.color.set('#18181b');
       _trailMaterial.color.set('#0284c7');
     } else if (boardTheme === 'cyberpunk') {
       _boardMaterial.color.set('#0f1026');
@@ -233,7 +233,6 @@ function MazeStage({
       _boardMaterial.metalness = 0.25;
       _outerWallMaterial.color.set('#1e1b4b');
       _innerWallMaterial.color.set('#312e81');
-      _ballMaterial.color.set('#f4f4f5');
       _trailMaterial.color.set('#f472b6');
     } else if (boardTheme === 'crimson') {
       _boardMaterial.color.set('#1c1214');
@@ -241,7 +240,6 @@ function MazeStage({
       _boardMaterial.metalness = 0.25;
       _outerWallMaterial.color.set('#3f1d24');
       _innerWallMaterial.color.set('#57242c');
-      _ballMaterial.color.set('#f4f4f5');
       _trailMaterial.color.set('#fb923c');
     } else {
       _boardMaterial.color.set('#18181b');
@@ -249,10 +247,30 @@ function MazeStage({
       _boardMaterial.metalness = 0.25;
       _outerWallMaterial.color.set('#27272a');
       _innerWallMaterial.color.set('#3f3f46');
-      _ballMaterial.color.set('#f4f4f5');
       _trailMaterial.color.set('#38bdf8');
     }
-  }, [boardTheme, isLightBoard]);
+
+    if (ballSkin === 'emerald') {
+      _ballMaterial.color.set('#10b981');
+      _ballMaterial.emissive.set('#059669');
+      _ballMaterial.emissiveIntensity = 0.7;
+      _trailMaterial.color.set('#34d399');
+    } else if (ballSkin === 'plasma') {
+      _ballMaterial.color.set('#a855f7');
+      _ballMaterial.emissive.set('#7e22ce');
+      _ballMaterial.emissiveIntensity = 0.75;
+      _trailMaterial.color.set('#c084fc');
+    } else if (ballSkin === 'crimson') {
+      _ballMaterial.color.set('#f43f5e');
+      _ballMaterial.emissive.set('#e11d48');
+      _ballMaterial.emissiveIntensity = 0.75;
+      _trailMaterial.color.set('#fb7185');
+    } else {
+      _ballMaterial.color.set(isLightBoard ? '#18181b' : '#f4f4f5');
+      _ballMaterial.emissive.set('#000000');
+      _ballMaterial.emissiveIntensity = 0;
+    }
+  }, [boardTheme, isLightBoard, ballSkin]);
 
   const halfBoard = levelData.boardSize / 2;
   const wallHeight = 0.85;
@@ -1136,7 +1154,7 @@ export function MazeScene() {
   );
 
   const isLightScene = colorScheme === 'light' || boardTheme === 'daylight';
-  const sceneBgColor = isLightScene ? '#f1f5f9' : '#09090b';
+  const sceneBgColor = isLightScene ? '#e9eef5' : '#0f1a2b';
 
   const isGoalUnlocked =
     collectedCrystals.length >= activeLevel.crystals.length;
@@ -1188,7 +1206,7 @@ export function MazeScene() {
         }
         return;
       }
-      if (gameStatus !== 'won') {
+      if (gameStatus !== 'won' && gameStatus !== 'lost') {
         if (!isSoundMuted) {
           soundEngine.playVictory();
         }
@@ -1259,9 +1277,7 @@ export function MazeScene() {
 
   return (
     <div
-      className={`fixed inset-0 z-0 h-screen w-screen transition-colors duration-300 ${
-        isLightScene ? 'bg-slate-100' : 'bg-zinc-950'
-      }`}
+      className="fixed inset-0 z-0 h-screen w-screen bg-base transition-colors duration-300"
     >
       <Canvas
         shadows

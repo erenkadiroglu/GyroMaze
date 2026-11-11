@@ -1,9 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
-  X,
   Play,
   Trash2,
   Copy,
@@ -17,6 +15,8 @@ import {
   Eraser,
   Activity,
   Shuffle,
+  Wrench,
+  Upload,
 } from 'lucide-react';
 import { useGameStore } from '@/store/useGameStore';
 import {
@@ -27,6 +27,7 @@ import {
   BoostPadDefinition,
   MovingObstacleDefinition,
 } from '@/components/scene/mazeLevels';
+import { Modal, Button, cx } from './primitives';
 
 type CellTool =
   | 'wall'
@@ -49,9 +50,97 @@ function gridToWorld(row: number, col: number): [number, number] {
   return [x, z];
 }
 
+const TOOLS: Array<{
+  id: CellTool;
+  label: string;
+  activeClass: string;
+  cellClass: string;
+  symbol: string;
+  icon: React.ReactNode;
+}> = [
+  {
+    id: 'wall',
+    label: 'Duvar',
+    activeClass: 'border-fg/40 bg-surface-2 text-fg',
+    cellClass: 'border-muted/50 bg-muted/30 text-fg',
+    symbol: '■',
+    icon: <Box className="h-3.5 w-3.5" aria-hidden="true" />,
+  },
+  {
+    id: 'hole',
+    label: 'Delik',
+    activeClass: 'border-danger/50 bg-danger/15 text-danger',
+    cellClass: 'border-danger/60 bg-danger/20 text-danger',
+    symbol: '●',
+    icon: <CircleDot className="h-3.5 w-3.5" aria-hidden="true" />,
+  },
+  {
+    id: 'crystal',
+    label: 'Kristal',
+    activeClass: 'border-signal/50 bg-signal/15 text-signal',
+    cellClass: 'border-signal/60 bg-signal/20 text-signal',
+    symbol: '◆',
+    icon: <Gem className="h-3.5 w-3.5" aria-hidden="true" />,
+  },
+  {
+    id: 'laser',
+    label: 'Lazer',
+    activeClass: 'border-warn/50 bg-warn/15 text-warn',
+    cellClass: 'border-warn/60 bg-warn/20 text-warn',
+    symbol: '⚡',
+    icon: <Zap className="h-3.5 w-3.5" aria-hidden="true" />,
+  },
+  {
+    id: 'boost',
+    label: 'Hız rampası',
+    activeClass: 'border-brass/50 bg-brass/15 text-brass',
+    cellClass: 'border-brass/60 bg-brass/20 text-brass',
+    symbol: '▲',
+    icon: <Play className="h-3.5 w-3.5" aria-hidden="true" />,
+  },
+  {
+    id: 'moving',
+    label: 'Devriye engel',
+    activeClass: 'border-warn/50 bg-warn/15 text-warn',
+    cellClass: 'border-warn/60 bg-warn/20 text-warn',
+    symbol: '↔',
+    icon: <Activity className="h-3.5 w-3.5" aria-hidden="true" />,
+  },
+  {
+    id: 'start',
+    label: 'Başlangıç',
+    activeClass: 'border-signal/50 bg-signal/15 text-signal',
+    cellClass: 'border-signal bg-signal/25 text-signal font-bold',
+    symbol: 'B',
+    icon: <MapPin className="h-3.5 w-3.5" aria-hidden="true" />,
+  },
+  {
+    id: 'goal',
+    label: 'Hedef',
+    activeClass: 'border-ok/50 bg-ok/15 text-ok',
+    cellClass: 'border-ok bg-ok/25 text-ok font-bold',
+    symbol: 'H',
+    icon: <Flag className="h-3.5 w-3.5" aria-hidden="true" />,
+  },
+  {
+    id: 'erase',
+    label: 'Silgi',
+    activeClass: 'border-line bg-surface-2 text-fg',
+    cellClass: '',
+    symbol: '',
+    icon: <Eraser className="h-3.5 w-3.5" aria-hidden="true" />,
+  },
+];
+
+const TOOL_BY_ID = Object.fromEntries(TOOLS.map((t) => [t.id, t])) as Record<
+  CellTool,
+  (typeof TOOLS)[number]
+>;
+
 /**
- * Kullanıcının tarayıcı üzerinden kendi 3B labirent haritasını (duvar, delik, kristal, lazer)
- * görsel bir ızgara üzerinde tasarlayıp anında oynayabilmesini sağlayan Harita Editörü.
+ * Kullanıcının 8×8 görsel ızgara üzerinden kendi 3B labirent haritasını
+ * (duvar, delik, kristal, lazer, devriye engel, rampa) tasarlayıp anında
+ * oynayabildiği ve JSON olarak paylaşabildiği Harita Editörü.
  */
 export function LevelEditorModal() {
   const isEditorOpen = useGameStore((s) => s.isEditorOpen);
@@ -59,11 +148,10 @@ export function LevelEditorModal() {
   const setCustomLevel = useGameStore((s) => s.setCustomLevel);
 
   const [activeTool, setActiveTool] = useState<CellTool>('wall');
-  const [customTitle, setCustomTitle] = useState('Özel Labirent — Tasarım #1');
+  const [customTitle, setCustomTitle] = useState('Özel Labirent — Tasarım 1');
   const [copiedJson, setCopiedJson] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
 
-  // 8x8 ızgara durumu
   const [grid, setGrid] = useState<CellTool[][]>(() => {
     const initial: CellTool[][] = Array.from({ length: GRID_SIZE }, () =>
       Array.from({ length: GRID_SIZE }, () => 'erase'),
@@ -82,7 +170,6 @@ export function LevelEditorModal() {
     setGrid((prev) => {
       const next = prev.map((row) => [...row]);
 
-      // Başlangıç veya Hedef taşınıyorsa eski konumu temizle
       if (activeTool === 'start' || activeTool === 'goal') {
         for (let i = 0; i < GRID_SIZE; i++) {
           for (let j = 0; j < GRID_SIZE; j++) {
@@ -95,7 +182,6 @@ export function LevelEditorModal() {
         return next;
       }
 
-      // Mevcut başlangıç veya hedef hücresinin silinmesini engelle
       if (next[r][c] === 'start' || next[r][c] === 'goal') {
         return prev;
       }
@@ -199,7 +285,7 @@ export function LevelEditorModal() {
     return {
       id: 99,
       title: customTitle.trim() || 'Özel Harita',
-      subtitle: 'Harita Editörü ile oluşturulan özel labirent',
+      subtitle: 'Harita editörü ile oluşturuldu',
       boardSize: 12,
       startPosition: startPos,
       goalPosition: goalPos,
@@ -213,8 +299,7 @@ export function LevelEditorModal() {
   };
 
   const handlePlayCustomLevel = () => {
-    const levelDef = buildLevelDefinition();
-    setCustomLevel(levelDef);
+    setCustomLevel(buildLevelDefinition());
   };
 
   const handleCopyJson = async () => {
@@ -225,7 +310,7 @@ export function LevelEditorModal() {
       setImportError(null);
       window.setTimeout(() => setCopiedJson(false), 2000);
     } catch {
-      // Panoya kopyalama başarısız olursa yoksay
+      setImportError('Pano erişimi reddedildi; harita kopyalanamadı.');
     }
   };
 
@@ -248,266 +333,155 @@ export function LevelEditorModal() {
         id: 99,
       });
     } catch {
-      setImportError('Panodan JSON okunamadı veya format hatalı.');
+      setImportError('Panodan geçerli bir JSON haritası okunamadı.');
     }
   };
 
-  const tools: Array<{
-    id: CellTool;
-    label: string;
-    colorClass: string;
-    icon: React.ReactNode;
-  }> = [
-    {
-      id: 'wall',
-      label: 'Duvar Bloğu',
-      colorClass: 'border-zinc-500 bg-zinc-700 text-zinc-100',
-      icon: <Box className="h-3.5 w-3.5" />,
-    },
-    {
-      id: 'hole',
-      label: 'Tuzak Deliği',
-      colorClass: 'border-rose-500/50 bg-rose-500/20 text-rose-300',
-      icon: <CircleDot className="h-3.5 w-3.5" />,
-    },
-    {
-      id: 'crystal',
-      label: 'Enerji Kristali',
-      colorClass: 'border-sky-500/50 bg-sky-500/20 text-sky-300',
-      icon: <Gem className="h-3.5 w-3.5" />,
-    },
-    {
-      id: 'laser',
-      label: 'Lazer Kapı',
-      colorClass: 'border-pink-500/50 bg-pink-500/20 text-pink-300',
-      icon: <Zap className="h-3.5 w-3.5" />,
-    },
-    {
-      id: 'boost',
-      label: 'Hız Rampası',
-      colorClass: 'border-purple-500/50 bg-purple-500/20 text-purple-300',
-      icon: <Play className="h-3.5 w-3.5" />,
-    },
-    {
-      id: 'moving',
-      label: 'Devriye Engel',
-      colorClass: 'border-orange-500/50 bg-orange-500/20 text-orange-300',
-      icon: <Activity className="h-3.5 w-3.5" />,
-    },
-    {
-      id: 'start',
-      label: 'Başlangıç',
-      colorClass: 'border-cyan-400/50 bg-cyan-500/20 text-cyan-200',
-      icon: <MapPin className="h-3.5 w-3.5" />,
-    },
-    {
-      id: 'goal',
-      label: 'Hedef Portalı',
-      colorClass: 'border-emerald-500/50 bg-emerald-500/20 text-emerald-300',
-      icon: <Flag className="h-3.5 w-3.5" />,
-    },
-    {
-      id: 'erase',
-      label: 'Silgi',
-      colorClass: 'border-zinc-700 bg-zinc-800/80 text-zinc-400',
-      icon: <Eraser className="h-3.5 w-3.5" />,
-    },
-  ];
-
   return (
-    <AnimatePresence>
-      {isEditorOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="pointer-events-auto fixed inset-0 z-40 flex items-center justify-center bg-zinc-950/80 p-4 backdrop-blur-md"
-        >
-          <motion.div
-            initial={{ scale: 0.94, opacity: 0, y: 12 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.94, opacity: 0, y: 12 }}
-            className="w-full max-w-2xl rounded-3xl border border-zinc-800 bg-zinc-900/95 p-6 shadow-2xl"
+    <Modal
+      open={isEditorOpen}
+      onClose={() => setEditorOpen(false)}
+      size="xl"
+      title="3B Harita Editörü"
+      description="8×8 ızgara üzerinde duvar, engel ve hedef noktalarını yerleştirin"
+      icon={<Wrench className="h-4 w-4" aria-hidden="true" />}
+      footer={
+        <>
+          <div className="mr-auto flex flex-wrap items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<Trash2 className="h-3.5 w-3.5 text-danger" aria-hidden="true" />}
+              onClick={handleClearGrid}
+            >
+              Temizle
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<Shuffle className="h-3.5 w-3.5 text-brass" aria-hidden="true" />}
+              onClick={handleRandomizeGrid}
+            >
+              Rastgele doldur
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={
+                copiedJson ? (
+                  <Check className="h-3.5 w-3.5 text-ok" aria-hidden="true" />
+                ) : (
+                  <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                )
+              }
+              onClick={handleCopyJson}
+            >
+              {copiedJson ? 'JSON kopyalandı' : 'JSON kopyala'}
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<Upload className="h-3.5 w-3.5 text-signal" aria-hidden="true" />}
+              onClick={handleImportFromClipboard}
+            >
+              Panodan yükle
+            </Button>
+          </div>
+          <Button
+            variant="primary"
+            icon={<Play className="h-4 w-4 fill-current" aria-hidden="true" />}
+            onClick={handlePlayCustomLevel}
           >
-            {/* Başlık */}
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <span className="text-xs font-semibold tracking-wider text-emerald-400 uppercase">
-                  Faz 5 • Özel Bölüm Tasarımcısı
-                </span>
-                <h2 className="text-xl font-semibold text-zinc-100">
-                  3B Labirent Harita Editörü
-                </h2>
-              </div>
-              <button
-                type="button"
-                onClick={() => setEditorOpen(false)}
-                className="cursor-pointer rounded-xl border border-zinc-800 bg-zinc-800/60 p-2 text-zinc-400 transition hover:text-zinc-100"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
+            3B sahnede oyna
+          </Button>
+        </>
+      }
+    >
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
+        {/* Sol Araç Paleti */}
+        <div className="space-y-4 md:col-span-5">
+          <label className="block">
+            <span className="mb-1.5 block text-xs font-medium text-muted">
+              Harita adı
+            </span>
+            <input
+              type="text"
+              maxLength={40}
+              value={customTitle}
+              onChange={(e) => setCustomTitle(e.target.value)}
+              className="w-full rounded-xl border border-line bg-surface-2 px-3 py-2 text-sm text-fg outline-none focus:border-brass"
+            />
+          </label>
 
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
-              {/* Sol Araç Paleti */}
-              <div className="flex flex-col justify-between space-y-4 md:col-span-5">
-                <div className="space-y-3">
-                  <label className="block text-xs font-medium text-zinc-400">
-                    Harita Adı
-                    <input
-                      type="text"
-                      value={customTitle}
-                      onChange={(e) => setCustomTitle(e.target.value)}
-                      className="mt-1.5 w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-100 outline-none focus:border-emerald-500"
-                    />
-                  </label>
-
-                  <span className="block text-xs font-medium text-zinc-400">
-                    Yerleştirme Aracı Seçin
-                  </span>
-                  <div className="grid grid-cols-2 gap-2">
-                    {tools.map((tool) => (
-                      <button
-                        key={tool.id}
-                        type="button"
-                        onClick={() => setActiveTool(tool.id)}
-                        className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition ${
-                          activeTool === tool.id
-                            ? tool.colorClass
-                            : 'border-zinc-800/80 bg-zinc-950/60 text-zinc-400 hover:bg-zinc-800/50'
-                        }`}
-                      >
-                        {tool.icon}
-                        <span>{tool.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-2 pt-2">
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={handleClearGrid}
-                      className="flex flex-1 cursor-pointer items-center justify-center gap-1 rounded-xl border border-zinc-800 bg-zinc-800/50 py-2.5 text-xs font-medium text-zinc-300 transition hover:bg-zinc-800"
-                    >
-                      <Trash2 className="h-3.5 w-3.5 text-rose-400" />
-                      <span>Temizle</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleRandomizeGrid}
-                      className="flex flex-1 cursor-pointer items-center justify-center gap-1 rounded-xl border border-zinc-800 bg-zinc-800/50 py-2.5 text-xs font-medium text-amber-300 transition hover:bg-zinc-800"
-                      title="8x8 Izgarayı Rastgele Engellerle Doldur"
-                    >
-                      <Shuffle className="h-3.5 w-3.5" />
-                      <span>Rastgele</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleCopyJson}
-                      className="flex flex-1 cursor-pointer items-center justify-center gap-1 rounded-xl border border-zinc-800 bg-zinc-800/50 py-2.5 text-xs font-medium text-zinc-300 transition hover:bg-zinc-800"
-                    >
-                      {copiedJson ? (
-                        <>
-                          <Check className="h-3.5 w-3.5 text-emerald-400" />
-                          <span className="text-emerald-300">Kopyalandı</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="h-3.5 w-3.5 text-zinc-400" />
-                          <span>Kopyala</span>
-                        </>
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleImportFromClipboard}
-                      className="flex flex-1 cursor-pointer items-center justify-center gap-1 rounded-xl border border-zinc-800 bg-zinc-800/50 py-2.5 text-xs font-medium text-sky-300 transition hover:bg-zinc-800"
-                      title="Panodaki JSON Haritasını İçe Aktar ve Oyna"
-                    >
-                      <span>Yükle</span>
-                    </button>
-                  </div>
-                  {importError && (
-                    <p className="text-[11px] text-rose-400">{importError}</p>
-                  )}
-
+          <div>
+            <span className="mb-2 block text-xs font-medium text-muted">
+              Yerleştirme aracı
+            </span>
+            <div className="grid grid-cols-2 gap-1.5">
+              {TOOLS.map((tool) => {
+                const isSelected = activeTool === tool.id;
+                return (
                   <button
+                    key={tool.id}
                     type="button"
-                    onClick={handlePlayCustomLevel}
-                    className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-500 py-3 text-xs font-semibold text-zinc-950 shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-400"
+                    aria-pressed={isSelected}
+                    onClick={() => setActiveTool(tool.id)}
+                    className={cx(
+                      'flex min-h-9 cursor-pointer items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-medium transition-colors',
+                      isSelected
+                        ? tool.activeClass
+                        : 'border-line bg-surface-2/50 text-muted hover:text-fg',
+                    )}
                   >
-                    <Play className="h-4 w-4 fill-current" />
-                    <span>Haritayı 3B Sahnede Hemen Oyna</span>
+                    {tool.icon}
+                    <span>{tool.label}</span>
                   </button>
-                </div>
-              </div>
-
-              {/* Sağ 8x8 Etkileşimli Harita Izgarası */}
-              <div className="flex flex-col items-center justify-center md:col-span-7">
-                <div className="grid aspect-square w-full max-w-[330px] grid-cols-8 gap-1.5 rounded-2xl border border-zinc-800 bg-zinc-950 p-3">
-                  {grid.map((row, rIdx) =>
-                    row.map((cell, cIdx) => {
-                      let cellStyle =
-                        'border-zinc-800/70 bg-zinc-900/60 hover:bg-zinc-800/70';
-                      let label = '';
-
-                      if (cell === 'wall') {
-                        cellStyle = 'border-zinc-500 bg-zinc-600 text-zinc-100';
-                        label = '■';
-                      } else if (cell === 'hole') {
-                        cellStyle =
-                          'border-rose-500 bg-rose-500/30 text-rose-300';
-                        label = '●';
-                      } else if (cell === 'crystal') {
-                        cellStyle = 'border-sky-400 bg-sky-500/30 text-sky-200';
-                        label = '◆';
-                      } else if (cell === 'laser') {
-                        cellStyle =
-                          'border-pink-500 bg-pink-500/30 text-pink-200';
-                        label = '⚡';
-                      } else if (cell === 'boost') {
-                        cellStyle =
-                          'border-purple-500 bg-purple-500/30 text-purple-200';
-                        label = '▲';
-                      } else if (cell === 'moving') {
-                        cellStyle =
-                          'border-orange-500 bg-orange-500/30 text-orange-200';
-                        label = '↔';
-                      } else if (cell === 'start') {
-                        cellStyle =
-                          'border-cyan-400 bg-cyan-500/30 text-cyan-200 font-bold';
-                        label = 'B';
-                      } else if (cell === 'goal') {
-                        cellStyle =
-                          'border-emerald-400 bg-emerald-500/30 text-emerald-200 font-bold';
-                        label = 'H';
-                      }
-
-                      return (
-                        <button
-                          key={`${rIdx}-${cIdx}`}
-                          type="button"
-                          onClick={() => handleCellClick(rIdx, cIdx)}
-                          className={`flex aspect-square cursor-pointer items-center justify-center rounded-lg border text-xs transition active:scale-90 ${cellStyle}`}
-                        >
-                          {label}
-                        </button>
-                      );
-                    }),
-                  )}
-                </div>
-                <span className="mt-2 text-[11px] text-zinc-400">
-                  Hücrelere tıklayarak duvar (■), delik (●), kristal (◆) veya
-                  lazer (⚡) yerleştirin
-                </span>
-              </div>
+                );
+              })}
             </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          </div>
+
+          {importError && (
+            <p role="alert" className="text-xs text-danger">
+              {importError}
+            </p>
+          )}
+        </div>
+
+        {/* Sağ 8×8 Etkileşimli Harita Izgarası */}
+        <div className="flex flex-col items-center justify-center md:col-span-7">
+          <div
+            role="grid"
+            aria-label="8 çarpı 8 labirent ızgarası"
+            className="grid aspect-square w-full max-w-[332px] grid-cols-8 gap-1.5 rounded-2xl border border-line bg-base/70 p-3"
+          >
+            {grid.map((row, rIdx) =>
+              row.map((cell, cIdx) => {
+                const meta = TOOL_BY_ID[cell];
+                return (
+                  <button
+                    key={`${rIdx}-${cIdx}`}
+                    type="button"
+                    aria-label={`Satır ${rIdx + 1} Sütun ${cIdx + 1}: ${cell === 'erase' ? 'Boş' : meta.label}`}
+                    onClick={() => handleCellClick(rIdx, cIdx)}
+                    className={cx(
+                      'flex aspect-square cursor-pointer items-center justify-center rounded-lg border text-xs transition active:scale-90',
+                      cell === 'erase'
+                        ? 'border-line/70 bg-surface-2/50 hover:bg-surface-2'
+                        : meta.cellClass,
+                    )}
+                  >
+                    {meta.symbol}
+                  </button>
+                );
+              }),
+            )}
+          </div>
+          <p className="mt-2.5 text-center text-xs text-muted">
+            Hücrelere tıklayarak öğe yerleştirin veya mevcut öğeyi kaldırın.
+          </p>
+        </div>
+      </div>
+    </Modal>
   );
 }
-

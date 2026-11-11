@@ -25,12 +25,17 @@ import { GyroData } from '@gyromaze/shared';
 import { useGameStore } from '@/store/useGameStore';
 import { useSocket } from '@/hooks/useSocket';
 import { useDeviceOrientation } from '@/hooks/useDeviceOrientation';
+import { useAppPreferences } from '@/hooks/useAppPreferences';
+import { cx } from '@/components/ui/primitives';
 
 /**
  * Mobil cihazın HTML5 jiroskop sensörlerini ve dokunmatik (touch) sanal gimbal
- * hareketlerini sıfır DOM reflow ve <10ms WebSocket gecikmesiyle masaüstü 3B sahnesine ileten kontrolcü arayüzü.
+ * hareketlerini sıfır DOM reflow ve <10ms WebSocket gecikmesiyle masaüstü 3B
+ * sahnesine ileten kontrolcü arayüzü.
  */
 function MobileControllerContent() {
+  useAppPreferences();
+
   const searchParams = useSearchParams();
   const initialRoomParam =
     searchParams.get('room')?.trim().toUpperCase() ?? '';
@@ -61,7 +66,6 @@ function MobileControllerContent() {
   const setErrorMessage = useGameStore((s) => s.setErrorMessage);
   const colorScheme = useGameStore((s) => s.colorScheme);
   const toggleColorScheme = useGameStore((s) => s.toggleColorScheme);
-  const isLight = colorScheme === 'light';
 
   const activeRoomCodeRef = useRef<string>(activeRoomCode);
   activeRoomCodeRef.current = activeRoomCode;
@@ -74,7 +78,6 @@ function MobileControllerContent() {
   const pitchValueRef = useRef<HTMLSpanElement | null>(null);
   const rollValueRef = useRef<HTMLSpanElement | null>(null);
 
-  // Dokunmatik sürükleme sırasında getBoundingClientRect() reflow maliyetini önleyen önbellek
   const isPointerDraggingRef = useRef<boolean>(false);
   const gimbalBoundsRef = useRef<{
     centerX: number;
@@ -86,7 +89,6 @@ function MobileControllerContent() {
     maxRadius: 100,
   });
 
-  // 60 FPS rAF döngüsünün okuduğu saf jiroskop durumu (React state tetiklemez)
   const liveGyroRef = useRef<GyroData>({
     alpha: 0,
     beta: 0,
@@ -106,10 +108,6 @@ function MobileControllerContent() {
     playerSlot,
   });
 
-  /**
-   * Sensör veya dokunmatik gimbal verisini ağa gönderir ve rAF tamponuna yazar.
-   * DOM manipülasyonu burada yapılmaz; ekran yenileme hızıyla (rAF) senkronize edilir.
-   */
   const pushGyroSample = useCallback(
     (beta: number, gamma: number) => {
       const now = Date.now();
@@ -153,7 +151,6 @@ function MobileControllerContent() {
     }
   }, [initialRoomParam]);
 
-  // Eşleşme gerçekleştiğinde oda kodu giriş panelini otomatik kapat
   useEffect(() => {
     if (isControllerPaired) {
       setIsRoomEditorOpen(false);
@@ -165,11 +162,7 @@ function MobileControllerContent() {
     Boolean(activeRoomCode) &&
     !isRoomEditorOpen;
 
-  /**
-   * Mobil GPU ve ana iş parçacığı (Main Thread) optimizasyonu:
-   * - Küre konumu (translate3d) yalnızca piksel farkı >= 0.2px olduğunda güncellenir.
-   * - Sayısal metinler (textContent) saniyede 120 kez yerine yalnızca 120ms'de bir (~8Hz) güncellenir.
-   */
+  // 60 FPS GPU-hızlandırmalı mobil ufuk küresi ve 8Hz sayısal açı güncellemesi
   useEffect(() => {
     if (!showGimbalSurface) return;
 
@@ -185,7 +178,7 @@ function MobileControllerContent() {
       const gamma = liveGyroRef.current.gamma;
 
       if (gimbalDotRef.current) {
-        const maxOffsetPx = 74;
+        const maxOffsetPx = 76;
         const offsetX = (gamma / 35) * maxOffsetPx;
         const offsetY = (beta / 35) * maxOffsetPx;
 
@@ -278,7 +271,7 @@ function MobileControllerContent() {
     e.preventDefault();
     const cleaned = manualRoomInput.trim().toUpperCase();
     if (cleaned.length < 4) {
-      setErrorMessage('Lütfen geçerli bir 6 haneli oda kodu girin.');
+      setErrorMessage('Geçerli bir 6 haneli oda kodu girin.');
       return;
     }
     setErrorMessage(null);
@@ -287,142 +280,125 @@ function MobileControllerContent() {
     setIsRoomEditorOpen(false);
   };
 
-  const cardClass = isLight
-    ? 'border-slate-300 bg-white text-slate-900'
-    : 'border-zinc-800 bg-zinc-900 text-zinc-100';
-  const subCardClass = isLight
-    ? 'border-slate-300 bg-slate-100 text-slate-800'
-    : 'border-zinc-800 bg-zinc-950 text-zinc-200';
   const levelLabel =
     level === 99
-      ? 'ÖZEL'
-      : `BÖLÜM ${level < 10 ? `0${level}` : String(level)}`;
+      ? 'Özel'
+      : `Bölüm ${level < 10 ? `0${level}` : String(level)}`;
 
   return (
-    <main
-      className={`flex min-h-dvh flex-col justify-between p-4 select-none ${
-        isLight
-          ? 'bg-slate-100 text-slate-900'
-          : 'bg-zinc-950 text-zinc-100'
-      }`}
-    >
-      {/* Üst Durum ve Hızlı Oda Değiştirme Çubuğu (Sıfır Blur / Saf GPU Katmanı) */}
-      <header
-        className={`flex items-center justify-between gap-2 rounded-2xl border px-3.5 py-2.5 ${cardClass}`}
-      >
+    <main className="flex min-h-dvh flex-col justify-between bg-base px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] text-fg select-none">
+      {/* ÜST DURUM ÇUBUĞU (Mobil GPU için sıfır backdrop-blur) */}
+      <header className="flex items-center justify-between gap-2 rounded-2xl border border-line bg-surface px-3.5 py-2.5">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-500">
-            <Smartphone className="h-4 w-4" />
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-brass/30 bg-brass/10 text-brass">
+            <Smartphone className="h-4 w-4" aria-hidden="true" />
           </div>
           <div>
-            <h1 className="text-xs font-semibold tracking-tight">
-              GyroMaze Kontrolcü
-            </h1>
-            <div
-              className={`flex items-center gap-1.5 text-[11px] ${
-                isLight ? 'text-slate-500' : 'text-zinc-400'
-              }`}
-            >
+            <h1 className="text-sm leading-tight font-semibold">GyroMaze</h1>
+            <div className="flex items-center gap-1.5 text-xs text-muted">
               <span>Oda:</span>
-              <span className="font-mono font-bold tracking-wider text-emerald-500">
-                {activeRoomCode || 'YOK'}
+              <span className="gm-num font-semibold tracking-wider text-brass">
+                {activeRoomCode || 'Yok'}
               </span>
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-1.5">
-          {/* Aydınlık / Karanlık Mod Değiştirici */}
           <button
             type="button"
             onClick={toggleColorScheme}
-            className={`flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl border active:scale-95 ${subCardClass}`}
-            aria-label="Aydınlık / Karanlık Mod"
+            aria-label={colorScheme === 'light' ? 'Gece moduna geç' : 'Gündüz moduna geç'}
+            className="flex min-h-[40px] min-w-[40px] cursor-pointer items-center justify-center rounded-xl border border-line bg-surface-2 active:scale-95"
           >
-            {isLight ? (
-              <Sun className="h-3.5 w-3.5 text-amber-500" />
+            {colorScheme === 'light' ? (
+              <Sun className="h-4 w-4 text-brass" aria-hidden="true" />
             ) : (
-              <Moon className="h-3.5 w-3.5 text-sky-400" />
+              <Moon className="h-4 w-4 text-signal" aria-hidden="true" />
             )}
           </button>
 
-          {/* Oda Kodu Değiştirme / Girme Butonu */}
           <button
             type="button"
             onClick={() => {
               setManualRoomInput(activeRoomCode);
               setIsRoomEditorOpen((prev) => !prev);
             }}
-            className={`flex cursor-pointer items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-[11px] font-medium active:scale-95 ${subCardClass}`}
+            className="flex min-h-[40px] cursor-pointer items-center gap-1.5 rounded-xl border border-line bg-surface-2 px-3 text-xs font-medium text-fg active:scale-95"
           >
-            <KeyRound className="h-3.5 w-3.5 text-emerald-500" />
-            <span>{activeRoomCode ? 'Kod Değiştir' : 'Kod Gir'}</span>
+            <KeyRound className="h-3.5 w-3.5 text-brass" aria-hidden="true" />
+            <span>{activeRoomCode ? 'Kod' : 'Kod gir'}</span>
           </button>
 
-          {/* Bağlantı Durumu Rozeti */}
           <div
-            className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-[11px] ${subCardClass}`}
+            aria-label={
+              isControllerPaired
+                ? 'Bağlantı durumu: Bağlı'
+                : isSocketConnected
+                  ? 'Bağlantı durumu: Hazır'
+                  : 'Bağlantı durumu: Kopuk'
+            }
+            className="flex min-h-[40px] items-center gap-1.5 rounded-xl border border-line bg-surface-2 px-3 text-xs font-semibold"
           >
             {isControllerPaired ? (
               <>
-                <Wifi className="h-3.5 w-3.5 text-emerald-500" />
-                <span className="font-semibold text-emerald-500">Bağlı</span>
+                <Wifi className="h-3.5 w-3.5 text-ok" aria-hidden="true" />
+                <span className="text-ok">Bağlı</span>
               </>
             ) : isSocketConnected ? (
               <>
-                <span className="h-2 w-2 rounded-full bg-amber-500" />
-                <span className="font-semibold text-amber-500">Hazır</span>
+                <span className="h-2 w-2 rounded-full bg-brass" aria-hidden="true" />
+                <span className="text-brass">Hazır</span>
               </>
             ) : (
               <>
-                <WifiOff className="h-3.5 w-3.5 text-rose-500" />
-                <span className="font-semibold text-rose-500">Kopuk</span>
+                <WifiOff className="h-3.5 w-3.5 text-danger" aria-hidden="true" />
+                <span className="text-danger">Kopuk</span>
               </>
             )}
           </div>
         </div>
       </header>
 
-      {/* Hata Bildirimi */}
+      {/* HATA BİLDİRİMİ */}
       {errorMessage && (
-        <div className="mt-2.5 flex items-center justify-between gap-2 rounded-2xl border border-rose-500/30 bg-rose-950/80 px-3.5 py-2.5 text-xs text-rose-200">
+        <div
+          role="alert"
+          className="mt-2.5 flex items-center justify-between gap-2 rounded-2xl border border-danger/40 bg-surface px-3.5 py-2.5 text-xs text-danger"
+        >
           <div className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
+            <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>{errorMessage}</span>
           </div>
           <button
             type="button"
             onClick={() => setIsRoomEditorOpen(true)}
-            className="shrink-0 rounded-lg bg-rose-500/20 px-2.5 py-1 text-[11px] font-semibold text-rose-200"
+            className="min-h-[34px] shrink-0 rounded-lg border border-danger/40 bg-danger/10 px-2.5 text-xs font-semibold text-danger"
           >
-            Yeni Kod Gir
+            Yeni kod
           </button>
         </div>
       )}
 
-      {/* Canlı Bölüm, Kristal Durumu ve Hızlı Bölüm Geçiş Çubuğu (Eşleştiğinde Aktif) */}
+      {/* BÖLÜM & KRİSTAL ÇUBUĞU (Eşleştiğinde aktif) */}
       {isControllerPaired && !isRoomEditorOpen && (
-        <div
-          className={`mt-2.5 flex items-center justify-between rounded-2xl border px-3 py-2 ${cardClass}`}
-        >
+        <div className="mt-2.5 flex items-center justify-between rounded-2xl border border-line bg-surface px-2.5 py-2">
           <button
             type="button"
             onClick={() => emitChangeLevel('prev')}
-            className={`flex cursor-pointer items-center gap-1 rounded-xl border px-2.5 py-1.5 text-[11px] font-medium active:scale-95 ${subCardClass}`}
+            className="flex min-h-[40px] cursor-pointer items-center gap-1 rounded-xl border border-line bg-surface-2 px-3 text-xs font-medium text-fg active:scale-95"
           >
-            <ChevronLeft className="h-3.5 w-3.5" />
+            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
             <span>Önceki</span>
           </button>
 
-          <div className="flex items-center gap-2.5 text-xs">
-            <span className="font-mono font-bold text-emerald-500">
-              {levelLabel}
+          <div className="flex items-center gap-2.5 text-sm">
+            <span className="gm-num font-semibold text-brass">{levelLabel}</span>
+            <span className="text-line" aria-hidden="true">
+              ·
             </span>
-            <span className={isLight ? 'text-slate-300' : 'text-zinc-700'}>
-              •
-            </span>
-            <span className="flex items-center gap-1 font-mono text-sky-500">
-              <Gem className="h-3.5 w-3.5" />
+            <span className="gm-num flex items-center gap-1 font-semibold text-signal">
+              <Gem className="h-3.5 w-3.5" aria-hidden="true" />
               {remoteCrystalsCollected}/{remoteCrystalsTotal}
             </span>
           </div>
@@ -430,61 +406,53 @@ function MobileControllerContent() {
           <button
             type="button"
             onClick={() => emitChangeLevel('next')}
-            className={`flex cursor-pointer items-center gap-1 rounded-xl border px-2.5 py-1.5 text-[11px] font-medium active:scale-95 ${subCardClass}`}
+            className="flex min-h-[40px] cursor-pointer items-center gap-1 rounded-xl border border-line bg-surface-2 px-3 text-xs font-medium text-fg active:scale-95"
           >
             <span>Sonraki</span>
-            <ChevronRight className="h-3.5 w-3.5" />
+            <ChevronRight className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
       )}
 
-      {/* Bölüm Tamamlandığında Telefondan Tek Dokunuşla Sonraki Bölüme Geçiş Kartı */}
+      {/* ZAFER KARTI */}
       {isControllerPaired && gameStatus === 'won' && !isRoomEditorOpen && (
-        <div className="mt-2.5 flex items-center justify-between gap-3 rounded-2xl border border-emerald-500/40 bg-emerald-950/60 px-4 py-3">
+        <div className="mt-2.5 flex items-center justify-between gap-3 rounded-2xl border border-ok/40 bg-surface px-4 py-3">
           <div className="flex items-center gap-2.5">
-            <Trophy className="h-5 w-5 shrink-0 text-amber-400" />
+            <Trophy className="h-5 w-5 shrink-0 text-brass" aria-hidden="true" />
             <div>
-              <p className="text-xs font-semibold text-emerald-300">
-                Bölüm Tamamlandı!
-              </p>
-              <p className="text-[11px] text-zinc-300">
-                Masaüstüne dokunmadan devam edin
+              <p className="text-sm font-semibold text-ok">Bölüm tamamlandı</p>
+              <p className="text-xs text-muted">
+                Telefondan sıradaki bölüme geçebilirsin
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={() => emitChangeLevel('next')}
-            className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl bg-emerald-500 px-3.5 py-2 text-xs font-semibold text-zinc-950 active:scale-95"
+            className="flex min-h-[44px] shrink-0 cursor-pointer items-center gap-1.5 rounded-xl bg-brass px-3.5 text-xs font-semibold text-brass-fg active:scale-95"
           >
-            <span>Sonraki Bölüm</span>
-            <ArrowRight className="h-3.5 w-3.5" />
+            <span>Sonraki bölüm</span>
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
         </div>
       )}
 
-      {/* Orta Alan: Oda Kodu Girişi, Sensör İzni veya Canlı Gimbal Terazisi */}
+      {/* ORTA ALAN: ODA KODU / İZİN / CANLI GİMBAL */}
       <section className="my-auto flex flex-col items-center justify-center py-3">
         {!activeRoomCode || isRoomEditorOpen ? (
           <form
             onSubmit={handleManualConnect}
-            className={`w-full max-w-sm space-y-4 rounded-3xl border p-6 ${cardClass}`}
+            className="w-full max-w-sm space-y-4 rounded-3xl border border-line bg-surface p-6"
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-500">
-                  <KeyRound className="h-4 w-4" />
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-brass/30 bg-brass/10 text-brass">
+                  <KeyRound className="h-4 w-4" aria-hidden="true" />
                 </div>
                 <div>
-                  <h2 className="text-base font-semibold">
-                    Oda Kodu ile Giriş
-                  </h2>
-                  <p
-                    className={`text-[11px] ${
-                      isLight ? 'text-slate-500' : 'text-zinc-400'
-                    }`}
-                  >
-                    Masaüstündeki 6 haneli kodu yazın
+                  <h2 className="text-base font-semibold">Oda kodu ile bağlan</h2>
+                  <p className="text-xs text-muted">
+                    Masaüstündeki 6 haneli kodu yaz
                   </p>
                 </div>
               </div>
@@ -492,10 +460,10 @@ function MobileControllerContent() {
                 <button
                   type="button"
                   onClick={() => setIsRoomEditorOpen(false)}
-                  className={`rounded-xl border p-2 ${subCardClass}`}
-                  aria-label="Kapat"
+                  aria-label="Oda kodu düzenlemeyi kapat"
+                  className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-line bg-surface-2 text-muted"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-4 w-4" aria-hidden="true" />
                 </button>
               )}
             </div>
@@ -508,6 +476,7 @@ function MobileControllerContent() {
               autoCorrect="off"
               spellCheck={false}
               maxLength={6}
+              aria-label="6 haneli oda kodu"
               value={manualRoomInput}
               onChange={(e) =>
                 setManualRoomInput(
@@ -515,222 +484,212 @@ function MobileControllerContent() {
                 )
               }
               placeholder="ÖRN: 84K9X2"
-              className={`w-full rounded-2xl border px-4 py-3.5 text-center font-mono text-2xl font-bold tracking-[0.25em] text-emerald-500 uppercase outline-none focus:border-emerald-500 ${subCardClass}`}
+              className="gm-num w-full rounded-2xl border border-line bg-surface-2 px-4 py-3.5 text-center text-2xl font-semibold tracking-[0.25em] text-brass uppercase outline-none focus:border-brass"
             />
 
             <button
               type="submit"
-              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-emerald-500 py-3.5 text-xs font-semibold text-zinc-950 active:scale-98"
+              className="flex min-h-[48px] w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-brass text-sm font-semibold text-brass-fg active:scale-[0.98]"
             >
-              <span>Oda Koduna Bağlan</span>
-              <ArrowRight className="h-4 w-4" />
+              <span>Odaya bağlan</span>
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </button>
           </form>
         ) : !showGimbalSurface ? (
-          <div
-            className={`w-full max-w-sm space-y-4 rounded-3xl border p-6 text-center ${cardClass}`}
-          >
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-500">
-              <ShieldCheck className="h-6 w-6" />
+          <div className="w-full max-w-sm space-y-4 rounded-3xl border border-line bg-surface p-6 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-brass/30 bg-brass/10 text-brass">
+              <ShieldCheck className="h-6 w-6" aria-hidden="true" />
             </div>
             <div className="space-y-1.5">
               <h2 className="text-lg font-semibold">
-                Jiroskop Sensörlerini Başlat
+                Jiroskop sensörlerini başlat
               </h2>
-              <p
-                className={`text-xs leading-relaxed ${
-                  isLight ? 'text-slate-500' : 'text-zinc-400'
-                }`}
-              >
-                Telefonunuzu rahat bir açıyla tutun ve sıfır gecikmeli jiroskop
-                kontrolünü etkinleştirin.
+              <p className="text-xs leading-relaxed text-muted">
+                Telefonunu rahat bir açıyla tut ve sıfır gecikmeli hareket
+                kontrolünü etkinleştir.
               </p>
             </div>
 
             <button
               type="button"
               onClick={handleActivateSensors}
-              className="w-full cursor-pointer rounded-2xl bg-emerald-500 py-3.5 text-sm font-semibold text-zinc-950 active:scale-98"
+              className="min-h-[48px] w-full cursor-pointer rounded-2xl bg-brass text-sm font-semibold text-brass-fg active:scale-[0.98]"
             >
-              Jiroskop Sensörlerini Başlat
+              Sensörleri başlat
             </button>
 
             <button
               type="button"
               onClick={() => setIsTouchOverride(true)}
-              className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border py-3 text-xs font-medium active:scale-98 ${subCardClass}`}
+              className="flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-line bg-surface-2 text-xs font-medium text-fg active:scale-[0.98]"
             >
-              <Hand className="h-4 w-4 text-sky-500" />
-              <span>Dokunmatik (Touch) Gimbal ile Kullan</span>
+              <Hand className="h-4 w-4 text-signal" aria-hidden="true" />
+              <span>Dokunmatik gimbal ile oyna</span>
             </button>
           </div>
         ) : (
-          /* Canlı 2B Jiroskop + Dokunmatik Ufuk Terazisi (Saf Donanım İvmeli Katman) */
           <div className="flex flex-col items-center">
+            {/* Canlı 2B Ufuk Pad */}
             <div
               ref={gimbalPadRef}
               onPointerDown={handlePointerDownOnGimbal}
               onPointerMove={handlePointerMoveOnGimbal}
               onPointerUp={handlePointerEndOnGimbal}
               onPointerCancel={handlePointerEndOnGimbal}
-              className={`relative flex h-60 w-60 touch-none items-center justify-center rounded-full border-2 ${cardClass}`}
+              className="relative flex h-60 w-60 touch-none items-center justify-center rounded-full border-2 border-line bg-surface shadow-inner"
             >
-              {/* İç Derece Halkaları */}
               <div
-                className={`pointer-events-none absolute h-40 w-40 rounded-full border border-dashed ${
-                  isLight ? 'border-slate-300' : 'border-zinc-800'
-                }`}
+                aria-hidden="true"
+                className="pointer-events-none absolute h-40 w-40 rounded-full border border-dashed border-line"
               />
               <div
-                className={`pointer-events-none absolute h-20 w-20 rounded-full border ${
-                  isLight ? 'border-slate-300' : 'border-zinc-800'
-                }`}
+                aria-hidden="true"
+                className="pointer-events-none absolute h-20 w-20 rounded-full border border-line"
               />
               <div
-                className={`pointer-events-none absolute h-px w-full ${
-                  isLight ? 'bg-slate-200' : 'bg-zinc-800'
-                }`}
+                aria-hidden="true"
+                className="pointer-events-none absolute h-px w-full bg-line/70"
               />
               <div
-                className={`pointer-events-none absolute h-full w-px ${
-                  isLight ? 'bg-slate-200' : 'bg-zinc-800'
-                }`}
+                aria-hidden="true"
+                className="pointer-events-none absolute h-full w-px bg-line/70"
               />
 
-              {/* Hareketli Jiroskop Küresi (Saf Composite Layer: will-change-transform) */}
               <div
                 ref={gimbalDotRef}
-                className="pointer-events-none relative flex h-11 w-11 items-center justify-center rounded-full border border-emerald-500 bg-emerald-500/20 will-change-transform"
+                className={cx(
+                  'pointer-events-none relative flex h-11 w-11 items-center justify-center rounded-full border will-change-transform',
+                  playerSlot === 2
+                    ? 'border-warn bg-warn/20'
+                    : 'border-brass bg-brass/20',
+                )}
               >
-                <div className="h-3.5 w-3.5 rounded-full bg-emerald-500" />
+                <div
+                  className={cx(
+                    'h-3.5 w-3.5 rounded-full',
+                    playerSlot === 2 ? 'bg-warn' : 'bg-brass',
+                  )}
+                />
               </div>
             </div>
 
-            <p
-              className={`mt-2.5 text-[11px] ${
-                isLight ? 'text-slate-500' : 'text-zinc-400'
-              }`}
-            >
-              Telefonu eğin veya daire içindeki küreyi parmağınızla sürükleyin
+            <p className="mt-2.5 text-xs text-muted">
+              Telefonu eğ veya dairedeki küreyi parmağınla sürükle
             </p>
 
-            {/* Sayısal Açı Göstergeleri (8Hz Throttled DOM Text) */}
-            <div className="mt-3.5 grid w-60 grid-cols-2 gap-2.5">
-              <div className={`rounded-2xl border p-2.5 text-center ${cardClass}`}>
-                <span
-                  className={`block text-[10px] tracking-wider uppercase ${
-                    isLight ? 'text-slate-500' : 'text-zinc-400'
-                  }`}
-                >
-                  Eğim (Pitch)
-                </span>
+            {/* Sayısal Açı Göstergeleri (8Hz) */}
+            <div className="mt-3 grid w-64 grid-cols-2 gap-2.5">
+              <div className="rounded-2xl border border-line bg-surface p-2.5 text-center">
+                <span className="block text-xs text-muted">Eğim (Pitch)</span>
                 <span
                   ref={pitchValueRef}
-                  className="mt-0.5 block font-mono text-sm font-semibold text-emerald-500"
+                  className="gm-num mt-0.5 block text-lg font-semibold text-signal"
                 >
                   +0.0°
                 </span>
               </div>
-              <div className={`rounded-2xl border p-2.5 text-center ${cardClass}`}>
-                <span
-                  className={`block text-[10px] tracking-wider uppercase ${
-                    isLight ? 'text-slate-500' : 'text-zinc-400'
-                  }`}
-                >
-                  Yatış (Roll)
-                </span>
+              <div className="rounded-2xl border border-line bg-surface p-2.5 text-center">
+                <span className="block text-xs text-muted">Yatış (Roll)</span>
                 <span
                   ref={rollValueRef}
-                  className="mt-0.5 block font-mono text-sm font-semibold text-sky-500"
+                  className="gm-num mt-0.5 block text-lg font-semibold text-signal"
                 >
                   +0.0°
                 </span>
               </div>
             </div>
 
-            {/* 3 Kademeli Jiroskop Hassasiyet Seçici */}
+            {/* Hassasiyet Seçici */}
             <div
-              className={`mt-2.5 grid w-60 grid-cols-3 gap-1.5 rounded-2xl border p-1 ${cardClass}`}
+              role="radiogroup"
+              aria-label="Jiroskop hassasiyeti"
+              className="mt-2.5 grid w-64 grid-cols-3 gap-1 rounded-2xl border border-line bg-surface p-1"
             >
               {(
                 [
                   { mult: 0.75, label: 'Hassas' },
                   { mult: 1, label: 'Standart' },
-                  { mult: 1.35, label: 'Pro (1.35x)' },
+                  { mult: 1.35, label: 'Hızlı' },
                 ] as const
-              ).map((item) => (
-                <button
-                  key={item.mult}
-                  type="button"
-                  onClick={() => setSensitivityMultiplier(item.mult)}
-                  className={`cursor-pointer rounded-xl py-1.5 text-[11px] font-semibold ${
-                    sensitivityMultiplier === item.mult
-                      ? 'bg-emerald-500 text-zinc-950'
-                      : isLight
-                        ? 'text-slate-500'
-                        : 'text-zinc-400'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
+              ).map((item) => {
+                const active = sensitivityMultiplier === item.mult;
+                return (
+                  <button
+                    key={item.mult}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    onClick={() => setSensitivityMultiplier(item.mult)}
+                    className={cx(
+                      'min-h-[38px] cursor-pointer rounded-xl text-xs font-semibold transition-colors',
+                      active
+                        ? 'bg-brass text-brass-fg'
+                        : 'text-muted hover:text-fg',
+                    )}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
             </div>
 
-            {/* Çok Oyunculu Oyuncu Seçici (Oyuncu 1 Zümrüt / Oyuncu 2 Altın) */}
+            {/* Çok Oyunculu Yuva Seçici */}
             <div
-              className={`mt-2 grid w-60 grid-cols-2 gap-1.5 rounded-2xl border p-1 ${cardClass}`}
+              role="radiogroup"
+              aria-label="Oyuncu yuvası"
+              className="mt-2 grid w-64 grid-cols-2 gap-1 rounded-2xl border border-line bg-surface p-1"
             >
               <button
                 type="button"
+                role="radio"
+                aria-checked={playerSlot === 1}
                 onClick={() => setPlayerSlot(1)}
-                className={`cursor-pointer rounded-xl py-1.5 text-[11px] font-semibold ${
+                className={cx(
+                  'min-h-[38px] cursor-pointer rounded-xl text-xs font-semibold transition-colors',
                   playerSlot === 1
-                    ? 'bg-emerald-500 text-zinc-950'
-                    : isLight
-                      ? 'text-slate-500'
-                      : 'text-zinc-400'
-                }`}
+                    ? 'bg-surface-2 text-brass ring-1 ring-brass/60'
+                    : 'text-muted hover:text-fg',
+                )}
               >
-                Oyuncu 1 (Ana)
+                1. Oyuncu (Ana)
               </button>
               <button
                 type="button"
+                role="radio"
+                aria-checked={playerSlot === 2}
                 onClick={() => setPlayerSlot(2)}
-                className={`cursor-pointer rounded-xl py-1.5 text-[11px] font-semibold ${
+                className={cx(
+                  'min-h-[38px] cursor-pointer rounded-xl text-xs font-semibold transition-colors',
                   playerSlot === 2
-                    ? 'bg-amber-500 text-zinc-950'
-                    : isLight
-                      ? 'text-slate-500'
-                      : 'text-zinc-400'
-                }`}
+                    ? 'bg-surface-2 text-warn ring-1 ring-warn/60'
+                    : 'text-muted hover:text-fg',
+                )}
               >
-                Oyuncu 2 (Altın)
+                2. Oyuncu (Altın)
               </button>
             </div>
           </div>
         )}
       </section>
 
-      {/* Alt Kontrol Butonları */}
+      {/* ALT EYLEMLER */}
       <footer className="grid grid-cols-2 gap-2.5">
         <button
           type="button"
           onClick={handleRecalibrate}
-          className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-emerald-500/40 bg-emerald-500/15 py-3.5 text-xs font-semibold text-emerald-500 active:scale-95"
+          className="flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-2xl border border-brass/40 bg-brass/15 text-xs font-semibold text-brass active:scale-95"
         >
-          <Crosshair className="h-4 w-4" />
-          <span>Merkezi Kalibre Et</span>
+          <Crosshair className="h-4 w-4" aria-hidden="true" />
+          <span>Merkezi kalibre et</span>
         </button>
 
         <button
           type="button"
           onClick={emitResetBall}
-          className={`flex cursor-pointer items-center justify-center gap-2 rounded-2xl border py-3.5 text-xs font-semibold active:scale-95 ${cardClass}`}
+          className="flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-2xl border border-line bg-surface text-xs font-semibold text-fg active:scale-95"
         >
-          <RotateCcw
-            className={`h-4 w-4 ${isLight ? 'text-slate-500' : 'text-zinc-400'}`}
-          />
-          <span>Topu Sıfırla</span>
+          <RotateCcw className="h-4 w-4 text-muted" aria-hidden="true" />
+          <span>Topu sıfırla</span>
         </button>
       </footer>
     </main>
@@ -744,7 +703,7 @@ export default function ControllerPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-dvh items-center justify-center bg-zinc-950 text-xs text-zinc-400">
+        <div className="flex min-h-dvh items-center justify-center bg-base text-xs text-muted">
           Kontrolcü yükleniyor...
         </div>
       }

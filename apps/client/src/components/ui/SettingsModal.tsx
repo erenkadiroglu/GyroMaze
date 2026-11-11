@@ -1,27 +1,55 @@
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
+import { Wrench, Medal } from 'lucide-react';
 import {
-  X,
-  Sliders,
-  Users,
-  Gauge,
-  Volume2,
-  Eye,
-  Sparkles,
-} from 'lucide-react';
+  BallSkin,
+  BoardTheme,
+  CameraMode,
+  ColorScheme,
+  GameMode,
+} from '@gyromaze/shared';
 import { useGameStore } from '@/store/useGameStore';
 import { soundEngine } from '@/utils/soundEngine';
+import {
+  Drawer,
+  SettingsSection,
+  FieldLabel,
+  Segmented,
+  SwitchRow,
+  Button,
+} from './primitives';
+
+const BALL_SKIN_SWATCHES: Array<{
+  value: BallSkin;
+  label: string;
+  swatchClass: string;
+}> = [
+  { value: 'chrome', label: 'Krom', swatchClass: 'bg-zinc-200' },
+  { value: 'emerald', label: 'Zümrüt', swatchClass: 'bg-emerald-500' },
+  { value: 'plasma', label: 'Plazma', swatchClass: 'bg-purple-500' },
+  { value: 'crimson', label: 'Kızıl', swatchClass: 'bg-rose-500' },
+];
 
 /**
- * Fizik ivmesi, eğim tepkiselliği, ses seviyesi, görsel katmanlar ve
- * Çok Oyunculu (2 Oyuncu - 1v1 / Co-op) modu yapılandıran Ayarlar Modalı.
+ * Sağdan açılan birleşik Ayarlar Paneli.
+ * Oyun modu, görünüm/kamera/bilye stili, fizik ivmesi, ses ve katman tercihlerini
+ * tek bir düzenli yüzeyde toplar.
  */
 export function SettingsModal() {
   const isSettingsOpen = useGameStore((s) => s.isSettingsOpen);
   const setSettingsOpen = useGameStore((s) => s.setSettingsOpen);
   const isMultiplayer = useGameStore((s) => s.isMultiplayer);
   const toggleMultiplayer = useGameStore((s) => s.toggleMultiplayer);
+  const gameMode = useGameStore((s) => s.gameMode);
+  const setGameMode = useGameStore((s) => s.setGameMode);
+  const colorScheme = useGameStore((s) => s.colorScheme);
+  const setColorScheme = useGameStore((s) => s.setColorScheme);
+  const boardTheme = useGameStore((s) => s.boardTheme);
+  const setBoardTheme = useGameStore((s) => s.setBoardTheme);
+  const cameraMode = useGameStore((s) => s.cameraMode);
+  const setCameraMode = useGameStore((s) => s.setCameraMode);
+  const ballSkin = useGameStore((s) => s.ballSkin);
+  const setBallSkin = useGameStore((s) => s.setBallSkin);
   const gravityScale = useGameStore((s) => s.gravityScale);
   const tiltResponsiveness = useGameStore((s) => s.tiltResponsiveness);
   const soundVolume = useGameStore((s) => s.soundVolume);
@@ -31,246 +59,247 @@ export function SettingsModal() {
   const showGhost = useGameStore((s) => s.showGhost);
   const showMiniMap = useGameStore((s) => s.showMiniMap);
   const updateSettings = useGameStore((s) => s.updateSettings);
+  const setEditorOpen = useGameStore((s) => s.setEditorOpen);
+  const setLeaderboardOpen = useGameStore((s) => s.setLeaderboardOpen);
 
-  const handleVolumeSelect = (vol: number) => {
-    soundEngine.setVolume(vol);
-    updateSettings({ soundVolume: vol });
-    if (isSoundMuted && vol > 0) {
-      toggleSoundMuted();
+  const handleVolumeChange = (nextVol: number) => {
+    if (nextVol === 0) {
+      if (!isSoundMuted) toggleSoundMuted();
+      return;
     }
+    soundEngine.setVolume(nextVol);
+    updateSettings({ soundVolume: nextVol });
+    if (isSoundMuted) toggleSoundMuted();
     soundEngine.playCalibrate();
   };
 
+  const activeVolumeKey = isSoundMuted ? 0 : soundVolume;
+
   return (
-    <AnimatePresence>
-      {isSettingsOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="pointer-events-auto fixed inset-0 z-40 flex items-center justify-center bg-zinc-950/80 p-4 backdrop-blur-md"
-        >
-          <motion.div
-            initial={{ scale: 0.94, opacity: 0, y: 12 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.94, opacity: 0, y: 12 }}
-            className="w-full max-w-lg rounded-3xl border border-zinc-800 bg-zinc-900/95 p-6 text-zinc-100 shadow-2xl"
+    <Drawer
+      open={isSettingsOpen}
+      onClose={() => setSettingsOpen(false)}
+      title="Ayarlar"
+      footer={
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={<Wrench className="h-3.5 w-3.5" aria-hidden="true" />}
+            onClick={() => {
+              setSettingsOpen(false);
+              setEditorOpen(true);
+            }}
           >
-            {/* Başlık */}
-            <div className="mb-5 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-400">
-                  <Sliders className="h-5 w-5" />
-                </div>
-                <div>
-                  <span className="text-xs font-semibold tracking-wider text-emerald-400 uppercase">
-                    Fizik, Ses ve Çok Oyunculu
-                  </span>
-                  <h2 className="text-lg font-semibold text-zinc-100">
-                    Oyun Ayarları
-                  </h2>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSettingsOpen(false)}
-                className="cursor-pointer rounded-xl border border-zinc-800 bg-zinc-800/60 p-2 text-zinc-400 transition hover:text-zinc-100"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
+            Harita editörü
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={<Medal className="h-3.5 w-3.5" aria-hidden="true" />}
+            onClick={() => {
+              setSettingsOpen(false);
+              setLeaderboardOpen(true);
+            }}
+          >
+            Skor tablosu
+          </Button>
+        </div>
+      }
+    >
+      <SettingsSection title="Oyun modu">
+        <div>
+          <FieldLabel>Oyuncu sayısı</FieldLabel>
+          <Segmented<'solo' | 'duo'>
+            label="Oyuncu sayısı"
+            value={isMultiplayer ? 'duo' : 'solo'}
+            options={[
+              { value: 'solo', label: '1 Oyuncu' },
+              { value: 'duo', label: '2 Oyuncu (1v1)' },
+            ]}
+            onChange={(val) => {
+              if ((val === 'duo') !== isMultiplayer) toggleMultiplayer();
+            }}
+          />
+          {isMultiplayer && (
+            <p className="mt-2 text-xs leading-relaxed text-muted">
+              2. oyuncu aynı oda koduna katılıp telefonundan{' '}
+              <strong className="text-fg">Oyuncu 2</strong> yuvasını seçebilir ya
+              da masaüstünde <strong className="text-fg">Yön Tuşları</strong>{' '}
+              ile oynayabilir.
+            </p>
+          )}
+        </div>
 
-            <div className="space-y-4">
-              {/* 1. Çok Oyunculu (1v1 / Co-op) Mod Seçimi */}
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-4">
-                <div className="mb-2.5 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-amber-400" />
-                    <span className="text-xs font-semibold text-zinc-100">
-                      Oyun Modu (Tek / Çok Oyunculu)
-                    </span>
-                  </div>
-                  <span className="rounded-md bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-300">
-                    {isMultiplayer ? '2 OYUNCU AKTİF' : 'SOLO MOD'}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (isMultiplayer) toggleMultiplayer();
-                    }}
-                    className={`cursor-pointer rounded-xl py-2.5 text-xs font-semibold transition ${
-                      !isMultiplayer
-                        ? 'bg-emerald-500 text-zinc-950'
-                        : 'border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-zinc-200'
-                    }`}
-                  >
-                    1 Oyuncu (Solo)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!isMultiplayer) toggleMultiplayer();
-                    }}
-                    className={`cursor-pointer rounded-xl py-2.5 text-xs font-semibold transition ${
-                      isMultiplayer
-                        ? 'bg-amber-500 text-zinc-950'
-                        : 'border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-zinc-200'
-                    }`}
-                  >
-                    2 Oyuncu (1v1 & Co-op)
-                  </button>
-                </div>
-                <p className="mt-2 text-[11px] leading-relaxed text-zinc-400">
-                  2 Oyunculu modda sahneye <strong className="text-amber-300">Altın Bilye</strong> eklenir. 2. oyuncu telefonundan aynı oda koduna girip <strong className="text-amber-300">Oyuncu 2</strong> yuvasını seçebilir veya masaüstünde <strong className="text-zinc-200">Yön Tuşları</strong> ile oynayabilir.
-                </p>
-              </div>
+        <div>
+          <FieldLabel>Süre kuralı</FieldLabel>
+          <Segmented<GameMode>
+            label="Süre kuralı"
+            value={gameMode}
+            options={[
+              { value: 'standard', label: 'Standart' },
+              {
+                value: 'time_attack',
+                label: 'Süreye karşı',
+                hint: 'Bölüm süresi dolmadan kristalleri toplayıp çıkışı bul',
+              },
+            ]}
+            onChange={setGameMode}
+          />
+        </div>
+      </SettingsSection>
 
-              {/* 2. Fizik İvmesi (Yerçekimi Ölçeği) ve Eğim Tepkiselliği */}
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-3.5">
-                  <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-zinc-200">
-                    <Gauge className="h-3.5 w-3.5 text-sky-400" />
-                    <span>Bilye İvme Hızı</span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {[
-                      { val: 28, label: 'Yavaş' },
-                      { val: 36, label: 'Standart' },
-                      { val: 46, label: 'Turbo' },
-                    ].map((opt) => (
-                      <button
-                        key={opt.val}
-                        type="button"
-                        onClick={() =>
-                          updateSettings({ gravityScale: opt.val })
-                        }
-                        className={`cursor-pointer rounded-lg py-1.5 text-[11px] font-semibold transition ${
-                          gravityScale === opt.val
-                            ? 'bg-sky-500 text-zinc-950'
-                            : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200'
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+      <SettingsSection title="Görünüm ve sahne">
+        <div>
+          <FieldLabel>Renk şeması</FieldLabel>
+          <Segmented<ColorScheme>
+            label="Renk şeması"
+            value={colorScheme}
+            options={[
+              { value: 'dark', label: 'Gece' },
+              { value: 'light', label: 'Gündüz' },
+            ]}
+            onChange={setColorScheme}
+          />
+        </div>
 
-                <div className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-3.5">
-                  <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-zinc-200">
-                    <Sparkles className="h-3.5 w-3.5 text-purple-400" />
-                    <span>Eğim Tepki Hızı</span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {[
-                      { val: 18, label: 'Yumuşak' },
-                      { val: 32, label: 'Standart' },
-                      { val: 48, label: 'Anında' },
-                    ].map((opt) => (
-                      <button
-                        key={opt.val}
-                        type="button"
-                        onClick={() =>
-                          updateSettings({ tiltResponsiveness: opt.val })
-                        }
-                        className={`cursor-pointer rounded-lg py-1.5 text-[11px] font-semibold transition ${
-                          tiltResponsiveness === opt.val
-                            ? 'bg-purple-500 text-zinc-950'
-                            : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200'
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
+        <div>
+          <FieldLabel>3B sahne atmosferi</FieldLabel>
+          <Segmented<BoardTheme>
+            label="Sahne atmosferi"
+            value={boardTheme}
+            options={[
+              { value: 'emerald', label: 'Zümrüt' },
+              { value: 'cyberpunk', label: 'Siberpunk' },
+              { value: 'crimson', label: 'Kızıl Kor' },
+              { value: 'daylight', label: 'Gün Işığı' },
+            ]}
+            onChange={setBoardTheme}
+          />
+        </div>
 
-              {/* 3. Ses Şiddeti Seçici */}
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-3.5">
-                <div className="mb-2 flex items-center justify-between text-xs font-semibold text-zinc-200">
-                  <div className="flex items-center gap-1.5">
-                    <Volume2 className="h-3.5 w-3.5 text-emerald-400" />
-                    <span>Ses Efekt Şiddeti</span>
-                  </div>
-                  <span className="font-mono text-[11px] text-emerald-400">
-                    {isSoundMuted ? 'Sessiz' : `%${Math.round(soundVolume * 100)}`}
-                  </span>
-                </div>
-                <div className="grid grid-cols-4 gap-1.5">
-                  {[
-                    { val: 0.25, label: '%25' },
-                    { val: 0.5, label: '%50' },
-                    { val: 0.75, label: '%75' },
-                    { val: 1, label: '%100' },
-                  ].map((opt) => (
-                    <button
-                      key={opt.val}
-                      type="button"
-                      onClick={() => handleVolumeSelect(opt.val)}
-                      className={`cursor-pointer rounded-lg py-1.5 font-mono text-xs font-semibold transition ${
-                        !isSoundMuted && soundVolume === opt.val
-                          ? 'bg-emerald-500 text-zinc-950'
-                          : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200'
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+        <div>
+          <FieldLabel>Kamera açısı</FieldLabel>
+          <Segmented<CameraMode>
+            label="Kamera açısı"
+            value={cameraMode}
+            options={[
+              { value: 'isometric', label: 'İzometrik' },
+              { value: 'topdown', label: 'Üstten' },
+              { value: 'follow', label: 'Takip' },
+            ]}
+            onChange={setCameraMode}
+          />
+        </div>
 
-              {/* 4. Görsel Katman Anahtarları */}
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-3.5">
-                <div className="mb-2.5 flex items-center gap-1.5 text-xs font-semibold text-zinc-200">
-                  <Eye className="h-3.5 w-3.5 text-amber-400" />
-                  <span>Görsel Sahne ve HUD Katmanları</span>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => updateSettings({ showTrail: !showTrail })}
-                    className={`cursor-pointer rounded-xl border py-2 text-xs font-medium transition ${
-                      showTrail
-                        ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300'
-                        : 'border-zinc-800 bg-zinc-900 text-zinc-500'
-                    }`}
-                  >
-                    Neon İz: {showTrail ? 'Açık' : 'Kapalı'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => updateSettings({ showGhost: !showGhost })}
-                    className={`cursor-pointer rounded-xl border py-2 text-xs font-medium transition ${
-                      showGhost
-                        ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300'
-                        : 'border-zinc-800 bg-zinc-900 text-zinc-500'
-                    }`}
-                  >
-                    Hayalet Küre: {showGhost ? 'Açık' : 'Kapalı'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      updateSettings({ showMiniMap: !showMiniMap })
-                    }
-                    className={`cursor-pointer rounded-xl border py-2 text-xs font-medium transition ${
-                      showMiniMap
-                        ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300'
-                        : 'border-zinc-800 bg-zinc-900 text-zinc-500'
-                    }`}
-                  >
-                    2B Radar: {showMiniMap ? 'Açık' : 'Kapalı'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        <div>
+          <FieldLabel>Bilye görünümü</FieldLabel>
+          <div
+            role="radiogroup"
+            aria-label="Bilye görünümü"
+            className="grid grid-cols-4 gap-1.5"
+          >
+            {BALL_SKIN_SWATCHES.map((skin) => {
+              const active = ballSkin === skin.value;
+              return (
+                <button
+                  key={skin.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => setBallSkin(skin.value)}
+                  className={`flex cursor-pointer flex-col items-center gap-1.5 rounded-xl border py-2 text-xs font-medium transition-colors ${
+                    active
+                      ? 'border-brass bg-surface-2 text-fg'
+                      : 'border-line bg-surface-2/40 text-muted hover:text-fg'
+                  }`}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`h-4 w-4 rounded-full ring-1 ring-white/20 ${skin.swatchClass}`}
+                  />
+                  <span>{skin.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </SettingsSection>
+
+      <SettingsSection title="Fizik ve kontrol">
+        <div>
+          <FieldLabel>Bilye ivmesi</FieldLabel>
+          <Segmented<number>
+            label="Bilye ivmesi"
+            value={gravityScale}
+            options={[
+              { value: 28, label: 'Yavaş' },
+              { value: 36, label: 'Standart' },
+              { value: 46, label: 'Turbo' },
+            ]}
+            onChange={(val) => updateSettings({ gravityScale: val })}
+          />
+        </div>
+
+        <div>
+          <FieldLabel>Eğim tepki hızı</FieldLabel>
+          <Segmented<number>
+            label="Eğim tepki hızı"
+            value={tiltResponsiveness}
+            options={[
+              { value: 18, label: 'Yumuşak' },
+              { value: 32, label: 'Standart' },
+              { value: 48, label: 'Anında' },
+            ]}
+            onChange={(val) => updateSettings({ tiltResponsiveness: val })}
+          />
+        </div>
+      </SettingsSection>
+
+      <SettingsSection title="Ses ve ekran katmanları">
+        <div>
+          <FieldLabel
+            value={
+              isSoundMuted ? 'Sessiz' : `%${Math.round(soundVolume * 100)}`
+            }
+          >
+            Ses şiddeti
+          </FieldLabel>
+          <Segmented<number>
+            label="Ses şiddeti"
+            value={activeVolumeKey}
+            options={[
+              { value: 0, label: 'Sessiz' },
+              { value: 0.25, label: '%25' },
+              { value: 0.5, label: '%50' },
+              { value: 0.75, label: '%75' },
+              { value: 1, label: '%100' },
+            ]}
+            onChange={handleVolumeChange}
+          />
+        </div>
+
+        <div className="divide-y divide-line pt-1">
+          <SwitchRow
+            label="Neon hareket izi"
+            description="Bilyenin arkasındaki parlak iz halkaları"
+            checked={showTrail}
+            onChange={(checked) => updateSettings({ showTrail: checked })}
+          />
+          <SwitchRow
+            label="3B hayalet yarışçı"
+            description="Bölümdeki en iyi turunun canlı hologramı"
+            checked={showGhost}
+            onChange={(checked) => updateSettings({ showGhost: checked })}
+          />
+          <SwitchRow
+            label="2B canlı radar"
+            description="Sol alt göstergede üstten harita konumu"
+            checked={showMiniMap}
+            onChange={(checked) => updateSettings({ showMiniMap: checked })}
+          />
+        </div>
+      </SettingsSection>
+    </Drawer>
   );
 }
-

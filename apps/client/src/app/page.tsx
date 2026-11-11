@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { DesktopHUD } from '@/components/ui/DesktopHUD';
 import { useSocket } from '@/hooks/useSocket';
 import { useKeyboardFallback } from '@/hooks/useKeyboardFallback';
+import { useAppPreferences } from '@/hooks/useAppPreferences';
 
 /**
  * WebGL ve Rapier WASM fizik motorunu yalnızca tarayıcı ortamında (CSR) yükler.
@@ -13,10 +14,10 @@ const MazeScene = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="fixed inset-0 flex flex-col items-center justify-center bg-zinc-950 text-zinc-400">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-800 border-t-emerald-400" />
-        <span className="mt-4 text-xs tracking-wider uppercase">
-          3B Fizik ve WebGL Sahnesi Hazırlanıyor...
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-base text-muted">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-line border-t-brass" />
+        <span className="mt-4 text-sm font-medium">
+          3B fizik sahnesi hazırlanıyor...
         </span>
       </div>
     ),
@@ -25,14 +26,15 @@ const MazeScene = dynamic(
 
 /**
  * GyroMaze Masaüstü Ana Ekranı.
- * Gerçek zamanlı Socket.io odasını başlatır, 3B Rapier sahnesini ve HUD katmanını birleştirir.
+ * Kalıcı tercihleri yükler, Socket.io odasını başlatır ve 3B sahne ile HUD katmanını birleştirir.
  */
 export default function HomePage() {
+  useAppPreferences();
   useSocket({ role: 'host' });
   useKeyboardFallback();
 
   return (
-    <main className="relative h-screen w-screen overflow-hidden bg-zinc-950">
+    <main className="relative h-screen w-screen overflow-hidden bg-base text-fg">
       <MazeScene />
       <DesktopHUD />
     </main>

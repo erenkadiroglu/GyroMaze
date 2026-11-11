@@ -97,6 +97,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Oyun, Fizik ve Görsel Ayarlar Modalı (`SettingsModal.tsx`):** Masaüstü HUD üzerinden bilye yerçekimi ivmesini (`gravityScale`: `0.5x – 1.8x`), tabla eğim tepki hızını (`tiltResponsiveness`: `0.5x – 1.8x`), Web Audio ses efekti seviyesini (`soundVolume`: `0% – 100%`) ve görsel katmanları (`Bilye Kuyruk İzi`, `3B Hayalet Yarışçı`, `2B Canlı Radar`) anlık olarak özelleştirme imkanı.
 - [x] **Çok Oyunculu (2 Oyuncu — 1v1 & Co-op) Modu (`playerSlot: 1 | 2`):** Aynı 6 haneli oda koduna 2 farklı telefonun (`Oyuncu 1 - Ana Bilye` ve `Oyuncu 2 - Altın Bilye`) veya masaüstünde `WASD` (1. Oyuncu) + `Yön Tuşları` (2. Oyuncu) kombinasyonunun aynı anda bağlanarak kristalleri ortaklaşa toplaması ve hedef portala yarışması.
 
+## ✅ Faz 13: Kokpit Arayüz Tasarım Sistemi, Süreye Karşı Mod ve Bilye Kaplamaları (Tamamlandı)
+
+- [x] **Birleşik Tasarım Sistemi (`docs/DESIGN.md`, `globals.css`, `primitives.tsx`):** `Barlow` + `Barlow Condensed` (`tabular-nums`) tipografisi, Gece Mavisi / Sis Grisi & Pirinç Vurgu renk belirteçleri (`data-scheme`), `localStorage` kalıcı tercih senkronizasyonu (`useAppPreferences`), `Esc` ve odak yönetimli erişilebilir `Modal` / `Drawer` / `Segmented` / `SwitchRow` / `IconButton` bileşenleri.
+- [x] **Sadeleştirilmiş Kokpit HUD ve Yapay Ufuk Göstergesi (`AttitudeGauge.tsx`, `DesktopHUD.tsx`):** Kalabalığı ortadan kaldıran iki kapsüllü üst çubuk (bölüm açılır menüsü + en fazla iki ana eylem), sol altta 60 FPS doğrudan DOM transformlarıyla çalışan **Yapay Ufuk Göstergesi (Attitude Indicator)** + kompakt 2B radar ve sağ altta klavye kısayollu hızlı araç çubuğu.
+- [x] **Süreye Karşı (`time_attack`) Modu ve 4 Bilye Kaplaması (`BallSkin`):** Ayarlar çekmecesi üzerinden geri sayımlı **Süreye Karşı** oyun akışı (`won` / `lost` durumları) ve 1. oyuncu bilyesi için *Krom*, *Zümrüt*, *Plazma* ve *Kızıl* materyal kaplamaları eklendi.
+
 
 
 

@@ -1,8 +1,11 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import {
+  BallSkin,
   BoardTheme,
   CameraMode,
   ColorScheme,
+  GameMode,
   GameStatus,
   GyroData,
   HapticType,
@@ -49,6 +52,7 @@ export const transientGyroP2: GyroData & {
 
 const BEST_TIMES_STORAGE_KEY = 'gyromaze_best_times_v1';
 const GHOST_PATHS_STORAGE_KEY = 'gyromaze_ghost_paths_v1';
+const SETTINGS_STORAGE_KEY = 'gyromaze_settings_v1';
 
 function loadBestTimes(): Record<number, number> {
   if (typeof window === 'undefined') return {};
@@ -122,6 +126,10 @@ interface GameStoreState {
   boardTheme: BoardTheme;
   /** Aydınlık / Karanlık arayüz ve sahne görünüm modu */
   colorScheme: ColorScheme;
+  /** 1. Oyuncu bilyesinin 3B materyal ve ışık kaplama (Skin) tipi */
+  ballSkin: BallSkin;
+  /** Oyun akış modu (Standart veya Geri Sayımlı Time Attack) */
+  gameMode: GameMode;
   /** Sahne üstü anlık durum bildirimi (kilitli portal, kristal, yeni sektör vb.) */
   hudNotification: {
     id: number;
@@ -186,8 +194,13 @@ interface GameStoreState {
   nextLevel: () => void;
   prevLevel: () => void;
   cycleCameraMode: () => void;
+  setCameraMode: (cameraMode: CameraMode) => void;
   cycleBoardTheme: () => void;
+  setBoardTheme: (boardTheme: BoardTheme) => void;
   toggleColorScheme: () => void;
+  setColorScheme: (colorScheme: ColorScheme) => void;
+  setBallSkin: (ballSkin: BallSkin) => void;
+  setGameMode: (gameMode: GameMode) => void;
   showHudNotification: (
     message: string,
     tone?: 'info' | 'success' | 'warn',
@@ -219,8 +232,13 @@ interface GameStoreState {
 
 /**
  * GyroMaze Zustand durum deposu.
+ * Kullanıcı tercihleri (tema, fizik, ses, katmanlar) `localStorage` üzerinde kalıcı tutulur.
+ * SSR hidrasyon uyumsuzluğunu önlemek için geri yükleme istemci tarafında
+ * `usePersistedSettings` kancası ile yapılır.
  */
-export const useGameStore = create<GameStoreState>((set) => ({
+export const useGameStore = create<GameStoreState>()(
+  persist(
+    (set) => ({
   roomId: null,
   lanIp: null,
   tunnelUrl: null,
@@ -244,6 +262,8 @@ export const useGameStore = create<GameStoreState>((set) => ({
   cameraMode: 'isometric',
   boardTheme: 'emerald',
   colorScheme: 'dark',
+  ballSkin: 'chrome',
+  gameMode: 'standard',
   hudNotification: null,
   customLevel: null,
   latencyMs: 0,
@@ -340,6 +360,7 @@ export const useGameStore = create<GameStoreState>((set) => ({
       const nextIdx = (order.indexOf(state.cameraMode) + 1) % order.length;
       return { cameraMode: order[nextIdx] };
     }),
+  setCameraMode: (cameraMode) => set({ cameraMode }),
   cycleBoardTheme: () =>
     set((state) => {
       const order: BoardTheme[] = [
@@ -354,6 +375,11 @@ export const useGameStore = create<GameStoreState>((set) => ({
         colorScheme: order[nextIdx] === 'daylight' ? 'light' : state.colorScheme,
       };
     }),
+  setBoardTheme: (boardTheme) =>
+    set((state) => ({
+      boardTheme,
+      colorScheme: boardTheme === 'daylight' ? 'light' : state.colorScheme,
+    })),
   toggleColorScheme: () =>
     set((state) => {
       const nextScheme: ColorScheme =
@@ -368,6 +394,26 @@ export const useGameStore = create<GameStoreState>((set) => ({
               : state.boardTheme,
       };
     }),
+  setColorScheme: (colorScheme) =>
+    set((state) => ({
+      colorScheme,
+      boardTheme:
+        colorScheme === 'light'
+          ? 'daylight'
+          : state.boardTheme === 'daylight'
+            ? 'emerald'
+            : state.boardTheme,
+    })),
+  setBallSkin: (ballSkin) => set({ ballSkin }),
+  setGameMode: (gameMode) =>
+    set((state) => ({
+      gameMode,
+      resetCount: state.resetCount + 1,
+      winnerPlayer: null,
+      elapsedSeconds: 0,
+      collectedCrystals: [],
+      gameStatus: 'playing',
+    })),
   showHudNotification: (message, tone = 'info') => {
     const nextSeq = Date.now();
     set((state) => ({
@@ -484,4 +530,25 @@ export const useGameStore = create<GameStoreState>((set) => ({
     transientGyroP2.gamma = 0;
     transientGyroP2.timestamp = Date.now();
   },
-}));
+    }),
+    {
+      name: SETTINGS_STORAGE_KEY,
+      storage: createJSONStorage(() => localStorage),
+      skipHydration: true,
+      partialize: (state) => ({
+        colorScheme: state.colorScheme,
+        boardTheme: state.boardTheme,
+        cameraMode: state.cameraMode,
+        ballSkin: state.ballSkin,
+        gameMode: state.gameMode,
+        gravityScale: state.gravityScale,
+        tiltResponsiveness: state.tiltResponsiveness,
+        soundVolume: state.soundVolume,
+        isSoundMuted: state.isSoundMuted,
+        showTrail: state.showTrail,
+        showGhost: state.showGhost,
+        showMiniMap: state.showMiniMap,
+      }),
+    },
+  ),
+);
