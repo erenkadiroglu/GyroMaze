@@ -45,8 +45,13 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Toplanabilir Enerji Kristalleri (`crystals`) ve Portal Kilidi:** Hedef portalını kehribar (kilitli) durumdan zümrüt yeşili (açık) duruma geçiren kristal toplama mekaniği.
 - [x] **Bilye Neon Hareket İzi (`Motion Trail`):** Sıfır GC maliyetli, halka tampon (ring-buffer) tabanlı akıcı neon zemin izi.
 
-## ✅ Faz 5: İleri Seviye Sistemler (Tamamlandı)
+## ✅ Faz 5: İleri Seviye Sistemler ve Mobil Performans Mimarisi (Tamamlandı)
 
 - [x] **Özel Harita Editörü (`LevelEditorModal.tsx`):** Kullanıcının tarayıcı üzerinden kendi duvar, kristal, lazer ve tuzaklarını 8×8 görsel ızgara üzerinde yerleştirip anında 3B sahnede oynayabilmesi ve JSON olarak dışa aktarabilmesi.
 - [x] **Küresel Skor Tablosu (`Leaderboard`):** Bölüm rekorlarının NestJS sunucusu üzerinde gerçek zamanlı olarak tutulması ve tüm bağlı istemcilere canlı yayınlanması.
+- [x] **Mobil GPU ve Sensör Döngüsü Optimizasyonu (`controller/page.tsx`, `useDeviceOrientation.ts`, `useSocket.ts`):**
+  - Mobil tarayıcılarda GPU overdraw yaratan tüm `backdrop-blur` ve ağır gölge katmanları kaldırıldı; yalnızca `will-change-transform` ve saf `translate3d` kompozit katmanı bırakıldı.
+  - 120–240Hz frekansında tetiklenen `deviceorientation` ve `pointermove` olayları doğrudan DOM manipülasyonundan ayrıştırıldı; tek bir `requestAnimationFrame` döngüsü ve 8Hz metin seyreltmesi (throttling) ile ana iş parçacığı (Main Thread) darboğazı sıfırlandı.
+  - Soket bağlantısını koparmadan çalışan 6 haneli **Oda Kodu (`joinRoomByCode`)** geçiş sistemi ve `0.1°` açısal delta filtresi eklendi.
+
 
