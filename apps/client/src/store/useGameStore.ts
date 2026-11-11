@@ -52,6 +52,8 @@ interface GameStoreState {
   bestTimes: Record<number, number>;
   /** Ses efektlerinin sessize alınıp alınmadığı */
   isSoundMuted: boolean;
+  /** Mevcut bölümde toplanan enerji kristallerinin indeks listesi */
+  collectedCrystals: number[];
   /** Topu başlangıç noktasına ışınlamak için artırılan tetikleyici sayaç */
   resetCount: number;
   /** Mobil cihaza titreşim göndermek için tetiklenen sinyal */
@@ -72,6 +74,7 @@ interface GameStoreState {
   setLatencyMs: (ms: number) => void;
   setElapsedSeconds: (seconds: number) => void;
   recordLevelCompletion: (level: number, seconds: number) => void;
+  collectCrystal: (crystalIndex: number) => void;
   toggleSoundMuted: () => void;
   triggerBallReset: () => void;
   triggerHaptic: (type: HapticType) => void;
@@ -96,6 +99,7 @@ export const useGameStore = create<GameStoreState>((set) => ({
   elapsedSeconds: 0,
   bestTimes: loadBestTimes(),
   isSoundMuted: false,
+  collectedCrystals: [],
   resetCount: 0,
   hapticSignal: null,
   errorMessage: null,
@@ -123,6 +127,7 @@ export const useGameStore = create<GameStoreState>((set) => ({
       level,
       gameStatus: 'playing',
       elapsedSeconds: 0,
+      collectedCrystals: [],
       resetCount: state.resetCount + 1,
     })),
   nextLevel: () =>
@@ -130,6 +135,7 @@ export const useGameStore = create<GameStoreState>((set) => ({
       level: state.level + 1,
       gameStatus: 'playing',
       elapsedSeconds: 0,
+      collectedCrystals: [],
       resetCount: state.resetCount + 1,
     })),
   setLatencyMs: (latencyMs) => set({ latencyMs }),
@@ -156,6 +162,15 @@ export const useGameStore = create<GameStoreState>((set) => ({
         bestTimes: nextBestTimes,
       };
     }),
+  collectCrystal: (crystalIndex) =>
+    set((state) => {
+      if (state.collectedCrystals.includes(crystalIndex)) {
+        return state;
+      }
+      return {
+        collectedCrystals: [...state.collectedCrystals, crystalIndex],
+      };
+    }),
   toggleSoundMuted: () =>
     set((state) => ({ isSoundMuted: !state.isSoundMuted })),
   triggerBallReset: () =>
@@ -163,6 +178,7 @@ export const useGameStore = create<GameStoreState>((set) => ({
       resetCount: state.resetCount + 1,
       gameStatus: 'playing',
       elapsedSeconds: 0,
+      collectedCrystals: [],
     })),
   triggerHaptic: (type) =>
     set((state) => ({

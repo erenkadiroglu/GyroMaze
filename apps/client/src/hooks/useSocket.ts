@@ -169,6 +169,12 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
           case 'calibrate':
             navigator.vibrate(30);
             break;
+          case 'crystal':
+            navigator.vibrate([25, 30, 45]);
+            break;
+          case 'laser':
+            navigator.vibrate([90, 30, 90]);
+            break;
         }
       });
     }

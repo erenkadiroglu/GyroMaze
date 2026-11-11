@@ -30,7 +30,7 @@ export type GameStatus = 'waiting' | 'ready' | 'playing' | 'paused' | 'won';
 /**
  * Mobil cihazda tetiklenecek titreşim (Haptic Feedback) tipi.
  */
-export type HapticType = 'wall' | 'hole' | 'goal' | 'calibrate';
+export type HapticType = 'wall' | 'hole' | 'goal' | 'calibrate' | 'crystal' | 'laser';
 
 /**
  * Socket.io üzerinden istemci ve sunucu arasında kullanılan
