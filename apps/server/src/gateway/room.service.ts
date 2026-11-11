@@ -10,6 +10,13 @@ interface SocketMembership {
   role: 'host' | 'controller';
 }
 
+interface NgrokTunnelResponse {
+  tunnels?: Array<{
+    public_url?: string;
+    proto?: string;
+  }>;
+}
+
 /**
  * Bellek içi (In-Memory) O(1) erişim süreli oda ve eşleşme yönetim servisi.
  * Veritabanı gecikmesi olmadan <1ms altında oda doğrulaması ve yönlendirme sağlar.
@@ -59,13 +66,38 @@ export class RoomService {
   }
 
   /**
+   * Eğer yerel makinede aktif bir ngrok HTTPS tüneli çalışıyorsa (127.0.0.1:4040),
+   * genel HTTPS adresini otomatik olarak tespit eder.
+   */
+  private async detectActiveTunnelUrl(): Promise<string | undefined> {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 350);
+      const response = await fetch('http://127.0.0.1:4040/api/tunnels', {
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+
+      if (!response.ok) return undefined;
+      const data = (await response.json()) as NgrokTunnelResponse;
+      const httpsTunnel = data.tunnels?.find((t) =>
+        t.public_url?.startsWith('https://'),
+      );
+      return httpsTunnel?.public_url;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
    * Masaüstü istemcisi (Host) için yeni bir oyun odası oluşturur.
    */
-  public createRoom(hostSocketId: string): RoomState {
-    // Eğer aynı soketin önceki bir odası varsa temizle
+  public async createRoom(hostSocketId: string): Promise<RoomState> {
     this.removeSocket(hostSocketId);
 
     const roomId = this.generateRoomCode();
+    const tunnelUrl = await this.detectActiveTunnelUrl();
+
     const roomState: RoomState = {
       roomId,
       hostSocketId,
@@ -73,6 +105,7 @@ export class RoomService {
       isControllerConnected: false,
       createdAt: Date.now(),
       lanIp: this.detectLanIp(),
+      tunnelUrl,
     };
 
     this.rooms.set(roomId, roomState);
@@ -115,7 +148,6 @@ export class RoomService {
       };
     }
 
-    // Önceki üyeliği varsa temizle
     this.removeSocket(controllerSocketId);
 
     room.controllerSocketId = controllerSocketId;
@@ -162,7 +194,6 @@ export class RoomService {
     }
 
     if (membership.role === 'host') {
-      // Masaüstü kapandıysa odayı tamamen kapat ve varsa kontrolcü kaydını sil
       if (room.controllerSocketId) {
         this.socketMembership.delete(room.controllerSocketId);
       }
@@ -172,7 +203,6 @@ export class RoomService {
         disconnectedRole: 'host',
       };
     } else {
-      // Mobil kontrolcü koptuysa odayı açık tut, sadece kontrolcü durumunu sıfırla
       room.controllerSocketId = null;
       room.isControllerConnected = false;
       return {
@@ -183,4 +213,3 @@ export class RoomService {
     }
   }
 }
-

@@ -28,6 +28,11 @@ export interface CalibrationOffset {
 export type GameStatus = 'waiting' | 'ready' | 'playing' | 'paused' | 'won';
 
 /**
+ * Mobil cihazda tetiklenecek titreşim (Haptic Feedback) tipi.
+ */
+export type HapticType = 'wall' | 'hole' | 'goal' | 'calibrate';
+
+/**
  * Socket.io üzerinden istemci ve sunucu arasında kullanılan
  * standart oda, oyun ve telemetri olay (event) isimleri.
  */
@@ -56,6 +61,8 @@ export enum RoomEvents {
   GAME_STATE_CHANGE = 'game:state_change',
   /** Topu başlangıç noktasına sıfırlama isteği */
   GAME_RESET_BALL = 'game:reset_ball',
+  /** Masaüstündeki fiziksel etkileşimleri (çarpma, delik, zafer) mobil titreşime iletme */
+  GAME_HAPTIC = 'game:haptic',
 }
 
 /**
@@ -74,6 +81,8 @@ export interface RoomState {
   createdAt: number;
   /** Mobil cihazların QR kod ile doğrudan bağlanabilmesi için sunucunun yerel ağ (LAN) IPv4 adresi */
   lanIp?: string;
+  /** Aktif bir HTTPS tüneli (ngrok vb.) varsa genel erişim adresi */
+  tunnelUrl?: string;
 }
 
 /**
@@ -98,6 +107,14 @@ export interface GameStatePayload {
   roomId: string;
   status: GameStatus;
   level?: number;
+}
+
+/**
+ * Mobil cihazda dokunsal titreşim tetiklemek için gönderilen veri yükü.
+ */
+export interface HapticPayload {
+  roomId: string;
+  type: HapticType;
 }
 
 /**

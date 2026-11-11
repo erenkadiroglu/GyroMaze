@@ -14,6 +14,7 @@ import {
   JoinRoomPayload,
   GyroUpdatePayload,
   GameStatePayload,
+  HapticPayload,
 } from '@gyromaze/shared';
 import { RoomService } from './room.service';
 
@@ -60,7 +61,9 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
         .to(removal.remainingRoom.hostSocketId)
         .emit(RoomEvents.ROOM_CONTROLLER_DISCONNECTED, removal.remainingRoom);
     } else if (removal.disconnectedRole === 'host') {
-      this.logger.warn(`Masaüstü oturumu kapandı, oda silindi: ${removal.roomId}`);
+      this.logger.warn(
+        `Masaüstü oturumu kapandı, oda silindi: ${removal.roomId}`,
+      );
       this.server
         .to(removal.roomId)
         .emit(RoomEvents.ROOM_HOST_DISCONNECTED, { roomId: removal.roomId });
@@ -72,9 +75,11 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
    */
   @SubscribeMessage(RoomEvents.ROOM_CREATE)
   public async handleCreateRoom(@ConnectedSocket() client: Socket): Promise<void> {
-    const room = this.roomService.createRoom(client.id);
+    const room = await this.roomService.createRoom(client.id);
     await client.join(room.roomId);
-    this.logger.log(`Yeni oda oluşturuldu: ${room.roomId} (Host: ${client.id})`);
+    this.logger.log(
+      `Yeni oda oluşturuldu: ${room.roomId} (Host: ${client.id}, Tunnel: ${room.tunnelUrl ?? 'Yok'})`,
+    );
     client.emit(RoomEvents.ROOM_CREATED, room);
   }
 
@@ -105,7 +110,6 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
       `Mobil kontrolcü eşleşti: Oda ${result.room.roomId} (Controller: ${client.id})`,
     );
 
-    // Hem masaüstü hem de mobil istemciye eşleşmenin tamamlandığını bildir
     this.server.to(result.room.roomId).emit(RoomEvents.ROOM_PAIRED, result.room);
   }
 
@@ -164,6 +168,26 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   /**
+   * Masaüstündeki fiziksel çarpışma/delik/hedef olaylarını mobil kontrolcüye titreşim olarak iletir.
+   */
+  @SubscribeMessage(RoomEvents.GAME_HAPTIC)
+  public handleGameHaptic(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: HapticPayload,
+  ): void {
+    const membership = this.roomService.getMembership(client.id);
+    const roomId = membership?.roomId ?? payload?.roomId;
+    if (!roomId) return;
+
+    const room = this.roomService.getRoom(roomId);
+    if (room?.controllerSocketId) {
+      this.server
+        .to(room.controllerSocketId)
+        .volatile.emit(RoomEvents.GAME_HAPTIC, payload);
+    }
+  }
+
+  /**
    * Oyun durumu değişimlerini (playing, paused, won) odadaki tüm cihazlara senkronize eder.
    */
   @SubscribeMessage(RoomEvents.GAME_STATE_CHANGE)
@@ -180,4 +204,3 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.to(roomId).emit(RoomEvents.GAME_STATE_CHANGE, payload);
   }
 }
-
