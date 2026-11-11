@@ -73,6 +73,13 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **3B Görsel Atmosfer Temaları (`Zümrüt`, `Siberpunk`, `Kızıl Kor`):** Üst HUD üzerinden gerçek zamanlı değiştirilebilen zemin, iç/dış duvar ve neon bilye izi renk paletleri.
 - [x] **Harita Editörü Hız Rampası Desteği (`LevelEditorModal.tsx`):** Özel harita tasarımcısına hızlandırma rampası (`▲`) yerleştirme aracı eklendi.
 
+## ✅ Faz 9: 3B Hayalet Yarışçı (Ghost Replay), Mobil Hassasiyet Ayarı ve JSON Harita İçe Aktarma (Tamamlandı)
+
+- [x] **3B Hayalet Yarışçı Sistemi (`Ghost Replay`):** Oyuncunun her bölümde kırdığı en iyi kişisel rekorun (Personal Best) 10Hz yörünge kaydı `localStorage` üzerinde saklanır; sonraki denemelerde yarı saydam zümrüt bir **Hayalet Küre** 60 FPS enterpolasyonla sahnede canlı olarak yarışır.
+- [x] **3 Kademeli Mobil Jiroskop Hassasiyet Seçici (`Hassas 0.75x`, `Standart 1.0x`, `Pro 1.35x`):** Mobil kontrolcü ekranından eğim çarpanını anında değiştirme imkanı.
+- [x] **Harita Editörü Panodan JSON İçe Aktarma (`JSON Yükle`):** Paylaşılan özel harita JSON verilerini tek tıkla içe aktarıp 3B sahnede oynama özelliği.
+
+
 
 
 

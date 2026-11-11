@@ -119,6 +119,13 @@ const _teleporterCoreMaterial = new THREE.MeshBasicMaterial({
   transparent: true,
   opacity: 0.32,
 });
+const _ghostBallMaterial = new THREE.MeshStandardMaterial({
+  color: '#34d399',
+  emissive: '#10b981',
+  emissiveIntensity: 1.4,
+  transparent: true,
+  opacity: 0.36,
+});
 
 const MAX_TILT_RADIANS = THREE.MathUtils.degToRad(24);
 const SLOPE_GRAVITY = 36.0;
@@ -129,8 +136,9 @@ interface MazeStageProps {
   levelData: MazeLevelDefinition;
   isGoalUnlocked: boolean;
   collectedCrystals: number[];
+  ghostPath?: Array<[number, number]>;
   onCollectCrystal: (idx: number) => void;
-  onReachGoal: () => void;
+  onReachGoal: (runPath: Array<[number, number]>) => void;
   onFallIntoHole: () => void;
   onLaserHit: () => void;
   onBoostHit: () => void;
@@ -139,12 +147,13 @@ interface MazeStageProps {
 }
 
 /**
- * Zıplamasız (Zero-Bounce), Enerji Kristalli, Lazer Kapılı, Hızlandırma Rampalı, Kuantum Portallı ve Neon İz Efektli 3B Labirent Sahnesi.
+ * Zıplamasız (Zero-Bounce), Enerji Kristalli, Lazer Kapılı, Hızlandırma Rampalı, Kuantum Portallı ve Hayalet Yarışçılı 3B Labirent Sahnesi.
  */
 function MazeStage({
   levelData,
   isGoalUnlocked,
   collectedCrystals,
+  ghostPath,
   onCollectCrystal,
   onReachGoal,
   onFallIntoHole,
@@ -156,6 +165,7 @@ function MazeStage({
   const ballBodyRef = useRef<RapierRigidBody | null>(null);
   const visualTiltGroupRef = useRef<THREE.Group | null>(null);
   const visualBallMeshRef = useRef<THREE.Mesh | null>(null);
+  const ghostBallMeshRef = useRef<THREE.Mesh | null>(null);
   const goalRingRef = useRef<THREE.Mesh | null>(null);
   const crystalMeshesRef = useRef<Array<THREE.Mesh | null>>([]);
   const laserBeamMeshesRef = useRef<Array<THREE.Mesh | null>>([]);
@@ -166,6 +176,9 @@ function MazeStage({
       z: levelData.startPosition[2],
     })),
   );
+  const runPathRef = useRef<Array<[number, number]>>([]);
+  const runElapsedRef = useRef<number>(0);
+  const lastSampleTimeRef = useRef<number>(0);
   const lastWallSoundTimeRef = useRef<number>(0);
   const lastBoostTimeRef = useRef<number>(0);
   const lastTeleportTimeRef = useRef<number>(0);
@@ -243,6 +256,9 @@ function MazeStage({
       visualTiltGroupRef.current.quaternion.identity();
     }
     const [sx, , sz] = levelData.startPosition;
+    runPathRef.current = [[Number(sx.toFixed(2)), Number(sz.toFixed(2))]];
+    runElapsedRef.current = 0;
+    lastSampleTimeRef.current = 0;
     for (let i = 0; i < TRAIL_COUNT; i++) {
       trailHistoryRef.current[i].x = sx;
       trailHistoryRef.current[i].z = sz;
@@ -348,6 +364,36 @@ function MazeStage({
           (vel.z / BALL_RADIUS) * safeDelta;
         visualBallMeshRef.current.rotation.z -=
           (vel.x / BALL_RADIUS) * safeDelta;
+      }
+
+      // 10Hz Hayalet Yarışçı (Ghost Replay) Kaydı ve Canlı Oynatımı
+      if (gameStatus === 'playing') {
+        runElapsedRef.current += safeDelta;
+        if (
+          runElapsedRef.current - lastSampleTimeRef.current >= 0.1 &&
+          runPathRef.current.length < 600
+        ) {
+          lastSampleTimeRef.current = runElapsedRef.current;
+          runPathRef.current.push([
+            Math.round(pos.x * 100) / 100,
+            Math.round(pos.z * 100) / 100,
+          ]);
+        }
+
+        if (ghostBallMeshRef.current && ghostPath && ghostPath.length > 1) {
+          const exactIdx = runElapsedRef.current * 10;
+          const idx0 = Math.min(ghostPath.length - 1, Math.floor(exactIdx));
+          const idx1 = Math.min(ghostPath.length - 1, idx0 + 1);
+          const frac = exactIdx - idx0;
+          const gx =
+            ghostPath[idx0][0] + (ghostPath[idx1][0] - ghostPath[idx0][0]) * frac;
+          const gz =
+            ghostPath[idx0][1] + (ghostPath[idx1][1] - ghostPath[idx0][1]) * frac;
+          ghostBallMeshRef.current.visible = idx0 < ghostPath.length - 1;
+          ghostBallMeshRef.current.position.set(gx, BALL_RADIUS, gz);
+        }
+      } else if (ghostBallMeshRef.current) {
+        ghostBallMeshRef.current.visible = false;
       }
 
       // Neon Hareket İzi (Motion Trail) halkalarını güncelle (Sıfır GC)
@@ -534,7 +580,7 @@ function MazeStage({
           args={[0.4, 0.46]}
           position={levelData.goalPosition}
           sensor
-          onIntersectionEnter={onReachGoal}
+          onIntersectionEnter={() => onReachGoal(runPathRef.current)}
         />
 
         {/* Tuzak Delikleri (Void Holes) Sensörleri */}
@@ -810,6 +856,20 @@ function MazeStage({
           </mesh>
         ))}
 
+        {/* Hayalet Yarışçı Küresi (Kendi En İyi Rekorunun Canlı Hologramı) */}
+        <mesh
+          ref={ghostBallMeshRef}
+          visible={false}
+          position={[
+            levelData.startPosition[0],
+            BALL_RADIUS,
+            levelData.startPosition[2],
+          ]}
+          material={_ghostBallMaterial}
+        >
+          <sphereGeometry args={[BALL_RADIUS * 0.92, 20, 20]} />
+        </mesh>
+
         {/* Görsel Metal Bilye */}
         <mesh
           ref={visualBallMeshRef}
@@ -838,6 +898,7 @@ export function MazeScene() {
   const elapsedSeconds = useGameStore((s) => s.elapsedSeconds);
   const isSoundMuted = useGameStore((s) => s.isSoundMuted);
   const collectedCrystals = useGameStore((s) => s.collectedCrystals);
+  const ghostPaths = useGameStore((s) => s.ghostPaths);
   const collectCrystal = useGameStore((s) => s.collectCrystal);
   const recordLevelCompletion = useGameStore((s) => s.recordLevelCompletion);
   const triggerHaptic = useGameStore((s) => s.triggerHaptic);
@@ -865,26 +926,29 @@ export function MazeScene() {
     [isSoundMuted, collectedCrystals.length, triggerHaptic, collectCrystal],
   );
 
-  const handleReachGoal = useCallback(() => {
-    if (!isGoalUnlocked) {
-      return;
-    }
-    if (gameStatus !== 'won') {
-      if (!isSoundMuted) {
-        soundEngine.playVictory();
+  const handleReachGoal = useCallback(
+    (runPath: Array<[number, number]>) => {
+      if (!isGoalUnlocked) {
+        return;
       }
-      triggerHaptic('goal');
-      recordLevelCompletion(activeLevel.id, elapsedSeconds);
-    }
-  }, [
-    isGoalUnlocked,
-    gameStatus,
-    isSoundMuted,
-    triggerHaptic,
-    recordLevelCompletion,
-    activeLevel.id,
-    elapsedSeconds,
-  ]);
+      if (gameStatus !== 'won') {
+        if (!isSoundMuted) {
+          soundEngine.playVictory();
+        }
+        triggerHaptic('goal');
+        recordLevelCompletion(activeLevel.id, elapsedSeconds, runPath);
+      }
+    },
+    [
+      isGoalUnlocked,
+      gameStatus,
+      isSoundMuted,
+      triggerHaptic,
+      recordLevelCompletion,
+      activeLevel.id,
+      elapsedSeconds,
+    ],
+  );
 
   const handleFallIntoHole = useCallback(() => {
     if (!isSoundMuted) {
@@ -957,6 +1021,7 @@ export function MazeScene() {
             levelData={activeLevel}
             isGoalUnlocked={isGoalUnlocked}
             collectedCrystals={collectedCrystals}
+            ghostPath={ghostPaths[activeLevel.id]}
             onCollectCrystal={handleCollectCrystal}
             onReachGoal={handleReachGoal}
             onFallIntoHole={handleFallIntoHole}

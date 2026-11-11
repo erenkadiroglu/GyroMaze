@@ -37,6 +37,11 @@ function MobileControllerContent() {
   const [activeRoomCode, setActiveRoomCode] = useState(initialRoomParam);
   const [isRoomEditorOpen, setIsRoomEditorOpen] = useState(!initialRoomParam);
   const [isTouchOverride, setIsTouchOverride] = useState(false);
+  const [sensitivityMultiplier, setSensitivityMultiplier] = useState<
+    0.75 | 1 | 1.35
+  >(1);
+  const sensitivityRef = useRef<number>(1);
+  sensitivityRef.current = sensitivityMultiplier;
 
   const isSocketConnected = useGameStore((s) => s.isSocketConnected);
   const isControllerPaired = useGameStore((s) => s.isControllerPaired);
@@ -98,8 +103,14 @@ function MobileControllerContent() {
   const pushGyroSample = useCallback(
     (beta: number, gamma: number) => {
       const now = Date.now();
-      liveGyroRef.current.beta = beta;
-      liveGyroRef.current.gamma = gamma;
+      const mult = sensitivityRef.current;
+      const scaledBeta =
+        Math.round(Math.max(-35, Math.min(35, beta * mult)) * 10) / 10;
+      const scaledGamma =
+        Math.round(Math.max(-35, Math.min(35, gamma * mult)) * 10) / 10;
+
+      liveGyroRef.current.beta = scaledBeta;
+      liveGyroRef.current.gamma = scaledGamma;
       liveGyroRef.current.timestamp = now;
 
       if (activeRoomCodeRef.current && isControllerPairedRef.current) {
@@ -543,6 +554,30 @@ function MobileControllerContent() {
                   +0.0°
                 </span>
               </div>
+            </div>
+
+            {/* 3 Kademeli Jiroskop Hassasiyet Seçici */}
+            <div className="mt-2.5 grid w-60 grid-cols-3 gap-1.5 rounded-2xl border border-zinc-800 bg-zinc-900 p-1">
+              {(
+                [
+                  { mult: 0.75, label: 'Hassas' },
+                  { mult: 1, label: 'Standart' },
+                  { mult: 1.35, label: 'Pro (1.35x)' },
+                ] as const
+              ).map((item) => (
+                <button
+                  key={item.mult}
+                  type="button"
+                  onClick={() => setSensitivityMultiplier(item.mult)}
+                  className={`cursor-pointer rounded-xl py-1.5 text-[11px] font-semibold ${
+                    sensitivityMultiplier === item.mult
+                      ? 'bg-emerald-500 text-zinc-950'
+                      : 'text-zinc-400'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
             </div>
           </div>
         )}

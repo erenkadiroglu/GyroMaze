@@ -22,12 +22,25 @@ export const transientGyro: GyroData = {
 };
 
 const BEST_TIMES_STORAGE_KEY = 'gyromaze_best_times_v1';
+const GHOST_PATHS_STORAGE_KEY = 'gyromaze_ghost_paths_v1';
 
 function loadBestTimes(): Record<number, number> {
   if (typeof window === 'undefined') return {};
   try {
     const raw = window.localStorage.getItem(BEST_TIMES_STORAGE_KEY);
     return raw ? (JSON.parse(raw) as Record<number, number>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function loadGhostPaths(): Record<number, Array<[number, number]>> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = window.localStorage.getItem(GHOST_PATHS_STORAGE_KEY);
+    return raw
+      ? (JSON.parse(raw) as Record<number, Array<[number, number]>>)
+      : {};
   } catch {
     return {};
   }
@@ -69,6 +82,8 @@ interface GameStoreState {
   elapsedSeconds: number;
   /** Seviye bazlı en iyi tamamlama süreleri (Yerel Rekorlar) */
   bestTimes: Record<number, number>;
+  /** Seviye bazlı en iyi turun 10Hz [x, z] hayalet yarışçı (Ghost Replay) izi */
+  ghostPaths: Record<number, Array<[number, number]>>;
   /** Sunucudan senkronize edilen küresel skor tablosu */
   leaderboard: LeaderboardEntry[];
   /** Sunucuya gönderilecek yeni skor kaydı sinyali */
@@ -112,7 +127,11 @@ interface GameStoreState {
   }) => void;
   setLatencyMs: (ms: number) => void;
   setElapsedSeconds: (seconds: number) => void;
-  recordLevelCompletion: (level: number, seconds: number) => void;
+  recordLevelCompletion: (
+    level: number,
+    seconds: number,
+    runPath?: Array<[number, number]>,
+  ) => void;
   setLeaderboard: (entries: LeaderboardEntry[]) => void;
   submitLeaderboardScore: (payload: SubmitScorePayload) => void;
   collectCrystal: (crystalIndex: number) => void;
@@ -144,6 +163,7 @@ export const useGameStore = create<GameStoreState>((set) => ({
   latencyMs: 0,
   elapsedSeconds: 0,
   bestTimes: loadBestTimes(),
+  ghostPaths: loadGhostPaths(),
   leaderboard: [],
   pendingScoreSubmission: null,
   isSoundMuted: false,
@@ -230,18 +250,28 @@ export const useGameStore = create<GameStoreState>((set) => ({
     })),
   setLatencyMs: (latencyMs) => set({ latencyMs }),
   setElapsedSeconds: (elapsedSeconds) => set({ elapsedSeconds }),
-  recordLevelCompletion: (level, seconds) =>
+  recordLevelCompletion: (level, seconds, runPath) =>
     set((state) => {
       const currentBest = state.bestTimes[level];
       const nextBestTimes = { ...state.bestTimes };
+      const nextGhostPaths = { ...state.ghostPaths };
       if (currentBest === undefined || seconds < currentBest) {
         nextBestTimes[level] = Number(seconds.toFixed(1));
+        if (runPath && runPath.length > 1) {
+          nextGhostPaths[level] = runPath;
+        }
         if (typeof window !== 'undefined') {
           try {
             window.localStorage.setItem(
               BEST_TIMES_STORAGE_KEY,
               JSON.stringify(nextBestTimes),
             );
+            if (runPath && runPath.length > 1) {
+              window.localStorage.setItem(
+                GHOST_PATHS_STORAGE_KEY,
+                JSON.stringify(nextGhostPaths),
+              );
+            }
           } catch {
             // LocalStorage erişim hatası varsa yoksay
           }
@@ -250,6 +280,7 @@ export const useGameStore = create<GameStoreState>((set) => ({
       return {
         gameStatus: 'won',
         bestTimes: nextBestTimes,
+        ghostPaths: nextGhostPaths,
       };
     }),
   setLeaderboard: (leaderboard) => set({ leaderboard }),

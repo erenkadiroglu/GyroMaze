@@ -57,6 +57,7 @@ export function LevelEditorModal() {
   const [activeTool, setActiveTool] = useState<CellTool>('wall');
   const [customTitle, setCustomTitle] = useState('Özel Labirent — Tasarım #1');
   const [copiedJson, setCopiedJson] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
 
   // 8x8 ızgara durumu
   const [grid, setGrid] = useState<CellTool[][]>(() => {
@@ -183,9 +184,33 @@ export function LevelEditorModal() {
       const levelDef = buildLevelDefinition();
       await navigator.clipboard.writeText(JSON.stringify(levelDef, null, 2));
       setCopiedJson(true);
+      setImportError(null);
       window.setTimeout(() => setCopiedJson(false), 2000);
     } catch {
       // Panoya kopyalama başarısız olursa yoksay
+    }
+  };
+
+  const handleImportFromClipboard = async () => {
+    try {
+      const raw = await navigator.clipboard.readText();
+      const parsed = JSON.parse(raw) as MazeLevelDefinition;
+      if (
+        !parsed ||
+        !Array.isArray(parsed.startPosition) ||
+        !Array.isArray(parsed.goalPosition) ||
+        !Array.isArray(parsed.innerWalls)
+      ) {
+        setImportError('Panodaki metin geçerli bir GyroMaze JSON haritası değil.');
+        return;
+      }
+      setImportError(null);
+      setCustomLevel({
+        ...parsed,
+        id: 99,
+      });
+    } catch {
+      setImportError('Panodan JSON okunamadı veya format hatalı.');
     }
   };
 
@@ -342,7 +367,18 @@ export function LevelEditorModal() {
                         </>
                       )}
                     </button>
+                    <button
+                      type="button"
+                      onClick={handleImportFromClipboard}
+                      className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-zinc-800 bg-zinc-800/50 py-2.5 text-xs font-medium text-sky-300 transition hover:bg-zinc-800"
+                      title="Panodaki JSON Haritasını İçe Aktar ve Oyna"
+                    >
+                      <span>JSON Yükle</span>
+                    </button>
                   </div>
+                  {importError && (
+                    <p className="text-[11px] text-rose-400">{importError}</p>
+                  )}
 
                   <button
                     type="button"
