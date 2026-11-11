@@ -18,8 +18,8 @@ interface UseDeviceOrientationOptions {
 }
 
 /**
- * HTML5 Device Orientation API üzerinden mobil cihazın eğim açılarını okuyan,
- * kalibrasyon (tare) ve ölü bölge (deadzone) filtrelemesi uygulayan hook.
+ * HTML5 Device Orientation API üzerinden mobil cihazın eğim açılarını sıfır GC (Garbage Collection)
+ * maliyetiyle okuyan, kalibrasyon (tare) ve ölü bölge filtrelemesi uygulayan hook.
  */
 export function useDeviceOrientation({
   onOrientationData,
@@ -28,6 +28,9 @@ export function useDeviceOrientation({
   const [permissionState, setPermissionState] = useState<
     'prompt' | 'granted' | 'denied' | 'unsupported'
   >('prompt');
+
+  const onOrientationDataRef = useRef(onOrientationData);
+  onOrientationDataRef.current = onOrientationData;
 
   const rawAnglesRef = useRef<{ alpha: number; beta: number; gamma: number }>({
     alpha: 0,
@@ -49,7 +52,6 @@ export function useDeviceOrientation({
 
   /**
    * iOS 13+ cihazlarda kullanıcı etkileşimiyle sensör izni ister.
-   * Android ve standart tarayıcılarda doğrudan izin verilmiş kabul eder.
    */
   const requestSensorPermission = useCallback(async (): Promise<boolean> => {
     if (typeof window === 'undefined' || !('DeviceOrientationEvent' in window)) {
@@ -79,10 +81,8 @@ export function useDeviceOrientation({
    * Kullanıcının telefonu o an tuttuğu açıyı (0, 0) referans noktası olarak kaydeder.
    */
   const calibrate = useCallback(() => {
-    calibrationRef.current = {
-      betaOffset: rawAnglesRef.current.beta,
-      gammaOffset: rawAnglesRef.current.gamma,
-    };
+    calibrationRef.current.betaOffset = rawAnglesRef.current.beta;
+    calibrationRef.current.gammaOffset = rawAnglesRef.current.gamma;
   }, []);
 
   useEffect(() => {
@@ -95,35 +95,38 @@ export function useDeviceOrientation({
       const beta = event.beta ?? 0;
       const gamma = event.gamma ?? 0;
 
-      rawAnglesRef.current = { alpha, beta, gamma };
+      rawAnglesRef.current.alpha = alpha;
+      rawAnglesRef.current.beta = beta;
+      rawAnglesRef.current.gamma = gamma;
 
       let deltaBeta = beta - calibrationRef.current.betaOffset;
       let deltaGamma = gamma - calibrationRef.current.gammaOffset;
 
-      // Mikro el titremelerini sönümlemek için 0.4 derecelik ölü bölge (deadzone)
-      if (Math.abs(deltaBeta) < 0.4) deltaBeta = 0;
-      if (Math.abs(deltaGamma) < 0.4) deltaGamma = 0;
+      // Mikro el titremelerini sönümlemek için 0.25 derecelik minimal ölü bölge
+      if (Math.abs(deltaBeta) < 0.25) deltaBeta = 0;
+      if (Math.abs(deltaGamma) < 0.25) deltaGamma = 0;
 
-      // Maksimum ±35 derece sınırlandırma (Clamping)
-      const clampedBeta = Math.max(-35, Math.min(35, deltaBeta));
-      const clampedGamma = Math.max(-35, Math.min(35, deltaGamma));
+      // Maksimum ±35 derece sınırlandırma ve saf kayan nokta yuvarlama (sıfır string tahsisi)
+      const clampedBeta =
+        Math.round(Math.max(-35, Math.min(35, deltaBeta)) * 10) / 10;
+      const clampedGamma =
+        Math.round(Math.max(-35, Math.min(35, deltaGamma)) * 10) / 10;
 
-      const payload: GyroData = {
-        alpha: Number(alpha.toFixed(2)),
-        beta: Number(clampedBeta.toFixed(2)),
-        gamma: Number(clampedGamma.toFixed(2)),
-        timestamp: Date.now(),
-      };
+      calibratedRef.current.alpha = Math.round(alpha * 10) / 10;
+      calibratedRef.current.beta = clampedBeta;
+      calibratedRef.current.gamma = clampedGamma;
+      calibratedRef.current.timestamp = Date.now();
 
-      calibratedRef.current = payload;
-      onOrientationData?.(payload);
+      onOrientationDataRef.current?.(calibratedRef.current);
     };
 
-    window.addEventListener('deviceorientation', handleOrientation, true);
+    window.addEventListener('deviceorientation', handleOrientation, {
+      passive: true,
+    });
     return () => {
-      window.removeEventListener('deviceorientation', handleOrientation, true);
+      window.removeEventListener('deviceorientation', handleOrientation);
     };
-  }, [enabled, permissionState, onOrientationData]);
+  }, [enabled, permissionState]);
 
   return {
     permissionState,
@@ -132,4 +135,3 @@ export function useDeviceOrientation({
     calibratedRef,
   };
 }
-

@@ -6,9 +6,9 @@
   "author": "Eren Kadiroğlu <154251984+erenkadiroglu@users.noreply.github.com>",
   "license": "MIT",
   "scripts": {
-    "dev": "next dev -H 0.0.0.0",
+    "dev": "node server.mjs",
     "build": "next build",
-    "start": "next start",
+    "start": "NODE_ENV=production node server.mjs",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
   },

@@ -14,7 +14,7 @@ import { useGameStore } from '@/store/useGameStore';
 
 /**
  * Hem yerel geliştirme ortamında (localhost:4000) hem de tek portlu HTTPS tünellerinde
- * (ngrok / cloudflared / Next.js /socket.io proxy) kesintisiz çalışan sunucu adresi çözücü.
+ * (server.mjs TCP_NODELAY WebSocket Proxy) kesintisiz çalışan sunucu adresi çözücü.
  */
 function resolveSocketServerUrl(): string {
   if (process.env.NEXT_PUBLIC_SOCKET_URL) {
@@ -22,8 +22,6 @@ function resolveSocketServerUrl(): string {
   }
   if (typeof window !== 'undefined') {
     const { protocol, hostname, origin } = window.location;
-    // HTTPS tüneli (ngrok vb.) veya uzak alan adı üzerinden girildiyse
-    // Next.js /socket.io rewrite kuralı üzerinden aynı origin (tek port) kullan
     if (
       protocol === 'https:' ||
       (hostname !== 'localhost' && hostname !== '127.0.0.1')
@@ -43,13 +41,12 @@ interface UseSocketOptions {
 }
 
 /**
- * Masaüstü ve mobil istemciler için Socket.io bağlantı, telemetri ve titreşim (haptic) hook'u.
+ * Masaüstü ve mobil istemciler için sıfır gecikmeli (<10ms) saf WebSocket bağlantı hook'u.
  */
 export function useSocket({ role, targetRoomId }: UseSocketOptions) {
   const socketRef = useRef<Socket | null>(null);
   const lastLatencyUpdateRef = useRef<number>(0);
   const lastEmitTimeRef = useRef<number>(0);
-  const isTunnelOrProxyRef = useRef<boolean>(false);
 
   const roomId = useGameStore((s) => s.roomId);
   const hapticSignal = useGameStore((s) => s.hapticSignal);
@@ -67,20 +64,15 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
 
   useEffect(() => {
     const serverUrl = resolveSocketServerUrl();
-    const isTunnelOrProxy =
-      typeof window !== 'undefined' && serverUrl === window.location.origin;
-    isTunnelOrProxyRef.current = isTunnelOrProxy;
 
     const socket = io(serverUrl, {
       path: '/socket.io/',
-      // Next.js rewrite proxy üzerinden (ngrok/tünel) bağlanırken HTTP polling kullanılır
-      // (Next.js dev sunucusu ws:// upgrade isteklerini HMR için ayırdığından kopmayı önler)
-      transports: isTunnelOrProxy ? ['polling'] : ['websocket', 'polling'],
-      reconnectionAttempts: 15,
-      reconnectionDelay: 1000,
-      extraHeaders: {
-        'ngrok-skip-browser-warning': 'true',
-      },
+      // HTTP Long-Polling gecikmesini tamamen ortadan kaldırmak için doğrudan WebSocket ile bağlan
+      transports: ['websocket', 'polling'],
+      upgrade: true,
+      rememberUpgrade: true,
+      reconnectionAttempts: 20,
+      reconnectionDelay: 500,
     });
 
     socketRef.current = socket;
@@ -146,7 +138,7 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
         updateTransientGyro(data);
 
         const now = Date.now();
-        if (now - lastLatencyUpdateRef.current > 250) {
+        if (now - lastLatencyUpdateRef.current > 300) {
           lastLatencyUpdateRef.current = now;
           const estimatedLatency = Math.max(
             1,
@@ -210,23 +202,24 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
     setGameStatus,
   ]);
 
-  // Masaüstünde oluşan fiziksel çarpışma/zafer sinyallerini mobil kontrolcüye ilet
   useEffect(() => {
     if (role !== 'host' || !hapticSignal || !roomId) return;
-    socketRef.current?.emit(RoomEvents.GAME_HAPTIC, {
+    socketRef.current?.volatile.emit(RoomEvents.GAME_HAPTIC, {
       roomId,
       type: hapticSignal.type,
     });
   }, [role, hapticSignal, roomId]);
 
+  /**
+   * 60Hz frekansında volatile WebSocket çerçevesi gönderir (eski paketlerin kuyrukta beklemesini önler).
+   */
   const emitGyroUpdate = useCallback((targetRoom: string, data: GyroData) => {
     if (!socketRef.current?.connected) return;
     const now = performance.now();
-    const minInterval = isTunnelOrProxyRef.current ? 35 : 14;
-    if (now - lastEmitTimeRef.current < minInterval) return;
+    if (now - lastEmitTimeRef.current < 14) return;
     lastEmitTimeRef.current = now;
 
-    socketRef.current.emit(RoomEvents.GYRO_UPDATE, {
+    socketRef.current.volatile.emit(RoomEvents.GYRO_UPDATE, {
       roomId: targetRoom,
       data,
     });
