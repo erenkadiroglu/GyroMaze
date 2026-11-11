@@ -128,6 +128,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Simetrik 1v1 Portal Paritesi & 2. Oyuncu Hayalet İzi (`MazeScene.tsx`):** Çok oyunculu modda 2. oyuncunun haksız geniş bitiş yarıçapı (`0.48` -> simetrik `0.46` / `0.2116`) 1. oyuncuyla eşitlendi, her iki oyuncunun portal üstünde beklerken son kristalin toplanmasıyla anında kazanabilmesi sağlandı, `runPathP2Ref` ile kazanan 2. oyuncunun da Hayalet Yarışçı izi kaydedildi ve sağ kenara yakın özel haritalar için güvenli `p2SpawnOffsetX` koruması eklendi.
 - [x] **Sunucu Skor Doğrulaması & Kokpit / Mobil Akış Düzeltmeleri (`room.service.ts`, `DesktopHUD.tsx`, `globals.css`, `controller/page.tsx`):** `submitScore` geçersiz süre/bölüm (`NaN`, `<=0`, `levelId: 99`) girişlerini reddeder; Skor Tablosu açıldığında oynanan aktif bölüme odaklanır; bölüm seçicide prosedürel aktif seviye vurgulanır; `globals.css` mobil kontrolcüde dikey kaydırmayı engellemeyecek şekilde `overflow-x: hidden` olarak düzenlendi ve mobilde 1. bölümde "Önceki" düğmesi devre dışı bırakıldı.
 
+## ✅ Faz 18: Zamanlayıcı Başlatma Güvenliği, Dinamik Editör Doğrulaması ve Tema Kontrastı (Tamamlandı)
+
+- [x] **Sıfır-Saniye Oyun Açığı Koruması (`DesktopHUD.tsx`, `MazeScene.tsx`):** QR eşleştirme penceresi `Esc`, kapatma düğmesi veya arka plan tıklamasıyla kapatıldığında da (`handleClosePairingModal`) `waiting` durumu `playing` olarak başlatılır; 3B fizik döngüsü ve delik sensörü artık yalnızca aktif `playing` durumunda çalışır; 1. oyuncu telefondan bağlıyken 2. oyuncu klavye kısayol ipucu korunur ve büyük tahtalar için dinamik gölge alanı (`shadowMargin`) uygulanır.
+- [x] **Dinamik Başlangıçlı BFS & Katı JSON İçe Aktarma (`LevelEditorModal.tsx`):** `hasSolvableGridPath` sabit `[0, 0]` yerine ızgaradaki gerçek `'start'` konumunu bulur ve **"3B sahnede oyna"** öncesinde erişilebilirlik doğrulaması uygular; panodan içe aktarılan JSON dizileri öğe bazlı şema/tip doğrulamasından geçirilerek Rapier/Three.js çökme riskleri ortadan kaldırılır.
+- [x] **Gündüz Modu Kartela Kontrastı (`SettingsModal.tsx`):** Bilye kaplama kartelasında (`BALL_SKIN_SWATCHES`) açık gri `Krom` örneğinin Gündüz modunda kaybolmaması için halka kenarlığı tema belirtecine (`ring-line`) geçirildi.
+
 
 
 

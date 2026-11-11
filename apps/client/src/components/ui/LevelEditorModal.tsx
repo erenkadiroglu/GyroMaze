@@ -51,21 +51,27 @@ function gridToWorld(row: number, col: number): [number, number] {
 }
 
 /**
- * Editör ızgarasında başlangıçtan tüm kristallere ve hedefe yürünür bir yol olup olmadığını BFS ile doğrular.
+ * Editör ızgarasında başlangıç hücresinden ('start') tüm kristallere ve hedefe ('goal')
+ * yürünür bir yol olup olmadığını BFS ile doğrular.
  */
 function hasSolvableGridPath(grid: CellTool[][]): boolean {
+  let startCell: [number, number] | null = null;
+  let totalCrystals = 0;
+
+  for (let r = 0; r < GRID_SIZE; r++) {
+    for (let c = 0; c < GRID_SIZE; c++) {
+      if (grid[r][c] === 'start') startCell = [r, c];
+      else if (grid[r][c] === 'crystal') totalCrystals += 1;
+    }
+  }
+
+  if (!startCell) return false;
+
   const visited = Array.from({ length: GRID_SIZE }, () =>
     Array.from({ length: GRID_SIZE }, () => false),
   );
-  const queue: Array<[number, number]> = [[0, 0]];
-  visited[0][0] = true;
-
-  let totalCrystals = 0;
-  for (let r = 0; r < GRID_SIZE; r++) {
-    for (let c = 0; c < GRID_SIZE; c++) {
-      if (grid[r][c] === 'crystal') totalCrystals += 1;
-    }
-  }
+  const queue: Array<[number, number]> = [startCell];
+  visited[startCell[0]][startCell[1]] = true;
 
   let reachedGoal = false;
   let reachedCrystals = 0;
@@ -220,6 +226,7 @@ export function LevelEditorModal() {
   });
 
   const handleCellClick = (r: number, c: number) => {
+    setImportError(null);
     setGrid((prev) => {
       const next = prev.map((row) => [...row]);
 
@@ -245,6 +252,7 @@ export function LevelEditorModal() {
   };
 
   const handleClearGrid = () => {
+    setImportError(null);
     setGrid(() => {
       const cleared: CellTool[][] = Array.from({ length: GRID_SIZE }, () =>
         Array.from({ length: GRID_SIZE }, () => 'erase'),
@@ -256,6 +264,7 @@ export function LevelEditorModal() {
   };
 
   const handleRandomizeGrid = () => {
+    setImportError(null);
     setGrid(() => {
       for (let attempt = 0; attempt < 25; attempt++) {
         const next: CellTool[][] = Array.from({ length: GRID_SIZE }, () =>
@@ -372,6 +381,13 @@ export function LevelEditorModal() {
   };
 
   const handlePlayCustomLevel = () => {
+    if (!hasSolvableGridPath(grid)) {
+      setImportError(
+        'Başlangıç noktasından tüm kristallere ve hedefe ulaşılabilir bir yol bulunmalıdır.',
+      );
+      return;
+    }
+    setImportError(null);
     setCustomLevel(buildLevelDefinition());
   };
 
@@ -391,16 +407,29 @@ export function LevelEditorModal() {
     try {
       const raw = await navigator.clipboard.readText();
       const parsed = JSON.parse(raw) as Partial<MazeLevelDefinition>;
+      const isVec2 = (v: unknown): v is [number, number] =>
+        Array.isArray(v) &&
+        v.length === 2 &&
+        v.every((n) => typeof n === 'number' && Number.isFinite(n));
       const isVec3 = (v: unknown): v is [number, number, number] =>
         Array.isArray(v) &&
         v.length === 3 &&
         v.every((n) => typeof n === 'number' && Number.isFinite(n));
+      const isWallDef = (w: unknown): w is WallDefinition =>
+        Boolean(
+          w &&
+            typeof w === 'object' &&
+            isVec3((w as WallDefinition).position) &&
+            isVec3((w as WallDefinition).size) &&
+            (w as WallDefinition).size.every((dim) => dim > 0),
+        );
 
       if (
         !parsed ||
         !isVec3(parsed.startPosition) ||
         !isVec3(parsed.goalPosition) ||
-        !Array.isArray(parsed.innerWalls)
+        !Array.isArray(parsed.innerWalls) ||
+        !parsed.innerWalls.every(isWallDef)
       ) {
         setImportError('Panodaki metin geçerli bir GyroMaze JSON haritası değil.');
         return;
@@ -411,6 +440,69 @@ export function LevelEditorModal() {
         Number.isFinite(parsed.boardSize)
           ? Math.max(8, Math.min(18, parsed.boardSize))
           : 12;
+
+      const voidHoles: VoidHoleDefinition[] = Array.isArray(parsed.voidHoles)
+        ? parsed.voidHoles.filter(
+            (h): h is VoidHoleDefinition =>
+              Boolean(h && typeof h === 'object' && isVec2(h.position)),
+          )
+        : [];
+      const crystals: [number, number][] = Array.isArray(parsed.crystals)
+        ? parsed.crystals.filter(isVec2)
+        : [];
+      const laserGates: LaserGateDefinition[] = Array.isArray(parsed.laserGates)
+        ? parsed.laserGates.filter(
+            (g): g is LaserGateDefinition =>
+              Boolean(
+                g &&
+                  typeof g === 'object' &&
+                  isVec2(g.position) &&
+                  typeof g.length === 'number' &&
+                  g.length > 0 &&
+                  (g.axis === 'x' || g.axis === 'z') &&
+                  typeof g.periodSeconds === 'number' &&
+                  g.periodSeconds > 0 &&
+                  typeof g.phaseOffset === 'number',
+              ),
+          )
+        : [];
+      const boostPads: BoostPadDefinition[] = Array.isArray(parsed.boostPads)
+        ? parsed.boostPads.filter(
+            (b): b is BoostPadDefinition =>
+              Boolean(
+                b &&
+                  typeof b === 'object' &&
+                  isVec2(b.position) &&
+                  isVec2(b.direction),
+              ),
+          )
+        : [];
+      const teleporters = Array.isArray(parsed.teleporters)
+        ? parsed.teleporters.filter((t) =>
+            Boolean(
+              t &&
+                typeof t === 'object' &&
+                isVec2(t.entry) &&
+                isVec2(t.exit),
+            ),
+          )
+        : [];
+      const movingObstacles: MovingObstacleDefinition[] = Array.isArray(
+        parsed.movingObstacles,
+      )
+        ? parsed.movingObstacles.filter(
+            (m): m is MovingObstacleDefinition =>
+              Boolean(
+                m &&
+                  typeof m === 'object' &&
+                  isVec2(m.center) &&
+                  (m.axis === 'x' || m.axis === 'z') &&
+                  typeof m.amplitude === 'number' &&
+                  typeof m.speed === 'number' &&
+                  typeof m.phaseOffset === 'number',
+              ),
+          )
+        : [];
 
       setImportError(null);
       setCustomLevel({
@@ -427,17 +519,15 @@ export function LevelEditorModal() {
         startPosition: parsed.startPosition,
         goalPosition: parsed.goalPosition,
         innerWalls: parsed.innerWalls,
-        voidHoles: Array.isArray(parsed.voidHoles) ? parsed.voidHoles : [],
-        crystals: Array.isArray(parsed.crystals) ? parsed.crystals : [],
-        laserGates: Array.isArray(parsed.laserGates) ? parsed.laserGates : [],
-        boostPads: Array.isArray(parsed.boostPads) ? parsed.boostPads : [],
-        teleporters: Array.isArray(parsed.teleporters)
-          ? parsed.teleporters
-          : [],
-        movingObstacles: Array.isArray(parsed.movingObstacles)
-          ? parsed.movingObstacles
-          : [],
-        starThresholds: parsed.starThresholds,
+        voidHoles,
+        crystals,
+        laserGates,
+        boostPads,
+        teleporters,
+        movingObstacles,
+        starThresholds: isVec2(parsed.starThresholds)
+          ? parsed.starThresholds
+          : undefined,
       });
     } catch {
       setImportError('Panodan geçerli bir JSON haritası okunamadı.');

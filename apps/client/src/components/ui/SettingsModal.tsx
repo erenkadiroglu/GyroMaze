@@ -216,7 +216,7 @@ export function SettingsModal() {
                 >
                   <span
                     aria-hidden="true"
-                    className={`h-4 w-4 rounded-full ring-1 ring-white/20 ${skin.swatchClass}`}
+                    className={`h-4 w-4 rounded-full ring-1 ring-line ${skin.swatchClass}`}
                   />
                   <span>{skin.label}</span>
                 </button>

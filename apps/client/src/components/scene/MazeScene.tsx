@@ -146,7 +146,6 @@ const _ball2Material = new THREE.MeshStandardMaterial({
 });
 
 const MAX_TILT_RADIANS = THREE.MathUtils.degToRad(24);
-const SLOPE_GRAVITY = 36.0;
 const BALL_RADIUS = 0.34;
 const TRAIL_COUNT = 7;
 
@@ -579,7 +578,7 @@ function MazeStage({
     }
 
     const isInteractive =
-      (gameStatus === 'playing' || gameStatus === 'waiting') &&
+      gameStatus === 'playing' &&
       !isPairingModalOpen &&
       !isSettingsOpen &&
       !isEditorOpen &&
@@ -867,10 +866,7 @@ function MazeStage({
             sensor
             onIntersectionEnter={(payload) => {
               const state = useGameStore.getState();
-              if (
-                state.gameStatus !== 'playing' &&
-                state.gameStatus !== 'waiting'
-              ) {
+              if (state.gameStatus !== 'playing') {
                 return;
               }
               if (
@@ -1276,6 +1272,7 @@ export function MazeScene() {
 
   const isLightScene = colorScheme === 'light' || boardTheme === 'daylight';
   const sceneBgColor = isLightScene ? '#e9eef5' : '#0f1a2b';
+  const shadowMargin = Math.max(9, Math.ceil(activeLevel.boardSize * 0.78));
 
   const isGoalUnlocked =
     collectedCrystals.length >= activeLevel.crystals.length;
@@ -1446,10 +1443,10 @@ export function MazeScene() {
           intensity={isLightScene ? 2.1 : 1.75}
           castShadow
           shadow-mapSize={[1024, 1024]}
-          shadow-camera-left={-9}
-          shadow-camera-right={9}
-          shadow-camera-top={9}
-          shadow-camera-bottom={-9}
+          shadow-camera-left={-shadowMargin}
+          shadow-camera-right={shadowMargin}
+          shadow-camera-top={shadowMargin}
+          shadow-camera-bottom={-shadowMargin}
         />
         <pointLight
           position={[-8, 6, -8]}

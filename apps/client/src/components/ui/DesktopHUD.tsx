@@ -301,10 +301,16 @@ export function DesktopHUD() {
     }
   };
 
+  const handleClosePairingModal = () => {
+    setPairingModalOpen(false);
+    if (useGameStore.getState().gameStatus === 'waiting') {
+      setGameStatus('playing');
+    }
+  };
+
   const handleStartKeyboardMode = () => {
     if (!isSoundMuted) soundEngine.playCalibrate();
-    setPairingModalOpen(false);
-    setGameStatus('playing');
+    handleClosePairingModal();
   };
 
   const handleResetClick = () => {
@@ -648,7 +654,8 @@ export function DesktopHUD() {
           showMiniMap={showMiniMap}
         />
 
-        {!isControllerPaired && (
+        {(!isControllerPaired ||
+          (isMultiplayer && !isSecondControllerPaired)) && (
           <div className="gm-panel hidden items-center gap-2 rounded-xl px-3 py-1.5 text-xs text-muted lg:flex">
             {isMultiplayer ? (
               <>
@@ -759,7 +766,7 @@ export function DesktopHUD() {
       {/* TELEFON EŞLEŞTİRME MODALI */}
       <Modal
         open={isPairingModalOpen}
-        onClose={() => setPairingModalOpen(false)}
+        onClose={handleClosePairingModal}
         size="md"
         title="Telefonunu bağla"
         description="QR kodu okut veya 6 haneli oda kodunu kontrolcüye gir."
