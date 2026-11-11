@@ -220,7 +220,7 @@ interface GameStoreState {
     winnerPlayer?: 1 | 2,
   ) => void;
   setLeaderboard: (entries: LeaderboardEntry[]) => void;
-  submitLeaderboardScore: (payload: SubmitScorePayload) => void;
+  submitLeaderboardScore: (payload: SubmitScorePayload | null) => void;
   collectCrystal: (crystalIndex: number) => void;
   toggleSoundMuted: () => void;
   triggerBallReset: () => void;

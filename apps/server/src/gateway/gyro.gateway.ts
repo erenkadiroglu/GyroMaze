@@ -126,6 +126,20 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     await client.join(result.room.roomId);
+
+    if (result.replacedControllerSocketId) {
+      const oldSocket = this.server.sockets?.sockets?.get(
+        result.replacedControllerSocketId,
+      );
+      if (oldSocket) {
+        await oldSocket.leave(result.room.roomId);
+      }
+      this.server.to(result.replacedControllerSocketId).emit(RoomEvents.ROOM_ERROR, {
+        code: 'SESSION_REPLACED',
+        message: 'Bu oyuncu yuvası başka bir cihaz veya sekme tarafından devralındı.',
+      });
+    }
+
     this.logger.log(
       `Mobil kontrolcü eşleşti: Oda ${result.room.roomId} (Controller: ${client.id})`,
     );
@@ -143,17 +157,16 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: GyroUpdatePayload,
   ): void {
     const membership = this.roomService.getMembership(client.id);
-    const targetRoomId = membership?.roomId ?? payload?.roomId;
-    if (!targetRoomId || !payload?.data) {
+    if (!membership || membership.role !== 'controller' || !payload?.data) {
       return;
     }
 
-    const room = this.roomService.getRoom(targetRoomId);
+    const room = this.roomService.getRoom(membership.roomId);
     if (!room) {
       return;
     }
 
-    const slot = membership?.playerSlot ?? payload.data.playerSlot ?? 1;
+    const slot = membership.playerSlot ?? payload.data.playerSlot ?? 1;
     this.server.to(room.hostSocketId).volatile.emit(RoomEvents.GYRO_SYNC, {
       ...payload.data,
       playerSlot: slot,
@@ -161,18 +174,20 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   /**
-   * Mobil cihazda kalibrasyon yapıldığında masaüstü sahnesini bilgilendirir.
+   * Mobil cihazda kalibrasyon yapıldığında masaüstü sahnesini yalnız ilgili oyuncu yuvasıyla bilgilendirir.
    */
   @SubscribeMessage(RoomEvents.GYRO_CALIBRATE)
   public handleGyroCalibrate(@ConnectedSocket() client: Socket): void {
     const membership = this.roomService.getMembership(client.id);
-    if (!membership) {
+    if (!membership || membership.role !== 'controller') {
       return;
     }
 
     const room = this.roomService.getRoom(membership.roomId);
     if (room) {
-      this.server.to(room.hostSocketId).emit(RoomEvents.GYRO_CALIBRATE);
+      this.server.to(room.hostSocketId).emit(RoomEvents.GYRO_CALIBRATE, {
+        playerSlot: membership.playerSlot ?? 1,
+      });
     }
   }
 
@@ -265,7 +280,15 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
   public handleSubmitScore(
     @MessageBody() payload: SubmitScorePayload,
   ): void {
-    if (!payload?.levelId || typeof payload.timeSeconds !== 'number') {
+    if (
+      !payload ||
+      !Number.isInteger(payload.levelId) ||
+      payload.levelId < 1 ||
+      payload.levelId === 99 ||
+      typeof payload.timeSeconds !== 'number' ||
+      !Number.isFinite(payload.timeSeconds) ||
+      payload.timeSeconds <= 0
+    ) {
       return;
     }
 

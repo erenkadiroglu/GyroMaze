@@ -175,5 +175,97 @@ describe('RoomService — Oda Yönetimi, 6 Haneli Kod Eşleşmesi ve Skor Tablos
     );
     assert.equal(typeof gateway.handlePing(), 'number');
   });
+
+  it('GyroGateway yeni sekme devralmada eski sokete SESSION_REPLACED hatası göndermeli, yetkisiz gyro paketlerini yok saymalı ve kalibrasyonu yuva bazlı iletmelidir', async () => {
+    const service = new RoomService();
+    const room = await service.createRoom('host-takeover');
+
+    const sentEvents = [];
+    const leftRooms = [];
+    const oldSocket = {
+      id: 'ctrl-old',
+      async join() {},
+      async leave(id) {
+        leftRooms.push({ socketId: 'ctrl-old', roomId: id });
+      },
+      emit(event, payload) {
+        sentEvents.push({ target: 'ctrl-old', event, payload });
+      },
+    };
+    const newSocket = {
+      id: 'ctrl-new',
+      async join() {},
+      async leave() {},
+      emit(event, payload) {
+        sentEvents.push({ target: 'ctrl-new', event, payload });
+      },
+    };
+    const p2Socket = {
+      id: 'ctrl-p2',
+      async join() {},
+      async leave() {},
+      emit(event, payload) {
+        sentEvents.push({ target: 'ctrl-p2', event, payload });
+      },
+    };
+
+    const gateway = new GyroGateway(service);
+    gateway.server = {
+      sockets: {
+        sockets: new Map([
+          ['ctrl-old', oldSocket],
+          ['ctrl-new', newSocket],
+          ['ctrl-p2', p2Socket],
+        ]),
+      },
+      to(target) {
+        return {
+          emit(event, payload) {
+            sentEvents.push({ target, event, payload });
+          },
+          volatile: {
+            emit(event, payload) {
+              sentEvents.push({ target, event, payload });
+            },
+          },
+        };
+      },
+    };
+
+    await gateway.handleJoinRoom(oldSocket, { roomId: room.roomId, playerSlot: 1 });
+    await gateway.handleJoinRoom(newSocket, { roomId: room.roomId, playerSlot: 1 });
+    await gateway.handleJoinRoom(p2Socket, { roomId: room.roomId, playerSlot: 2 });
+
+    assert.deepEqual(leftRooms, [{ socketId: 'ctrl-old', roomId: room.roomId }]);
+    const replacedErr = sentEvents.find(
+      (e) => e.target === 'ctrl-old' && e.event === RoomEvents.ROOM_ERROR,
+    );
+    assert.equal(replacedErr?.payload?.code, 'SESSION_REPLACED');
+
+    const beforeGyroCount = sentEvents.length;
+    gateway.handleGyroUpdate(oldSocket, {
+      roomId: room.roomId,
+      data: { alpha: 0, beta: 10, gamma: 5, timestamp: 123 },
+    });
+    assert.equal(sentEvents.length, beforeGyroCount);
+
+    gateway.handleGyroCalibrate(p2Socket);
+    const calEvent = sentEvents.find(
+      (e) => e.target === 'host-takeover' && e.event === RoomEvents.GYRO_CALIBRATE,
+    );
+    assert.deepEqual(calEvent?.payload, { playerSlot: 2 });
+  });
+
+  it('submitScore geçersiz süre veya özel harita kimliklerini (NaN, <=0, 99) reddetmelidir', () => {
+    const service = new RoomService();
+    const initialCount = service.getLeaderboard().length;
+
+    service.submitScore({ playerName: 'Test', levelId: 1, timeSeconds: Number.NaN });
+    service.submitScore({ playerName: 'Test', levelId: 1, timeSeconds: -3 });
+    service.submitScore({ playerName: 'Test', levelId: 99, timeSeconds: 5.5 });
+    service.submitScore({ playerName: 'Test', levelId: 0, timeSeconds: 5.5 });
+
+    assert.equal(service.getLeaderboard().length, initialCount);
+  });
 });
 

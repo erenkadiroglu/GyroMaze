@@ -10,6 +10,7 @@ import {
   GameStatePayload,
   ChangeLevelPayload,
   HapticPayload,
+  CalibratePayload,
   LeaderboardEntry,
 } from '@gyromaze/shared';
 import { useGameStore } from '@/store/useGameStore';
@@ -86,6 +87,7 @@ export function useSocket({
   const setLatencyMs = useGameStore((s) => s.setLatencyMs);
   const setErrorMessage = useGameStore((s) => s.setErrorMessage);
   const setLeaderboard = useGameStore((s) => s.setLeaderboard);
+  const submitLeaderboardScore = useGameStore((s) => s.submitLeaderboardScore);
   const updateTransientGyro = useGameStore((s) => s.updateTransientGyro);
   const resetTransientGyro = useGameStore((s) => s.resetTransientGyro);
   const triggerBallReset = useGameStore((s) => s.triggerBallReset);
@@ -148,6 +150,12 @@ export function useSocket({
           Boolean(room.isControllerConnected || room.isSecondControllerConnected),
         );
         setSecondControllerPaired(Boolean(room.isSecondControllerConnected));
+        if (!room.isControllerConnected) {
+          resetTransientGyro(1);
+        }
+        if (!room.isSecondControllerConnected) {
+          resetTransientGyro(2);
+        }
         // Yeni veya yeniden bağlanan her kontrolcüye mevcut masaüstü durumunu anında gönder
         const snap = useGameStore.getState();
         const currentLvl = getMazeLevel(snap.level, snap.customLevel);
@@ -221,9 +229,12 @@ export function useSocket({
         updateTransientGyro(data);
       });
 
-      socket.on(RoomEvents.GYRO_CALIBRATE, () => {
-        resetTransientGyro();
-      });
+      socket.on(
+        RoomEvents.GYRO_CALIBRATE,
+        (payload?: CalibratePayload) => {
+          resetTransientGyro(payload?.playerSlot);
+        },
+      );
 
       socket.on(
         RoomEvents.GAME_CHANGE_LEVEL,
@@ -385,7 +396,8 @@ export function useSocket({
       RoomEvents.LEADERBOARD_SUBMIT,
       pendingScoreSubmission,
     );
-  }, [role, pendingScoreSubmission]);
+    submitLeaderboardScore(null);
+  }, [role, pendingScoreSubmission, submitLeaderboardScore]);
 
   /**
    * 60Hz frekansında ve delta filtreli volatile WebSocket çerçevesi gönderir.
@@ -433,7 +445,9 @@ export function useSocket({
 
   const emitCalibrate = useCallback(() => {
     if (!socketRef.current?.connected) return;
-    socketRef.current.emit(RoomEvents.GYRO_CALIBRATE);
+    socketRef.current.emit(RoomEvents.GYRO_CALIBRATE, {
+      playerSlot: playerSlotRef.current,
+    });
   }, []);
 
   const emitResetBall = useCallback(() => {

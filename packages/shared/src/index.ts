@@ -199,9 +199,16 @@ export interface HapticPayload {
 }
 
 /**
+ * Mobil cihazdan gelen kalibrasyon olayının oyuncu yuvası bilgisi.
+ */
+export interface CalibratePayload {
+  playerSlot?: 1 | 2;
+}
+
+/**
  * Oda hatalarında dönülen standart hata yanıtı.
  */
 export interface RoomErrorPayload {
-  code: 'ROOM_NOT_FOUND' | 'ROOM_FULL' | 'INVALID_PAYLOAD';
+  code: 'ROOM_NOT_FOUND' | 'ROOM_FULL' | 'INVALID_PAYLOAD' | 'SESSION_REPLACED';
   message: string;
 }

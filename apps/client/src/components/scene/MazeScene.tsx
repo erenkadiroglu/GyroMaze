@@ -198,6 +198,7 @@ function MazeStage({
     })),
   );
   const runPathRef = useRef<Array<[number, number]>>([]);
+  const runPathP2Ref = useRef<Array<[number, number]>>([]);
   const runElapsedRef = useRef<number>(0);
   const lastSampleTimeRef = useRef<number>(0);
   const lastWallSoundTimeRef = useRef<{ 1: number; 2: number }>({ 1: 0, 2: 0 });
@@ -323,11 +324,13 @@ function MazeStage({
     [halfBoard, levelData.boardSize],
   );
 
+  const p2SpawnOffsetX = levelData.startPosition[0] > halfBoard - 1.4 ? -0.45 : 0.45;
+
   const resetSingleBall = useCallback(
     (body: RapierRigidBody | null, slot: 1 | 2) => {
       if (!body) return;
       const [sx, , sz] = levelData.startPosition;
-      const targetX = slot === 2 ? sx + 0.42 : sx;
+      const targetX = slot === 2 ? sx + p2SpawnOffsetX : sx;
       body.setTranslation({ x: targetX, y: BALL_RADIUS, z: sz }, true);
       body.setLinvel({ x: 0, y: 0, z: 0 }, true);
       body.setAngvel({ x: 0, y: 0, z: 0 }, true);
@@ -338,7 +341,7 @@ function MazeStage({
         }
       }
     },
-    [levelData.startPosition],
+    [levelData.startPosition, p2SpawnOffsetX],
   );
 
   const resetBallAndBoard = useCallback(() => {
@@ -348,11 +351,14 @@ function MazeStage({
     }
     const [sx, , sz] = levelData.startPosition;
     runPathRef.current = [[Number(sx.toFixed(2)), Number(sz.toFixed(2))]];
+    runPathP2Ref.current = [
+      [Number((sx + p2SpawnOffsetX).toFixed(2)), Number(sz.toFixed(2))],
+    ];
     runElapsedRef.current = 0;
     lastSampleTimeRef.current = 0;
     resetSingleBall(ballBodyRef.current, 1);
     resetSingleBall(ball2BodyRef.current, 2);
-  }, [levelData.startPosition, resetSingleBall]);
+  }, [levelData.startPosition, p2SpawnOffsetX, resetSingleBall]);
 
   useEffect(() => {
     resetBallAndBoard();
@@ -383,6 +389,8 @@ function MazeStage({
       elapsed: number,
       isInteractive: boolean,
     ) => {
+      if (!isInteractive) return;
+
       // Enerji Kristali Toplama Kontrolü (Senkron store okuma ile çift tetiklenme engelli)
       const liveCollected = useGameStore.getState().collectedCrystals;
       for (let i = 0; i < levelData.crystals.length; i++) {
@@ -395,8 +403,6 @@ function MazeStage({
           }
         }
       }
-
-      if (!isInteractive) return;
 
       // Hızlandırma Rampaları (Boost Pads) Kontrolü
       const boostPads = levelData.boostPads;
@@ -640,17 +646,19 @@ function MazeStage({
       }
 
       // 10Hz Hayalet Yarışçı (Ghost Replay) Kaydı ve Canlı Oynatımı
+      let shouldSampleGhost = false;
       if (gameStatus === 'playing' && isInteractive) {
         runElapsedRef.current += safeDelta;
-        if (
-          runElapsedRef.current - lastSampleTimeRef.current >= 0.1 &&
-          runPathRef.current.length < 600
-        ) {
+        shouldSampleGhost =
+          runElapsedRef.current - lastSampleTimeRef.current >= 0.1;
+        if (shouldSampleGhost) {
           lastSampleTimeRef.current = runElapsedRef.current;
-          runPathRef.current.push([
-            Math.round(pos.x * 100) / 100,
-            Math.round(pos.z * 100) / 100,
-          ]);
+          if (runPathRef.current.length < 600) {
+            runPathRef.current.push([
+              Math.round(pos.x * 100) / 100,
+              Math.round(pos.z * 100) / 100,
+            ]);
+          }
         }
 
         if (
@@ -704,6 +712,13 @@ function MazeStage({
         isInteractive,
       );
 
+      if (isInteractive && isGoalUnlocked) {
+        const [gx, , gz] = levelData.goalPosition;
+        if ((pos.x - gx) ** 2 + (pos.z - gz) ** 2 < 0.2116) {
+          onReachGoal(runPathRef.current, 1);
+        }
+      }
+
       // Çok Oyunculu (2. Oyuncu - Altın Bilye) Fizik ve Tam Etkileşim Paritesi
       if (isMultiplayer && ball2BodyRef.current) {
         const p2PitchRad = THREE.MathUtils.clamp(
@@ -740,6 +755,13 @@ function MazeStage({
         transientGyroP2.ballZ = pos2.z;
         transientGyroP2.ballSpeed = Math.hypot(vel2.x, vel2.z);
 
+        if (shouldSampleGhost && runPathP2Ref.current.length < 600) {
+          runPathP2Ref.current.push([
+            Math.round(pos2.x * 100) / 100,
+            Math.round(pos2.z * 100) / 100,
+          ]);
+        }
+
         if (visualBall2MeshRef.current) {
           visualBall2MeshRef.current.visible = true;
           visualBall2MeshRef.current.position.set(pos2.x, BALL_RADIUS, pos2.z);
@@ -758,11 +780,11 @@ function MazeStage({
           isInteractive,
         );
 
-        // 2. Oyuncu hedef portalı kontrolü
-        if (isInteractive) {
+        // 2. Oyuncu ile 1. Oyuncu için birebir simetrik hedef portalı yarıçapı (0.46 birim)
+        if (isInteractive && isGoalUnlocked) {
           const [gx, , gz] = levelData.goalPosition;
-          if ((pos2.x - gx) ** 2 + (pos2.z - gz) ** 2 < 0.48) {
-            onReachGoal(runPathRef.current, 2);
+          if ((pos2.x - gx) ** 2 + (pos2.z - gz) ** 2 < 0.2116) {
+            onReachGoal(runPathP2Ref.current, 2);
           }
         }
       } else if (visualBall2MeshRef.current) {
@@ -829,7 +851,10 @@ function MazeStage({
           onIntersectionEnter={(payload) => {
             const slot =
               payload.other.rigidBodyObject?.name === 'ball-p2' ? 2 : 1;
-            onReachGoal(runPathRef.current, slot);
+            onReachGoal(
+              slot === 2 ? runPathP2Ref.current : runPathRef.current,
+              slot,
+            );
           }}
         />
 
@@ -904,7 +929,7 @@ function MazeStage({
           type="dynamic"
           colliders={false}
           position={[
-            levelData.startPosition[0] + 0.42,
+            levelData.startPosition[0] + p2SpawnOffsetX,
             BALL_RADIUS,
             levelData.startPosition[2],
           ]}
@@ -1211,7 +1236,7 @@ function MazeStage({
           ref={visualBall2MeshRef}
           visible={false}
           position={[
-            levelData.startPosition[0] + 0.42,
+            levelData.startPosition[0] + p2SpawnOffsetX,
             BALL_RADIUS,
             levelData.startPosition[2],
           ]}

@@ -151,6 +151,12 @@ export function DesktopHUD() {
   }, [level, gameStatus]);
 
   useEffect(() => {
+    if (isLeaderboardOpen) {
+      setSelectedLeaderboardLevel(level === 99 ? 1 : Math.max(1, level));
+    }
+  }, [isLeaderboardOpen, level]);
+
+  useEffect(() => {
     if (typeof window !== 'undefined') {
       setBrowserLocation({
         origin: window.location.origin,
@@ -462,13 +468,25 @@ export function DesktopHUD() {
                     type="button"
                     role="menuitem"
                     onClick={handleJumpProceduralLevel}
-                    className="flex w-full cursor-pointer items-center justify-between rounded-xl border border-line bg-surface-2/70 px-3 py-2 text-xs font-medium text-fg transition-colors hover:border-brass/60"
+                    className={cx(
+                      'flex w-full cursor-pointer items-center justify-between rounded-xl border px-3 py-2 text-xs font-medium transition-colors',
+                      level >= 6 && level !== 99
+                        ? 'border-brass bg-brass/15 text-brass'
+                        : 'border-line bg-surface-2/70 text-fg hover:border-brass/60',
+                    )}
                   >
                     <span className="flex items-center gap-2">
                       <Sparkles className="h-3.5 w-3.5 text-brass" aria-hidden="true" />
                       Sonsuz prosedürel bölüm üret
                     </span>
-                    <span className="gm-num text-muted">06+</span>
+                    <span
+                      className={cx(
+                        'gm-num',
+                        level >= 6 && level !== 99 ? 'text-brass font-semibold' : 'text-muted',
+                      )}
+                    >
+                      {level >= 6 && level !== 99 ? `${shortLevelTag} +1` : '06+'}
+                    </span>
                   </button>
 
                   {customLevel && (

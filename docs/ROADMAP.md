@@ -122,6 +122,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Mobil Wake Lock, HTTP Güvenli Bağlam Uyarısı ve Yuva Değişimi Sıfırlaması (`controller/page.tsx`):** Aktif kontrol sırasında ekranın kararmasını önleyen `navigator.wakeLock` desteği (`visibilitychange` ile otomatik yenileme) eklendi; HTTP üzerinde açıldığında sensör kısıtlaması ve dokunmatik gimbal rehberi gösterilir; çok oyunculu yuva değişiminde artık eğim `0, 0` olarak temizlenir.
 - [x] **Kilitli Portal Haptik Hedeflemesi & Web Audio Güvenli Devam Etme (`MazeScene.tsx`, `soundEngine.ts`):** Kristaller toplanmadan hedefe çarpan ilgili oyuncuya özel `wall` titreşimi yönlendirildi ve tarayıcı otomatik oynatma kısıtlarında `AudioContext.resume()` hatalarının sessizce yakalanması sağlandı.
 
+## ✅ Faz 17: Yetkili Oturum Devralma, Simetrik 1v1 Fizik Paritesi ve Skor Doğrulaması (Tamamlandı)
+
+- [x] **Sekme Devralma Koruması & Yuva Bazlı Kalibrasyon (`gyro.gateway.ts`, `useSocket.ts`, `@gyromaze/shared`):** Aynı yuvaya yeni bir telefon veya sekme katıldığında eski soket odadan çıkarılarak `SESSION_REPLACED` hatasıyla bilgilendirilir ve yetkisiz/eski kontrolcü jiroskop paketleri ağ geçidinde reddedilir; `GYRO_CALIBRATE` artık `playerSlot` bilgisini taşıyarak çok oyunculu modda yalnızca kalibre eden oyuncunun tamponunu sıfırlar ve yuva değişiminde terk edilen yuva temizlenir.
+- [x] **Simetrik 1v1 Portal Paritesi & 2. Oyuncu Hayalet İzi (`MazeScene.tsx`):** Çok oyunculu modda 2. oyuncunun haksız geniş bitiş yarıçapı (`0.48` -> simetrik `0.46` / `0.2116`) 1. oyuncuyla eşitlendi, her iki oyuncunun portal üstünde beklerken son kristalin toplanmasıyla anında kazanabilmesi sağlandı, `runPathP2Ref` ile kazanan 2. oyuncunun da Hayalet Yarışçı izi kaydedildi ve sağ kenara yakın özel haritalar için güvenli `p2SpawnOffsetX` koruması eklendi.
+- [x] **Sunucu Skor Doğrulaması & Kokpit / Mobil Akış Düzeltmeleri (`room.service.ts`, `DesktopHUD.tsx`, `globals.css`, `controller/page.tsx`):** `submitScore` geçersiz süre/bölüm (`NaN`, `<=0`, `levelId: 99`) girişlerini reddeder; Skor Tablosu açıldığında oynanan aktif bölüme odaklanır; bölüm seçicide prosedürel aktif seviye vurgulanır; `globals.css` mobil kontrolcüde dikey kaydırmayı engellemeyecek şekilde `overflow-x: hidden` olarak düzenlendi ve mobilde 1. bölümde "Önceki" düğmesi devre dışı bırakıldı.
+
 
 
 

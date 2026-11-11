@@ -322,8 +322,20 @@ export class RoomService {
    * Yeni bir bölüm tamamlama skorunu kaydeder ve her bölüm için en hızlı 10 kaydı sıralar.
    */
   public submitScore(payload: SubmitScorePayload): LeaderboardEntry[] {
-    const cleanName =
-      payload.playerName.trim().slice(0, 24) || 'Anonim Oyuncu';
+    if (
+      !payload ||
+      !Number.isInteger(payload.levelId) ||
+      payload.levelId < 1 ||
+      payload.levelId === 99 ||
+      typeof payload.timeSeconds !== 'number' ||
+      !Number.isFinite(payload.timeSeconds) ||
+      payload.timeSeconds <= 0
+    ) {
+      return this.leaderboard;
+    }
+
+    const rawName = typeof payload.playerName === 'string' ? payload.playerName : '';
+    const cleanName = rawName.trim().slice(0, 24) || 'Anonim Oyuncu';
     const entry: LeaderboardEntry = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       playerName: cleanName,
