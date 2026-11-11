@@ -20,11 +20,55 @@ const _targetEuler = new THREE.Euler(0, 0, 0, 'XYZ');
 const _targetQuat = new THREE.Quaternion();
 const _currentQuat = new THREE.Quaternion();
 const _currentEuler = new THREE.Euler(0, 0, 0, 'XYZ');
-const _cameraTargetPos = new THREE.Vector3(0, 14.5, 10.5);
+const _cameraTargetPos = new THREE.Vector3(0, 14.5, 10.2);
 const _cameraLookAt = new THREE.Vector3(0, 0, 0);
 
-const MAX_TILT_RADIANS = THREE.MathUtils.degToRad(22);
-const SLOPE_GRAVITY = 26.0;
+// GPU Shader ve bellek optimizasyonu için paylaşılan (singleton) materyaller
+const _boardMaterial = new THREE.MeshStandardMaterial({
+  color: '#18181b',
+  roughness: 0.55,
+  metalness: 0.25,
+});
+const _outerWallMaterial = new THREE.MeshStandardMaterial({
+  color: '#27272a',
+  roughness: 0.35,
+  metalness: 0.45,
+});
+const _innerWallMaterial = new THREE.MeshStandardMaterial({
+  color: '#3f3f46',
+  roughness: 0.3,
+  metalness: 0.5,
+});
+const _ballMaterial = new THREE.MeshStandardMaterial({
+  color: '#f4f4f5',
+  metalness: 0.88,
+  roughness: 0.14,
+});
+const _holeCoreMaterial = new THREE.MeshBasicMaterial({ color: '#050507' });
+const _holeRingMaterial = new THREE.MeshStandardMaterial({
+  color: '#f43f5e',
+  emissive: '#e11d48',
+  emissiveIntensity: 1.4,
+});
+const _goalRingMaterial = new THREE.MeshStandardMaterial({
+  color: '#10b981',
+  emissive: '#10b981',
+  emissiveIntensity: 1.6,
+  roughness: 0.2,
+});
+const _goalCoreMaterial = new THREE.MeshBasicMaterial({
+  color: '#34d399',
+  transparent: true,
+  opacity: 0.35,
+});
+const _startRingMaterial = new THREE.MeshBasicMaterial({
+  color: '#38bdf8',
+  transparent: true,
+  opacity: 0.65,
+});
+
+const MAX_TILT_RADIANS = THREE.MathUtils.degToRad(24);
+const SLOPE_GRAVITY = 36.0;
 const BALL_RADIUS = 0.34;
 
 interface MazeStageProps {
@@ -35,12 +79,7 @@ interface MazeStageProps {
 }
 
 /**
- * Zıplamasız (Zero-Bounce) Hibrit Fizik ve Görsel Labirent Sahnesi:
- * - Rapier fizik çarpıştırıcıları tahta-yerel (board-local) uzayda sabit (fixed) durur ve
- *   kürenin dikey ekseni (Y) tahta yüzeyine kilitlenir; böylece hızlı eğimlerde zemin küreyi
- *   asla havaya fırlatmaz.
- * - Görsel 3B grup (visualTiltGroupRef) ise Quaternion Slerp ile dünya uzayında 60 FPS
- *   pürüzsüzce eğilir ve kürenin yerel koordinatlarını birebir yansıtır.
+ * Zıplamasız (Zero-Bounce) ve Ultra Tepkisel (32Hz Slerp) 3B Labirent Sahnesi.
  */
 function MazeStage({
   levelData,
@@ -61,7 +100,6 @@ function MazeStage({
   const wallHeight = 0.85;
   const wallThickness = 0.4;
 
-  // Dış çerçeve duvarları
   const outerWalls = useMemo(
     () => [
       {
@@ -163,8 +201,8 @@ function MazeStage({
     _targetEuler.set(clampedPitch, 0, clampedRoll, 'XYZ');
     _targetQuat.setFromEuler(_targetEuler);
 
-    // 1. Görsel 3B tahtayı Quaternion Slerp ile pürüzsüzce eğ
-    const slerpAlpha = 1 - Math.exp(-12 * safeDelta);
+    // 1. Yüksek tepkisellik katsayısı (32) ile anında eğim tepkisi + 60 FPS mikro-sönümleme
+    const slerpAlpha = 1 - Math.exp(-32 * safeDelta);
     _currentQuat.slerp(_targetQuat, slerpAlpha);
     _currentEuler.setFromQuaternion(_currentQuat, 'XYZ');
 
@@ -172,14 +210,14 @@ function MazeStage({
       visualTiltGroupRef.current.quaternion.copy(_currentQuat);
     }
 
-    // 2. Fizik küresine eğim açısına karşılık gelen teğetsel yerçekimi ivmesini uygula (Zıplama = 0)
+    // 2. Fizik küresine eğim açısına karşılık gelen anlık ivmeyi uygula (Zıplama = 0)
     if (ballBodyRef.current) {
       if (isInteractive) {
         const accelX = -SLOPE_GRAVITY * Math.sin(_currentEuler.z);
         const accelZ = SLOPE_GRAVITY * Math.sin(_currentEuler.x);
 
         const currentVel = ballBodyRef.current.linvel();
-        const damping = Math.exp(-1.15 * safeDelta);
+        const damping = Math.exp(-0.55 * safeDelta);
         const nextVx = (currentVel.x + accelX * safeDelta) * damping;
         const nextVz = (currentVel.z + accelZ * safeDelta) * damping;
 
@@ -188,13 +226,11 @@ function MazeStage({
         ballBodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
       }
 
-      // Görsel küreyi fiziksel kürenin tahta-yerel koordinatlarıyla eşitle
       const pos = ballBodyRef.current.translation();
       const vel = ballBodyRef.current.linvel();
 
       if (visualBallMeshRef.current) {
         visualBallMeshRef.current.position.set(pos.x, BALL_RADIUS, pos.z);
-        // Yuvarlanma hissi için hız vektörüne dik açısal dönüş
         visualBallMeshRef.current.rotation.x +=
           (vel.z / BALL_RADIUS) * safeDelta;
         visualBallMeshRef.current.rotation.z -=
@@ -204,25 +240,21 @@ function MazeStage({
 
     // 3. Kameraya hafif paralaks takibi uygula
     _cameraTargetPos.set(
-      -clampedRoll * 2.8,
+      -clampedRoll * 2.4,
       14.5,
-      10.2 + clampedPitch * 2.2,
+      10.2 + clampedPitch * 2.0,
     );
     state.camera.position.lerp(
       _cameraTargetPos,
-      1 - Math.exp(-6 * safeDelta),
+      1 - Math.exp(-10 * safeDelta),
     );
     state.camera.lookAt(_cameraLookAt);
   });
 
   return (
     <>
-      {/* =====================================================================
-          1. GÖRÜNMEZ SABİT FİZİK ÇARPIŞTIRICILARI (TAHTA-YEREL KOORDİNATLAR)
-          Zemin ve duvarlar fizik motorunda sabit olduğu için küre asla zıplamaz!
-         ===================================================================== */}
-      <RigidBody type="fixed" colliders={false} friction={0.2} restitution={0.15}>
-        {/* Dış Duvar Çarpıştırıcıları */}
+      {/* 1. SABİT FİZİK ÇARPIŞTIRICILARI (TAHTA-YEREL UZAY) */}
+      <RigidBody type="fixed" colliders={false} friction={0.12} restitution={0.18}>
         {outerWalls.map((wall, idx) => (
           <CuboidCollider
             key={`phys-outer-${idx}`}
@@ -231,7 +263,6 @@ function MazeStage({
           />
         ))}
 
-        {/* İç Duvar Çarpıştırıcıları */}
         {levelData.innerWalls.map((wall, idx) => (
           <CuboidCollider
             key={`phys-inner-${levelData.id}-${idx}`}
@@ -242,17 +273,17 @@ function MazeStage({
 
         {/* Hedef Portalı Sensörü */}
         <CylinderCollider
-          args={[0.4, 0.48]}
+          args={[0.4, 0.46]}
           position={levelData.goalPosition}
           sensor
           onIntersectionEnter={onReachGoal}
         />
 
-        {/* Tuzak Delikleri (Void Holes) Sensörleri */}
+        {/* Tuzak Delikleri (Void Holes) Sensörleri — Sadece kürenin merkezi deliğe girdiğinde tetiklenir */}
         {levelData.voidHoles.map((hole, idx) => (
           <CylinderCollider
             key={`phys-hole-${levelData.id}-${idx}`}
-            args={[0.4, hole.radius ?? 0.38]}
+            args={[0.4, (hole.radius ?? 0.42) * 0.68]}
             position={[hole.position[0], 0.25, hole.position[1]]}
             sensor
             onIntersectionEnter={() => {
@@ -275,65 +306,50 @@ function MazeStage({
         ]}
         enabledTranslations={[true, false, true]}
         enabledRotations={[false, false, false]}
-        restitution={0.2}
-        friction={0.1}
+        restitution={0.22}
+        friction={0.08}
         ccd={true}
         onCollisionEnter={handleBallCollision}
       >
         <BallCollider args={[BALL_RADIUS]} />
       </RigidBody>
 
-      {/* =====================================================================
-          2. GÖRSEL 3B SAHNE GRUBU (QUATERNION SLERP İLE EĞİLEN GÖRSEL KATMAN)
-         ===================================================================== */}
+      {/* 2. GÖRSEL 3B SAHNE GRUBU */}
       <group ref={visualTiltGroupRef}>
-        {/* Ana Labirent Zemin Plakası */}
-        <mesh position={[0, -0.25, 0]} receiveShadow castShadow>
+        <mesh
+          position={[0, -0.25, 0]}
+          material={_boardMaterial}
+          receiveShadow
+        >
           <boxGeometry args={[levelData.boardSize, 0.5, levelData.boardSize]} />
-          <meshStandardMaterial
-            color="#18181b"
-            roughness={0.55}
-            metalness={0.25}
-          />
         </mesh>
 
-        {/* Zemin Üzeri İnce Teknoloji Izgara Çizgileri */}
         <gridHelper
           args={[levelData.boardSize - 0.4, 12, '#27272a', '#27272a']}
           position={[0, 0.01, 0]}
         />
 
-        {/* Görsel Dış Çerçeve Duvarları */}
         {outerWalls.map((wall, idx) => (
           <mesh
             key={`vis-outer-${idx}`}
             position={wall.position}
+            material={_outerWallMaterial}
             castShadow
             receiveShadow
           >
             <boxGeometry args={wall.size} />
-            <meshStandardMaterial
-              color="#27272a"
-              roughness={0.35}
-              metalness={0.45}
-            />
           </mesh>
         ))}
 
-        {/* Görsel İç Labirent Duvarları */}
         {levelData.innerWalls.map((wall, idx) => (
           <mesh
             key={`vis-inner-${levelData.id}-${idx}`}
             position={wall.position}
+            material={_innerWallMaterial}
             castShadow
             receiveShadow
           >
             <boxGeometry args={wall.size} />
-            <meshStandardMaterial
-              color="#3f3f46"
-              roughness={0.3}
-              metalness={0.5}
-            />
           </mesh>
         ))}
 
@@ -345,58 +361,57 @@ function MazeStage({
             levelData.startPosition[2],
           ]}
           rotation={[-Math.PI / 2, 0, 0]}
+          material={_startRingMaterial}
         >
-          <ringGeometry args={[0.35, 0.52, 32]} />
-          <meshBasicMaterial color="#38bdf8" transparent opacity={0.65} />
+          <ringGeometry args={[0.35, 0.52, 24]} />
         </mesh>
 
-        {/* Tuzak Delikleri (Kırmızı / Kara Delik Halkaları) */}
+        {/* Tuzak Delikleri */}
         {levelData.voidHoles.map((hole, idx) => {
-          const r = hole.radius ?? 0.46;
+          const r = hole.radius ?? 0.42;
           return (
             <group
               key={`vis-hole-${levelData.id}-${idx}`}
               position={[hole.position[0], 0.02, hole.position[1]]}
             >
-              <mesh rotation={[-Math.PI / 2, 0, 0]}>
-                <circleGeometry args={[r, 32]} />
-                <meshBasicMaterial color="#050507" />
+              <mesh
+                rotation={[-Math.PI / 2, 0, 0]}
+                material={_holeCoreMaterial}
+              >
+                <circleGeometry args={[r, 24]} />
               </mesh>
-              <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, 0]}>
-                <ringGeometry args={[r * 0.82, r * 1.08, 32]} />
-                <meshStandardMaterial
-                  color="#f43f5e"
-                  emissive="#e11d48"
-                  emissiveIntensity={1.4}
-                />
+              <mesh
+                rotation={[-Math.PI / 2, 0, 0]}
+                position={[0, 0.005, 0]}
+                material={_holeRingMaterial}
+              >
+                <ringGeometry args={[r * 0.82, r * 1.08, 24]} />
               </mesh>
             </group>
           );
         })}
 
-        {/* Hedef Portalı (Zümrüt Yeşili Sensör Bölgesi) */}
+        {/* Hedef Portalı */}
         <group position={levelData.goalPosition}>
           <mesh
             ref={goalRingRef}
             position={[0, -0.32, 0]}
             rotation={[-Math.PI / 2, 0, 0]}
+            material={_goalRingMaterial}
           >
             <ringGeometry args={[0.35, 0.68, 6]} />
-            <meshStandardMaterial
-              color="#10b981"
-              emissive="#10b981"
-              emissiveIntensity={1.6}
-              roughness={0.2}
-            />
           </mesh>
-          <mesh position={[0, -0.33, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <circleGeometry args={[0.35, 32]} />
-            <meshBasicMaterial color="#34d399" transparent opacity={0.35} />
+          <mesh
+            position={[0, -0.33, 0]}
+            rotation={[-Math.PI / 2, 0, 0]}
+            material={_goalCoreMaterial}
+          >
+            <circleGeometry args={[0.35, 24]} />
           </mesh>
           <pointLight
             color="#10b981"
-            intensity={3.5}
-            distance={4.5}
+            intensity={3.0}
+            distance={4.2}
             position={[0, 0.5, 0]}
           />
         </group>
@@ -409,15 +424,10 @@ function MazeStage({
             BALL_RADIUS,
             levelData.startPosition[2],
           ]}
+          material={_ballMaterial}
           castShadow
-          receiveShadow
         >
-          <sphereGeometry args={[BALL_RADIUS, 48, 48]} />
-          <meshStandardMaterial
-            color="#f4f4f5"
-            metalness={0.88}
-            roughness={0.14}
-          />
+          <sphereGeometry args={[BALL_RADIUS, 32, 32]} />
         </mesh>
       </group>
     </>
@@ -482,27 +492,26 @@ export function MazeScene() {
     <div className="fixed inset-0 z-0 h-screen w-screen bg-zinc-950">
       <Canvas
         shadows
-        dpr={[1, 2]}
-        camera={{ position: [0, 14.5, 10.2], fov: 42, near: 0.1, far: 100 }}
+        dpr={[1, 1.5]}
+        gl={{ powerPreference: 'high-performance', antialias: true }}
+        camera={{ position: [0, 14.5, 10.2], fov: 42, near: 0.1, far: 60 }}
       >
         <color attach="background" args={['#09090b']} />
         <fog attach="fog" args={['#09090b', 18, 36]} />
 
-        {/* Sahne Aydınlatması */}
-        <ambientLight intensity={0.65} />
+        <ambientLight intensity={0.7} />
         <directionalLight
           position={[8, 16, 10]}
-          intensity={1.8}
+          intensity={1.75}
           castShadow
-          shadow-mapSize={[2048, 2048]}
-          shadow-camera-left={-10}
-          shadow-camera-right={10}
-          shadow-camera-top={10}
-          shadow-camera-bottom={-10}
+          shadow-mapSize={[1024, 1024]}
+          shadow-camera-left={-9}
+          shadow-camera-right={9}
+          shadow-camera-top={9}
+          shadow-camera-bottom={-9}
         />
-        <pointLight position={[-8, 6, -8]} intensity={1.2} color="#38bdf8" />
+        <pointLight position={[-8, 6, -8]} intensity={1.1} color="#38bdf8" />
 
-        {/* 3B Rapier Fizik Dünyası */}
         <Physics gravity={[0, 0, 0]}>
           <MazeStage
             levelData={activeLevel}
