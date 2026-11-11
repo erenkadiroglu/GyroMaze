@@ -50,6 +50,57 @@ class SoundEngine {
   }
 
   /**
+   * Enerji kristali toplandığında kristalize armonik çan sesi üretir.
+   */
+  public playCrystalPickup(collectedIndex = 1): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    const baseFreq = 660 + collectedIndex * 110;
+    [baseFreq, baseFreq * 1.5].forEach((freq, idx) => {
+      const now = ctx.currentTime + idx * 0.045;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now);
+      osc.frequency.exponentialRampToValueAtTime(freq * 1.12, now + 0.18);
+
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.21);
+    });
+  }
+
+  /**
+   * Lazer bariyerine temas edildiğinde elektro-darbe sesi üretir.
+   */
+  public playLaserZap(): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(240, now);
+    osc.frequency.linearRampToValueAtTime(85, now + 0.22);
+
+    gain.gain.setValueAtTime(0.18, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.25);
+  }
+
+  /**
    * Küre tuzak deliğine (Void Hole) düştüğünde alçalan frekanslı ses efekti üretir.
    */
   public playHoleFall(): void {

@@ -50,47 +50,98 @@ const _holeRingMaterial = new THREE.MeshStandardMaterial({
   emissive: '#e11d48',
   emissiveIntensity: 1.4,
 });
-const _goalRingMaterial = new THREE.MeshStandardMaterial({
+const _goalUnlockedRingMaterial = new THREE.MeshStandardMaterial({
   color: '#10b981',
   emissive: '#10b981',
-  emissiveIntensity: 1.6,
+  emissiveIntensity: 1.7,
   roughness: 0.2,
 });
-const _goalCoreMaterial = new THREE.MeshBasicMaterial({
+const _goalLockedRingMaterial = new THREE.MeshStandardMaterial({
+  color: '#f59e0b',
+  emissive: '#d97706',
+  emissiveIntensity: 1.1,
+  roughness: 0.3,
+});
+const _goalUnlockedCoreMaterial = new THREE.MeshBasicMaterial({
   color: '#34d399',
   transparent: true,
-  opacity: 0.35,
+  opacity: 0.38,
+});
+const _goalLockedCoreMaterial = new THREE.MeshBasicMaterial({
+  color: '#fbbf24',
+  transparent: true,
+  opacity: 0.22,
 });
 const _startRingMaterial = new THREE.MeshBasicMaterial({
   color: '#38bdf8',
   transparent: true,
   opacity: 0.65,
 });
+const _crystalMaterial = new THREE.MeshStandardMaterial({
+  color: '#38bdf8',
+  emissive: '#0284c7',
+  emissiveIntensity: 1.6,
+  roughness: 0.15,
+  metalness: 0.8,
+});
+const _laserBeamMaterial = new THREE.MeshBasicMaterial({
+  color: '#fb7185',
+  transparent: true,
+  opacity: 0.88,
+});
+const _laserPillarMaterial = new THREE.MeshStandardMaterial({
+  color: '#52525b',
+  metalness: 0.7,
+  roughness: 0.25,
+});
+const _trailMaterial = new THREE.MeshBasicMaterial({
+  color: '#38bdf8',
+  transparent: true,
+  opacity: 0.28,
+});
 
 const MAX_TILT_RADIANS = THREE.MathUtils.degToRad(24);
 const SLOPE_GRAVITY = 36.0;
 const BALL_RADIUS = 0.34;
+const TRAIL_COUNT = 7;
 
 interface MazeStageProps {
   levelData: MazeLevelDefinition;
+  isGoalUnlocked: boolean;
+  collectedCrystals: number[];
+  onCollectCrystal: (idx: number) => void;
   onReachGoal: () => void;
   onFallIntoHole: () => void;
+  onLaserHit: () => void;
   onWallHit: (speed: number) => void;
 }
 
 /**
- * Zıplamasız (Zero-Bounce) ve Ultra Tepkisel (32Hz Slerp) 3B Labirent Sahnesi.
+ * Zıplamasız (Zero-Bounce), Enerji Kristalli, Lazer Kapılı ve Neon İz Efektli 3B Labirent Sahnesi.
  */
 function MazeStage({
   levelData,
+  isGoalUnlocked,
+  collectedCrystals,
+  onCollectCrystal,
   onReachGoal,
   onFallIntoHole,
+  onLaserHit,
   onWallHit,
 }: MazeStageProps) {
   const ballBodyRef = useRef<RapierRigidBody | null>(null);
   const visualTiltGroupRef = useRef<THREE.Group | null>(null);
   const visualBallMeshRef = useRef<THREE.Mesh | null>(null);
   const goalRingRef = useRef<THREE.Mesh | null>(null);
+  const crystalMeshesRef = useRef<Array<THREE.Mesh | null>>([]);
+  const laserBeamMeshesRef = useRef<Array<THREE.Mesh | null>>([]);
+  const trailMeshesRef = useRef<Array<THREE.Mesh | null>>([]);
+  const trailHistoryRef = useRef<Array<{ x: number; z: number }>>(
+    Array.from({ length: TRAIL_COUNT }, () => ({
+      x: levelData.startPosition[0],
+      z: levelData.startPosition[2],
+    })),
+  );
   const lastWallSoundTimeRef = useRef<number>(0);
 
   const resetCount = useGameStore((s) => s.resetCount);
@@ -143,8 +194,12 @@ function MazeStage({
     if (visualTiltGroupRef.current) {
       visualTiltGroupRef.current.quaternion.identity();
     }
+    const [sx, , sz] = levelData.startPosition;
+    for (let i = 0; i < TRAIL_COUNT; i++) {
+      trailHistoryRef.current[i].x = sx;
+      trailHistoryRef.current[i].z = sz;
+    }
     if (ballBodyRef.current) {
-      const [sx, , sz] = levelData.startPosition;
       ballBodyRef.current.setTranslation(
         { x: sx, y: BALL_RADIUS, z: sz },
         true,
@@ -173,9 +228,19 @@ function MazeStage({
 
   useFrame((state, delta) => {
     const safeDelta = Math.min(delta, 0.05);
+    const elapsed = state.clock.elapsedTime;
 
     if (goalRingRef.current) {
-      goalRingRef.current.rotation.z += safeDelta * 1.8;
+      goalRingRef.current.rotation.z += safeDelta * (isGoalUnlocked ? 2.4 : 0.8);
+    }
+
+    // Kristallerin havada süzülme ve dönme animasyonu
+    for (let i = 0; i < levelData.crystals.length; i++) {
+      const mesh = crystalMeshesRef.current[i];
+      if (mesh && mesh.visible) {
+        mesh.rotation.y += safeDelta * 2.5;
+        mesh.position.y = 0.42 + Math.sin(elapsed * 3.5 + i) * 0.08;
+      }
     }
 
     const isInteractive = gameStatus === 'playing' || gameStatus === 'waiting';
@@ -201,7 +266,7 @@ function MazeStage({
     _targetEuler.set(clampedPitch, 0, clampedRoll, 'XYZ');
     _targetQuat.setFromEuler(_targetEuler);
 
-    // 1. Yüksek tepkisellik katsayısı (32) ile anında eğim tepkisi + 60 FPS mikro-sönümleme
+    // 1. Yüksek tepkisellik katsayısı (32) ile anında eğim tepkisi
     const slerpAlpha = 1 - Math.exp(-32 * safeDelta);
     _currentQuat.slerp(_targetQuat, slerpAlpha);
     _currentEuler.setFromQuaternion(_currentQuat, 'XYZ');
@@ -210,7 +275,7 @@ function MazeStage({
       visualTiltGroupRef.current.quaternion.copy(_currentQuat);
     }
 
-    // 2. Fizik küresine eğim açısına karşılık gelen anlık ivmeyi uygula (Zıplama = 0)
+    // 2. Fizik küresine eğim ivmesi, kristal toplama, lazer kontrolü ve neon iz güncellemesi
     if (ballBodyRef.current) {
       if (isInteractive) {
         const accelX = -SLOPE_GRAVITY * Math.sin(_currentEuler.z);
@@ -235,6 +300,68 @@ function MazeStage({
           (vel.z / BALL_RADIUS) * safeDelta;
         visualBallMeshRef.current.rotation.z -=
           (vel.x / BALL_RADIUS) * safeDelta;
+      }
+
+      // Neon Hareket İzi (Motion Trail) halkalarını güncelle (Sıfır GC)
+      const history = trailHistoryRef.current;
+      for (let i = TRAIL_COUNT - 1; i > 0; i--) {
+        history[i].x += (history[i - 1].x - history[i].x) * 0.42;
+        history[i].z += (history[i - 1].z - history[i].z) * 0.42;
+      }
+      history[0].x = pos.x;
+      history[0].z = pos.z;
+
+      for (let i = 0; i < TRAIL_COUNT; i++) {
+        const trailMesh = trailMeshesRef.current[i];
+        if (trailMesh) {
+          trailMesh.position.set(history[i].x, 0.025, history[i].z);
+          const scale = Math.max(0.15, 1 - i / (TRAIL_COUNT + 1));
+          trailMesh.scale.set(scale, scale, 1);
+        }
+      }
+
+      // Enerji Kristali Toplama Kontrolü (Mesafe karesi < 0.42)
+      for (let i = 0; i < levelData.crystals.length; i++) {
+        if (!collectedCrystals.includes(i)) {
+          const [cx, cz] = levelData.crystals[i];
+          const dx = pos.x - cx;
+          const dz = pos.z - cz;
+          if (dx * dx + dz * dz < 0.42) {
+            onCollectCrystal(i);
+          }
+        }
+      }
+
+      // Periyodik Lazer Kapıları Kontrolü
+      for (let i = 0; i < levelData.laserGates.length; i++) {
+        const gate = levelData.laserGates[i];
+        const cycleTime = (elapsed + gate.phaseOffset) % gate.periodSeconds;
+        // Döngünün %52'sinde aktif, %48'inde güvenli geçiş için kapalı
+        const isLaserActive = cycleTime < gate.periodSeconds * 0.52;
+
+        const beamMesh = laserBeamMeshesRef.current[i];
+        if (beamMesh) {
+          beamMesh.visible = isLaserActive;
+        }
+
+        if (isLaserActive && isInteractive) {
+          const [gx, gz] = gate.position;
+          const halfLen = gate.length / 2;
+          const hitThreshold = BALL_RADIUS + 0.08;
+
+          const hit =
+            gate.axis === 'x'
+              ? Math.abs(pos.z - gz) < hitThreshold &&
+                Math.abs(pos.x - gx) < halfLen
+              : Math.abs(pos.x - gx) < hitThreshold &&
+                Math.abs(pos.z - gz) < halfLen;
+
+          if (hit) {
+            onLaserHit();
+            resetBallAndBoard();
+            break;
+          }
+        }
       }
     }
 
@@ -279,7 +406,7 @@ function MazeStage({
           onIntersectionEnter={onReachGoal}
         />
 
-        {/* Tuzak Delikleri (Void Holes) Sensörleri — Sadece kürenin merkezi deliğe girdiğinde tetiklenir */}
+        {/* Tuzak Delikleri (Void Holes) Sensörleri */}
         {levelData.voidHoles.map((hole, idx) => (
           <CylinderCollider
             key={`phys-hole-${levelData.id}-${idx}`}
@@ -391,30 +518,114 @@ function MazeStage({
           );
         })}
 
-        {/* Hedef Portalı */}
+        {/* Toplanabilir Enerji Kristalleri */}
+        {levelData.crystals.map(([cx, cz], idx) => {
+          const isCollected = collectedCrystals.includes(idx);
+          return (
+            <mesh
+              key={`crystal-${levelData.id}-${idx}`}
+              ref={(el) => {
+                crystalMeshesRef.current[idx] = el;
+              }}
+              position={[cx, 0.42, cz]}
+              visible={!isCollected}
+              material={_crystalMaterial}
+              castShadow
+            >
+              <octahedronGeometry args={[0.28, 0]} />
+            </mesh>
+          );
+        })}
+
+        {/* Periyodik Lazer Kapılar */}
+        {levelData.laserGates.map((gate, idx) => {
+          const [gx, gz] = gate.position;
+          const halfLen = gate.length / 2;
+          const p1: [number, number, number] =
+            gate.axis === 'x'
+              ? [gx - halfLen, 0.35, gz]
+              : [gx, 0.35, gz - halfLen];
+          const p2: [number, number, number] =
+            gate.axis === 'x'
+              ? [gx + halfLen, 0.35, gz]
+              : [gx, 0.35, gz + halfLen];
+          const beamSize: [number, number, number] =
+            gate.axis === 'x'
+              ? [gate.length, 0.14, 0.08]
+              : [0.08, 0.14, gate.length];
+
+          return (
+            <group key={`laser-${levelData.id}-${idx}`}>
+              <mesh position={p1} material={_laserPillarMaterial}>
+                <cylinderGeometry args={[0.1, 0.12, 0.7, 12]} />
+              </mesh>
+              <mesh position={p2} material={_laserPillarMaterial}>
+                <cylinderGeometry args={[0.1, 0.12, 0.7, 12]} />
+              </mesh>
+              <mesh
+                ref={(el) => {
+                  laserBeamMeshesRef.current[idx] = el;
+                }}
+                position={[gx, 0.35, gz]}
+                material={_laserBeamMaterial}
+              >
+                <boxGeometry args={beamSize} />
+              </mesh>
+            </group>
+          );
+        })}
+
+        {/* Hedef Portalı (Kristaller Toplandığında Kehribardan Zümrüt Yeşiline Dönüşür) */}
         <group position={levelData.goalPosition}>
           <mesh
             ref={goalRingRef}
             position={[0, -0.32, 0]}
             rotation={[-Math.PI / 2, 0, 0]}
-            material={_goalRingMaterial}
+            material={
+              isGoalUnlocked
+                ? _goalUnlockedRingMaterial
+                : _goalLockedRingMaterial
+            }
           >
             <ringGeometry args={[0.35, 0.68, 6]} />
           </mesh>
           <mesh
             position={[0, -0.33, 0]}
             rotation={[-Math.PI / 2, 0, 0]}
-            material={_goalCoreMaterial}
+            material={
+              isGoalUnlocked
+                ? _goalUnlockedCoreMaterial
+                : _goalLockedCoreMaterial
+            }
           >
             <circleGeometry args={[0.35, 24]} />
           </mesh>
           <pointLight
-            color="#10b981"
+            color={isGoalUnlocked ? '#10b981' : '#f59e0b'}
             intensity={3.0}
             distance={4.2}
             position={[0, 0.5, 0]}
           />
         </group>
+
+        {/* Bilye Neon Hareket İzi (Motion Trail) */}
+        {Array.from({ length: TRAIL_COUNT }).map((_, idx) => (
+          <mesh
+            key={`trail-${idx}`}
+            ref={(el) => {
+              trailMeshesRef.current[idx] = el;
+            }}
+            position={[
+              levelData.startPosition[0],
+              0.025,
+              levelData.startPosition[2],
+            ]}
+            rotation={[-Math.PI / 2, 0, 0]}
+            material={_trailMaterial}
+          >
+            <circleGeometry args={[BALL_RADIUS * 0.68, 16]} />
+          </mesh>
+        ))}
 
         {/* Görsel Metal Bilye */}
         <mesh
@@ -442,16 +653,35 @@ export function MazeScene() {
   const gameStatus = useGameStore((s) => s.gameStatus);
   const elapsedSeconds = useGameStore((s) => s.elapsedSeconds);
   const isSoundMuted = useGameStore((s) => s.isSoundMuted);
+  const collectedCrystals = useGameStore((s) => s.collectedCrystals);
+  const collectCrystal = useGameStore((s) => s.collectCrystal);
   const recordLevelCompletion = useGameStore((s) => s.recordLevelCompletion);
   const triggerHaptic = useGameStore((s) => s.triggerHaptic);
-  const setElapsedSeconds = useGameStore((s) => s.setElapsedSeconds);
+  const triggerBallReset = useGameStore((s) => s.triggerBallReset);
 
   const activeLevel = useMemo(() => {
     const index = (level - 1) % MAZE_LEVELS.length;
     return MAZE_LEVELS[index];
   }, [level]);
 
+  const isGoalUnlocked =
+    collectedCrystals.length >= activeLevel.crystals.length;
+
+  const handleCollectCrystal = useCallback(
+    (idx: number) => {
+      if (!isSoundMuted) {
+        soundEngine.playCrystalPickup(collectedCrystals.length + 1);
+      }
+      triggerHaptic('crystal');
+      collectCrystal(idx);
+    },
+    [isSoundMuted, collectedCrystals.length, triggerHaptic, collectCrystal],
+  );
+
   const handleReachGoal = useCallback(() => {
+    if (!isGoalUnlocked) {
+      return;
+    }
     if (gameStatus !== 'won') {
       if (!isSoundMuted) {
         soundEngine.playVictory();
@@ -460,6 +690,7 @@ export function MazeScene() {
       recordLevelCompletion(activeLevel.id, elapsedSeconds);
     }
   }, [
+    isGoalUnlocked,
     gameStatus,
     isSoundMuted,
     triggerHaptic,
@@ -473,8 +704,16 @@ export function MazeScene() {
       soundEngine.playHoleFall();
     }
     triggerHaptic('hole');
-    setElapsedSeconds(0);
-  }, [isSoundMuted, triggerHaptic, setElapsedSeconds]);
+    triggerBallReset();
+  }, [isSoundMuted, triggerHaptic, triggerBallReset]);
+
+  const handleLaserHit = useCallback(() => {
+    if (!isSoundMuted) {
+      soundEngine.playLaserZap();
+    }
+    triggerHaptic('laser');
+    triggerBallReset();
+  }, [isSoundMuted, triggerHaptic, triggerBallReset]);
 
   const handleWallHit = useCallback(
     (speed: number) => {
@@ -515,8 +754,12 @@ export function MazeScene() {
         <Physics gravity={[0, 0, 0]}>
           <MazeStage
             levelData={activeLevel}
+            isGoalUnlocked={isGoalUnlocked}
+            collectedCrystals={collectedCrystals}
+            onCollectCrystal={handleCollectCrystal}
             onReachGoal={handleReachGoal}
             onFallIntoHole={handleFallIntoHole}
+            onLaserHit={handleLaserHit}
             onWallHit={handleWallHit}
           />
         </Physics>
