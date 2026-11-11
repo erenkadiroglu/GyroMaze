@@ -22,3 +22,4 @@
 - **Sunucu (`apps/server`):** NestJS, TypeScript, Socket.io
 - **Paylaşılan (`packages/shared`):** Ortak TypeScript tip ve arayüz tanımları (`GyroData`, `RoomEvents`)
 - **Donanım API:** HTML5 Device Orientation API (Mobil)
+

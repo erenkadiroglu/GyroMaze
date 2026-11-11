@@ -73,3 +73,4 @@ Commit mesajları aşağıdaki yapıyı takip etmelidir:
    npm run typecheck
    ```
 4. PR açıklamasında yapılan değişikliği, mimari etkilerini ve varsa ekran görüntülerini/GIF'leri Türkçe olarak paylaşın.
+

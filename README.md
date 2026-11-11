@@ -135,3 +135,4 @@ Projeye katkıda bulunmadan önce lütfen [**Katkı Rehberi (`CONTRIBUTING.md`)*
 
 **Eren Kadiroğlu**
 - GitHub: [@erenkadiroglu](https://github.com/erenkadiroglu)
+

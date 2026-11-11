@@ -115,3 +115,4 @@ Mobil sensörlerden gelen ham veriler mikro titreşimler (sensör gürültüsü)
 ### 4.3. Kinematik Fizik Etkileşimi (`@react-three/rapier`)
 - **Labirent Gövdesi (`RigidBody type="kinematicPosition"` / `kinematicVelocity`):** Labirent duvarları ve zemini kinematik bir fiziksel gövde olarak tanımlanır. Her fizik adımında sönümlenmiş jiroskop rotasyonu (`setNextKinematicRotation`) uygulanır.
 - **Küre (Top) Gövdesi (`RigidBody type="dynamic" colliders="ball"`):** Labirent içindeki metal bilye tamamen dinamik bir fizik nesnesidir. Labirent eğildikçe yerçekimi, yüzey sürtünmesi (`friction`) ve esneklik (`restitution`) parametrelerine göre doğal bir şekilde hızlanır, duvarlara çarpar ve hedefe doğru yuvarlanır.
+
