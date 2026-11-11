@@ -15,6 +15,7 @@ import {
   GyroUpdatePayload,
   GameStatePayload,
   HapticPayload,
+  SubmitScorePayload,
 } from '@gyromaze/shared';
 import { RoomService } from './room.service';
 
@@ -81,6 +82,10 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
       `Yeni oda oluşturuldu: ${room.roomId} (Host: ${client.id}, Tunnel: ${room.tunnelUrl ?? 'Yok'})`,
     );
     client.emit(RoomEvents.ROOM_CREATED, room);
+    client.emit(
+      RoomEvents.LEADERBOARD_UPDATE,
+      this.roomService.getLeaderboard(),
+    );
   }
 
   /**
@@ -202,5 +207,20 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     this.server.to(roomId).emit(RoomEvents.GAME_STATE_CHANGE, payload);
+  }
+
+  /**
+   * Oyuncunun tamamladığı bölüm süresini küresel skor tablosuna ekler ve tüm istemcilere yayınlar.
+   */
+  @SubscribeMessage(RoomEvents.LEADERBOARD_SUBMIT)
+  public handleSubmitScore(
+    @MessageBody() payload: SubmitScorePayload,
+  ): void {
+    if (!payload?.levelId || typeof payload.timeSeconds !== 'number') {
+      return;
+    }
+
+    const updated = this.roomService.submitScore(payload);
+    this.server.emit(RoomEvents.LEADERBOARD_UPDATE, updated);
   }
 }

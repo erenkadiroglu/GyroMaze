@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { networkInterfaces } from 'os';
-import { RoomState, RoomErrorPayload } from '@gyromaze/shared';
+import {
+  RoomState,
+  RoomErrorPayload,
+  LeaderboardEntry,
+  SubmitScorePayload,
+} from '@gyromaze/shared';
 
 /**
  * Soket kimliğinin hangi odada ve hangi rolde bulunduğunu tutan hızlı arama kaydı.
@@ -31,6 +36,45 @@ export class RoomService {
 
   /** Karışıklığı önlemek için 0/O ve 1/I/L gibi benzer karakterleri içermeyen alfabe */
   private readonly ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+
+  /** Bölüm bazlı en hızlı tamamlama sürelerini tutan küresel skor listesi */
+  private leaderboard: LeaderboardEntry[] = [
+    {
+      id: 'seed-1',
+      playerName: 'Eren Kadiroğlu',
+      levelId: 1,
+      timeSeconds: 9.4,
+      createdAt: Date.now() - 86400000,
+    },
+    {
+      id: 'seed-2',
+      playerName: 'Eren Kadiroğlu',
+      levelId: 2,
+      timeSeconds: 14.2,
+      createdAt: Date.now() - 72000000,
+    },
+    {
+      id: 'seed-3',
+      playerName: 'Eren Kadiroğlu',
+      levelId: 3,
+      timeSeconds: 18.6,
+      createdAt: Date.now() - 54000000,
+    },
+    {
+      id: 'seed-4',
+      playerName: 'Eren Kadiroğlu',
+      levelId: 4,
+      timeSeconds: 16.8,
+      createdAt: Date.now() - 36000000,
+    },
+    {
+      id: 'seed-5',
+      playerName: 'Eren Kadiroğlu',
+      levelId: 5,
+      timeSeconds: 21.5,
+      createdAt: Date.now() - 18000000,
+    },
+  ];
 
   /**
    * Çakışmasız 6 karakterli benzersiz oda kodu üretir.
@@ -211,5 +255,45 @@ export class RoomService {
         remainingRoom: room,
       };
     }
+  }
+
+  /**
+   * Mevcut küresel skor tablosunu döndürür.
+   */
+  public getLeaderboard(): LeaderboardEntry[] {
+    return this.leaderboard;
+  }
+
+  /**
+   * Yeni bir bölüm tamamlama skorunu kaydeder ve her bölüm için en hızlı 10 kaydı sıralar.
+   */
+  public submitScore(payload: SubmitScorePayload): LeaderboardEntry[] {
+    const cleanName =
+      payload.playerName.trim().slice(0, 24) || 'Anonim Oyuncu';
+    const entry: LeaderboardEntry = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      playerName: cleanName,
+      levelId: payload.levelId,
+      timeSeconds: Number(Math.max(1, payload.timeSeconds).toFixed(1)),
+      createdAt: Date.now(),
+    };
+
+    this.leaderboard.push(entry);
+
+    const grouped = new Map<number, LeaderboardEntry[]>();
+    for (const item of this.leaderboard) {
+      const list = grouped.get(item.levelId) ?? [];
+      list.push(item);
+      grouped.set(item.levelId, list);
+    }
+
+    const nextLeaderboard: LeaderboardEntry[] = [];
+    for (const [, list] of grouped.entries()) {
+      list.sort((a, b) => a.timeSeconds - b.timeSeconds);
+      nextLeaderboard.push(...list.slice(0, 10));
+    }
+
+    this.leaderboard = nextLeaderboard;
+    return this.leaderboard;
   }
 }

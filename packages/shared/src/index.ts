@@ -30,11 +30,37 @@ export type GameStatus = 'waiting' | 'ready' | 'playing' | 'paused' | 'won';
 /**
  * Mobil cihazda tetiklenecek titreşim (Haptic Feedback) tipi.
  */
-export type HapticType = 'wall' | 'hole' | 'goal' | 'calibrate' | 'crystal' | 'laser';
+export type HapticType =
+  | 'wall'
+  | 'hole'
+  | 'goal'
+  | 'calibrate'
+  | 'crystal'
+  | 'laser';
+
+/**
+ * Küresel skor tablosundaki (Leaderboard) tek bir rekor kaydı.
+ */
+export interface LeaderboardEntry {
+  id: string;
+  playerName: string;
+  levelId: number;
+  timeSeconds: number;
+  createdAt: number;
+}
+
+/**
+ * Yeni bir bölüm skoru gönderilirken kullanılan veri yükü.
+ */
+export interface SubmitScorePayload {
+  playerName: string;
+  levelId: number;
+  timeSeconds: number;
+}
 
 /**
  * Socket.io üzerinden istemci ve sunucu arasında kullanılan
- * standart oda, oyun ve telemetri olay (event) isimleri.
+ * standart oda, oyun, liderlik tablosu ve telemetri olay (event) isimleri.
  */
 export enum RoomEvents {
   /** Masaüstü istemcisi yeni bir oda oluşturmak istediğinde */
@@ -63,6 +89,10 @@ export enum RoomEvents {
   GAME_RESET_BALL = 'game:reset_ball',
   /** Masaüstündeki fiziksel etkileşimleri (çarpma, delik, zafer) mobil titreşime iletme */
   GAME_HAPTIC = 'game:haptic',
+  /** Bölüm tamamlandığında sunucu skor tablosuna süre kaydetme */
+  LEADERBOARD_SUBMIT = 'leaderboard:submit',
+  /** Güncel skor tablosunun tüm istemcilere yayınlanması */
+  LEADERBOARD_UPDATE = 'leaderboard:update',
 }
 
 /**
