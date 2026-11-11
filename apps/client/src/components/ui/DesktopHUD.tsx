@@ -26,11 +26,16 @@ import {
   Camera,
   Palette,
   Star,
+  Sun,
+  Moon,
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
   X,
   Send,
 } from 'lucide-react';
 import { useGameStore, transientGyro } from '@/store/useGameStore';
-import { MAZE_LEVELS } from '@/components/scene/mazeLevels';
+import { getMazeLevel } from '@/components/scene/mazeLevels';
 import { soundEngine } from '@/utils/soundEngine';
 import { LevelEditorModal } from './LevelEditorModal';
 
@@ -56,9 +61,14 @@ export function DesktopHUD() {
   const cycleCameraMode = useGameStore((s) => s.cycleCameraMode);
   const boardTheme = useGameStore((s) => s.boardTheme);
   const cycleBoardTheme = useGameStore((s) => s.cycleBoardTheme);
+  const colorScheme = useGameStore((s) => s.colorScheme);
+  const toggleColorScheme = useGameStore((s) => s.toggleColorScheme);
+  const hudNotification = useGameStore((s) => s.hudNotification);
+  const showHudNotification = useGameStore((s) => s.showHudNotification);
   const customLevel = useGameStore((s) => s.customLevel);
   const setLevel = useGameStore((s) => s.setLevel);
   const nextLevel = useGameStore((s) => s.nextLevel);
+  const prevLevel = useGameStore((s) => s.prevLevel);
   const latencyMs = useGameStore((s) => s.latencyMs);
   const elapsedSeconds = useGameStore((s) => s.elapsedSeconds);
   const setElapsedSeconds = useGameStore((s) => s.setElapsedSeconds);
@@ -82,10 +92,18 @@ export function DesktopHUD() {
   const pitchTextRef = useRef<HTMLSpanElement | null>(null);
   const rollTextRef = useRef<HTMLSpanElement | null>(null);
 
-  const currentLevelInfo =
-    level === 99 && customLevel
-      ? customLevel
-      : (MAZE_LEVELS[(level - 1) % MAZE_LEVELS.length] ?? MAZE_LEVELS[0]);
+  const currentLevelInfo = getMazeLevel(level, customLevel);
+  const isLight = colorScheme === 'light' || boardTheme === 'daylight';
+
+  const activeNumericLevel = level === 99 ? 1 : Math.max(1, level);
+  const levelWindowStart = Math.max(1, activeNumericLevel - 2);
+  const visibleLevelIds = [
+    levelWindowStart,
+    levelWindowStart + 1,
+    levelWindowStart + 2,
+    levelWindowStart + 3,
+    levelWindowStart + 4,
+  ];
 
   const currentBestTime = bestTimes[currentLevelInfo.id];
   const totalCrystals = currentLevelInfo.crystals.length;
@@ -110,7 +128,16 @@ export function DesktopHUD() {
       ? 'Zümrüt'
       : boardTheme === 'cyberpunk'
         ? 'Siberpunk'
-        : 'Kızıl Kor';
+        : boardTheme === 'crimson'
+          ? 'Kızıl Kor'
+          : 'Gün Işığı';
+
+  const panelClass = isLight
+    ? 'border-slate-300/90 bg-white/88 text-slate-900 shadow-lg'
+    : 'border-zinc-800/80 bg-zinc-900/75 text-zinc-100 shadow-2xl';
+  const btnClass = isLight
+    ? 'border-slate-300/90 bg-white/88 text-slate-800 hover:border-slate-400 hover:bg-slate-100/90 shadow-sm'
+    : 'border-zinc-800/80 bg-zinc-900/75 text-zinc-200 hover:border-zinc-700 hover:bg-zinc-800/90';
 
   useEffect(() => {
     setScoreSubmitted(false);
@@ -216,6 +243,40 @@ export function DesktopHUD() {
     triggerBallReset();
   };
 
+  const handleJumpProceduralLevel = () => {
+    const nextProc = level < 6 || level === 99 ? 6 : level + 1;
+    setLevel(nextProc);
+    showHudNotification(
+      `✨ Prosedürel Bölüm ${nextProc < 10 ? `0${nextProc}` : nextProc} oluşturuldu!`,
+      'info',
+    );
+  };
+
+  // Klavye kısayolları (R: Sıfırla, C: Kamera, M: Ses, L: Aydınlık/Karanlık Mod)
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      const key = e.key.toLowerCase();
+      if (key === 'r') {
+        triggerBallReset();
+      } else if (key === 'c') {
+        cycleCameraMode();
+      } else if (key === 'm') {
+        toggleSoundMuted();
+      } else if (key === 'l') {
+        toggleColorScheme();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [
+    triggerBallReset,
+    cycleCameraMode,
+    toggleSoundMuted,
+    toggleColorScheme,
+  ]);
+
   const handleScoreSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (scoreSubmitted) return;
@@ -235,8 +296,10 @@ export function DesktopHUD() {
     <div className="pointer-events-none fixed inset-0 z-10 flex flex-col justify-between p-5">
       {/* ÜST GÖSTERGE PANELİ (TOP HUD) */}
       <header className="flex flex-wrap items-center justify-between gap-3">
-        {/* Sol: Marka, Bölüm Bilgisi ve Seviye Seçici */}
-        <div className="pointer-events-auto flex flex-wrap items-center gap-3.5 rounded-2xl border border-zinc-800/80 bg-zinc-900/75 px-4 py-2.5 shadow-2xl backdrop-blur-xl">
+        {/* Sol: Marka, Bölüm Bilgisi ve Sonsuz Seviye Seçici */}
+        <div
+          className={`pointer-events-auto flex flex-wrap items-center gap-3 rounded-2xl border px-4 py-2.5 backdrop-blur-xl transition-colors ${panelClass}`}
+        >
           <div className="flex items-center gap-2">
             <span className="relative flex h-2.5 w-2.5">
               <span
@@ -258,69 +321,144 @@ export function DesktopHUD() {
                 }`}
               />
             </span>
-            <span className="text-base font-semibold tracking-tight text-zinc-100">
+            <span className="text-base font-semibold tracking-tight">
               GyroMaze
             </span>
           </div>
 
-          <div className="h-4 w-px bg-zinc-800" />
+          <div
+            className={`h-4 w-px ${isLight ? 'bg-slate-300' : 'bg-zinc-800'}`}
+          />
 
           <div className="flex flex-col">
-            <span className="text-xs font-medium text-emerald-400">
-              {currentLevelInfo.title}
-            </span>
-            <span className="text-[11px] text-zinc-400">
+            <div className="flex items-center gap-1.5">
+              <span
+                className={`text-xs font-semibold ${
+                  isLight ? 'text-emerald-600' : 'text-emerald-400'
+                }`}
+              >
+                {currentLevelInfo.title}
+              </span>
+              {currentLevelInfo.id >= 6 && currentLevelInfo.id !== 99 && (
+                <span className="rounded-md bg-purple-500/15 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-purple-400 uppercase">
+                  Sonsuz
+                </span>
+              )}
+            </div>
+            <span
+              className={`text-[11px] ${
+                isLight ? 'text-slate-500' : 'text-zinc-400'
+              }`}
+            >
               {currentLevelInfo.subtitle}
             </span>
           </div>
 
-          <div className="h-4 w-px bg-zinc-800" />
+          <div
+            className={`h-4 w-px ${isLight ? 'bg-slate-300' : 'bg-zinc-800'}`}
+          />
 
-          {/* Hızlı Bölüm Seçici (01 - 05) */}
+          {/* Sonsuz Bölüm Gezgini (01 .. ∞) */}
           <div className="flex items-center gap-1">
-            {MAZE_LEVELS.map((lvl) => {
-              const isActive = currentLevelInfo.id === lvl.id;
+            <button
+              type="button"
+              onClick={prevLevel}
+              disabled={activeNumericLevel <= 1 && level !== 99}
+              className={`flex h-7 w-6 cursor-pointer items-center justify-center rounded-lg transition disabled:cursor-not-allowed disabled:opacity-35 ${
+                isLight
+                  ? 'bg-slate-200/80 text-slate-700 hover:bg-slate-300'
+                  : 'bg-zinc-800/70 text-zinc-300 hover:bg-zinc-800'
+              }`}
+              title="Önceki Bölüm"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </button>
+
+            {visibleLevelIds.map((lvlId) => {
+              const isActive = currentLevelInfo.id === lvlId;
+              const label = lvlId < 10 ? `0${lvlId}` : String(lvlId);
               return (
                 <button
-                  key={lvl.id}
+                  key={lvlId}
                   type="button"
-                  onClick={() => setLevel(lvl.id)}
-                  className={`h-7 w-7 cursor-pointer rounded-lg font-mono text-xs font-semibold transition ${
+                  onClick={() => setLevel(lvlId)}
+                  className={`h-7 min-w-7 cursor-pointer rounded-lg px-1.5 font-mono text-xs font-semibold transition ${
                     isActive
                       ? 'bg-emerald-500 text-zinc-950 shadow-sm shadow-emerald-500/30'
-                      : 'bg-zinc-800/70 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
+                      : isLight
+                        ? 'bg-slate-200/75 text-slate-600 hover:bg-slate-300 hover:text-slate-900'
+                        : 'bg-zinc-800/70 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
                   }`}
-                  title={lvl.title}
+                  title={
+                    lvlId <= 5
+                      ? `Bölüm ${label} (Özel Tasarım)`
+                      : `Bölüm ${label} (Sonsuz Prosedürel Labirent)`
+                  }
                 >
-                  0{lvl.id}
+                  {label}
                 </button>
               );
             })}
+
+            <button
+              type="button"
+              onClick={nextLevel}
+              className={`flex h-7 w-6 cursor-pointer items-center justify-center rounded-lg transition ${
+                isLight
+                  ? 'bg-slate-200/80 text-slate-700 hover:bg-slate-300'
+                  : 'bg-zinc-800/70 text-zinc-300 hover:bg-zinc-800'
+              }`}
+              title="Sonraki Bölüm (Sonsuz İlerleme)"
+            >
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={handleJumpProceduralLevel}
+              className="ml-0.5 flex h-7 cursor-pointer items-center gap-1 rounded-lg border border-purple-500/35 bg-purple-500/15 px-2 text-[11px] font-semibold text-purple-400 transition hover:bg-purple-500/25 active:scale-95"
+              title="Yeni Prosedürel Sonsuz Bölüm Üret (Bölüm 06+)"
+            >
+              <Sparkles className="h-3 w-3" />
+              <span>Sonsuz</span>
+            </button>
           </div>
         </div>
 
-        {/* Sağ: Kristal, Süre, Rekor, Editör, Liderlik, Ses ve QR */}
+        {/* Sağ: Kristal, Süre, Rekor, Aydınlık/Karanlık Mod, Editör, Liderlik, Ses ve QR */}
         <div className="pointer-events-auto flex flex-wrap items-center gap-2">
           {/* Enerji Kristali ve Portal Kilidi Göstergesi */}
           <div
             className={`flex items-center gap-2 rounded-xl border px-3.5 py-2 backdrop-blur-xl transition ${
               isPortalUnlocked
-                ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
-                : 'border-zinc-800/80 bg-zinc-900/75 text-zinc-200'
+                ? isLight
+                  ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-700'
+                  : 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
+                : panelClass
             }`}
           >
-            <Gem className="h-3.5 w-3.5 text-sky-400" />
+            <Gem className="h-3.5 w-3.5 text-sky-500" />
             <span className="font-mono text-xs font-semibold">
               {collectedCrystals.length}/{totalCrystals}
             </span>
-            <div className="h-3 w-px bg-zinc-800" />
+            <div
+              className={`h-3 w-px ${isLight ? 'bg-slate-300' : 'bg-zinc-800'}`}
+            />
             {isPortalUnlocked ? (
-              <span className="flex items-center gap-1 text-xs font-medium text-emerald-300">
+              <span
+                className={`flex items-center gap-1 text-xs font-semibold ${
+                  isLight ? 'text-emerald-700' : 'text-emerald-300'
+                }`}
+              >
                 <Unlock className="h-3.5 w-3.5" />
                 Açık
               </span>
             ) : (
-              <span className="flex items-center gap-1 text-xs font-medium text-amber-300">
+              <span
+                className={`flex items-center gap-1 text-xs font-semibold ${
+                  isLight ? 'text-amber-600' : 'text-amber-300'
+                }`}
+              >
                 <Lock className="h-3.5 w-3.5" />
                 Kilitli
               </span>
@@ -328,22 +466,36 @@ export function DesktopHUD() {
           </div>
 
           {/* Süre ve En İyi Rekor Sayacı */}
-          <div className="flex items-center gap-2.5 rounded-xl border border-zinc-800/80 bg-zinc-900/75 px-3.5 py-2 backdrop-blur-xl">
+          <div
+            className={`flex items-center gap-2.5 rounded-xl border px-3.5 py-2 backdrop-blur-xl ${panelClass}`}
+          >
             <div className="flex items-center gap-1.5">
-              <span className="text-[11px] tracking-wider text-zinc-400 uppercase">
+              <span
+                className={`text-[11px] tracking-wider uppercase ${
+                  isLight ? 'text-slate-500' : 'text-zinc-400'
+                }`}
+              >
                 Süre
               </span>
-              <span className="font-mono text-xs font-semibold text-zinc-100">
+              <span className="font-mono text-xs font-semibold">
                 {elapsedSeconds.toFixed(1)}sn
               </span>
             </div>
 
             {currentBestTime !== undefined && (
               <>
-                <div className="h-3 w-px bg-zinc-800" />
+                <div
+                  className={`h-3 w-px ${
+                    isLight ? 'bg-slate-300' : 'bg-zinc-800'
+                  }`}
+                />
                 <div className="flex items-center gap-1">
-                  <Trophy className="h-3.5 w-3.5 text-amber-400" />
-                  <span className="font-mono text-xs font-medium text-amber-300">
+                  <Trophy className="h-3.5 w-3.5 text-amber-500" />
+                  <span
+                    className={`font-mono text-xs font-semibold ${
+                      isLight ? 'text-amber-600' : 'text-amber-300'
+                    }`}
+                  >
                     {currentBestTime.toFixed(1)}sn
                   </span>
                 </div>
@@ -355,28 +507,62 @@ export function DesktopHUD() {
           <button
             type="button"
             onClick={() => setPairingModalOpen(true)}
-            className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-zinc-800/80 bg-zinc-900/75 px-3.5 py-2 backdrop-blur-xl transition hover:border-zinc-700"
+            className={`flex cursor-pointer items-center gap-1.5 rounded-xl border px-3.5 py-2 backdrop-blur-xl transition ${btnClass}`}
             title="Oda Kodu ve Mobil Eşleşme Bilgileri"
           >
             {isControllerPaired ? (
               <>
-                <Wifi className="h-3.5 w-3.5 text-emerald-400" />
-                <span className="font-mono text-xs font-semibold text-emerald-300">
+                <Wifi className="h-3.5 w-3.5 text-emerald-500" />
+                <span
+                  className={`font-mono text-xs font-semibold ${
+                    isLight ? 'text-emerald-700' : 'text-emerald-300'
+                  }`}
+                >
                   {roomId} • {latencyMs}ms
                 </span>
               </>
             ) : isSocketConnected ? (
               <>
-                <KeyRound className="h-3.5 w-3.5 text-amber-400" />
-                <span className="text-[11px] text-zinc-400">Oda:</span>
-                <span className="font-mono text-xs font-bold tracking-wider text-amber-300">
+                <KeyRound className="h-3.5 w-3.5 text-amber-500" />
+                <span
+                  className={`text-[11px] ${
+                    isLight ? 'text-slate-500' : 'text-zinc-400'
+                  }`}
+                >
+                  Oda:
+                </span>
+                <span
+                  className={`font-mono text-xs font-bold tracking-wider ${
+                    isLight ? 'text-amber-600' : 'text-amber-300'
+                  }`}
+                >
                   {roomId ?? '...'}
                 </span>
               </>
             ) : (
               <>
-                <WifiOff className="h-3.5 w-3.5 text-rose-400" />
-                <span className="text-xs font-medium text-rose-300">Kopuk</span>
+                <WifiOff className="h-3.5 w-3.5 text-rose-500" />
+                <span className="text-xs font-medium text-rose-500">Kopuk</span>
+              </>
+            )}
+          </button>
+
+          {/* Aydınlık / Karanlık Mod Değiştirme Butonu */}
+          <button
+            type="button"
+            onClick={toggleColorScheme}
+            className={`flex cursor-pointer items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium transition active:scale-95 ${btnClass}`}
+            title="Aydınlık / Karanlık Mod Değiştir (Kısayol: L)"
+          >
+            {isLight ? (
+              <>
+                <Sun className="h-3.5 w-3.5 text-amber-500" />
+                <span>Aydınlık</span>
+              </>
+            ) : (
+              <>
+                <Moon className="h-3.5 w-3.5 text-sky-400" />
+                <span>Karanlık</span>
               </>
             )}
           </button>
@@ -385,10 +571,10 @@ export function DesktopHUD() {
           <button
             type="button"
             onClick={cycleCameraMode}
-            className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-zinc-800/80 bg-zinc-900/75 px-3 py-2 text-xs font-medium text-zinc-200 transition hover:border-zinc-700 hover:bg-zinc-800/90 active:scale-95"
-            title="Kamera Bakış Açısını Değiştir (İzometrik / Üstten / Takip)"
+            className={`flex cursor-pointer items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium transition active:scale-95 ${btnClass}`}
+            title="Kamera Bakış Açısını Değiştir (Kısayol: C)"
           >
-            <Camera className="h-3.5 w-3.5 text-purple-400" />
+            <Camera className="h-3.5 w-3.5 text-purple-500" />
             <span>{cameraModeLabel}</span>
           </button>
 
@@ -396,10 +582,10 @@ export function DesktopHUD() {
           <button
             type="button"
             onClick={cycleBoardTheme}
-            className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-zinc-800/80 bg-zinc-900/75 px-3 py-2 text-xs font-medium text-zinc-200 transition hover:border-zinc-700 hover:bg-zinc-800/90 active:scale-95"
-            title="3B Sahne Atmosfer Temasını Değiştir (Zümrüt / Siberpunk / Kızıl Kor)"
+            className={`flex cursor-pointer items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium transition active:scale-95 ${btnClass}`}
+            title="3B Sahne Atmosfer Temasını Değiştir (Zümrüt / Siberpunk / Kızıl Kor / Gün Işığı)"
           >
-            <Palette className="h-3.5 w-3.5 text-pink-400" />
+            <Palette className="h-3.5 w-3.5 text-pink-500" />
             <span>{boardThemeLabel}</span>
           </button>
 
@@ -407,10 +593,10 @@ export function DesktopHUD() {
           <button
             type="button"
             onClick={() => setEditorOpen(true)}
-            className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-zinc-800/80 bg-zinc-900/75 px-3 py-2 text-xs font-medium text-zinc-200 transition hover:border-zinc-700 hover:bg-zinc-800/90 active:scale-95"
+            className={`flex cursor-pointer items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium transition active:scale-95 ${btnClass}`}
             title="Özel 3B Harita Editörünü Aç"
           >
-            <Wrench className="h-3.5 w-3.5 text-sky-400" />
+            <Wrench className="h-3.5 w-3.5 text-sky-500" />
             <span>Harita Editörü</span>
           </button>
 
@@ -423,10 +609,10 @@ export function DesktopHUD() {
               );
               setLeaderboardOpen(true);
             }}
-            className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-zinc-800/80 bg-zinc-900/75 px-3 py-2 text-xs font-medium text-zinc-200 transition hover:border-zinc-700 hover:bg-zinc-800/90 active:scale-95"
+            className={`flex cursor-pointer items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium transition active:scale-95 ${btnClass}`}
             title="Küresel Skor Tablosu"
           >
-            <Medal className="h-3.5 w-3.5 text-amber-400" />
+            <Medal className="h-3.5 w-3.5 text-amber-500" />
             <span>Skorlar</span>
           </button>
 
@@ -434,13 +620,15 @@ export function DesktopHUD() {
           <button
             type="button"
             onClick={toggleSoundMuted}
-            className="flex cursor-pointer items-center justify-center rounded-xl border border-zinc-800/80 bg-zinc-900/75 p-2 text-zinc-300 transition hover:border-zinc-700 hover:bg-zinc-800/90 active:scale-95"
-            title={isSoundMuted ? 'Sesi Aç' : 'Sesi Kapat'}
+            className={`flex cursor-pointer items-center justify-center rounded-xl border p-2 transition active:scale-95 ${btnClass}`}
+            title={
+              isSoundMuted ? 'Sesi Aç (Kısayol: M)' : 'Sesi Kapat (Kısayol: M)'
+            }
           >
             {isSoundMuted ? (
-              <VolumeX className="h-4 w-4 text-rose-400" />
+              <VolumeX className="h-4 w-4 text-rose-500" />
             ) : (
-              <Volume2 className="h-4 w-4 text-emerald-400" />
+              <Volume2 className="h-4 w-4 text-emerald-500" />
             )}
           </button>
 
@@ -448,10 +636,10 @@ export function DesktopHUD() {
           <button
             type="button"
             onClick={handleResetClick}
-            className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-zinc-800/80 bg-zinc-900/75 px-3 py-2 text-xs font-medium text-zinc-200 transition hover:border-zinc-700 hover:bg-zinc-800/90 active:scale-95"
-            title="Topu Başlangıç Noktasına Sıfırla"
+            className={`flex cursor-pointer items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium transition active:scale-95 ${btnClass}`}
+            title="Topu Başlangıç Noktasına Sıfırla (Kısayol: R)"
           >
-            <RotateCcw className="h-3.5 w-3.5 text-zinc-400" />
+            <RotateCcw className="h-3.5 w-3.5 text-slate-400" />
             <span>Sıfırla</span>
           </button>
 
@@ -459,7 +647,7 @@ export function DesktopHUD() {
           <button
             type="button"
             onClick={() => setPairingModalOpen(true)}
-            className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-300 transition hover:bg-emerald-500/20 active:scale-95"
+            className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/15 px-3 py-2 text-xs font-semibold text-emerald-500 transition hover:bg-emerald-500/25 active:scale-95"
           >
             <QrCode className="h-3.5 w-3.5" />
             <span>Eşleştir</span>
@@ -467,41 +655,92 @@ export function DesktopHUD() {
         </div>
       </header>
 
+      {/* ETKİLEŞİMLİ SAHNE BİLDİRİM TOASTU (KİLİTLİ PORTAL / PORTAL AÇILDI / PROSEDÜREL BÖLÜM) */}
+      <AnimatePresence>
+        {hudNotification && (
+          <motion.div
+            key={hudNotification.seq}
+            initial={{ opacity: 0, y: -14, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -14, scale: 0.95 }}
+            className="pointer-events-none fixed top-20 left-1/2 z-30 -translate-x-1/2"
+          >
+            <div
+              className={`rounded-2xl border px-5 py-2.5 text-xs font-semibold shadow-2xl backdrop-blur-xl ${
+                hudNotification.tone === 'warn'
+                  ? 'border-amber-500/50 bg-amber-950/90 text-amber-200'
+                  : hudNotification.tone === 'success'
+                    ? 'border-emerald-500/50 bg-emerald-950/90 text-emerald-200'
+                    : 'border-purple-500/50 bg-purple-950/90 text-purple-200'
+              }`}
+            >
+              {hudNotification.message}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ALT TELEMETRİ PANELİ (BOTTOM TELEMETRY BAR) */}
       <footer className="flex flex-wrap items-end justify-between gap-4">
-        <div className="pointer-events-auto flex items-center gap-6 rounded-2xl border border-zinc-800/80 bg-zinc-900/75 px-5 py-3.5 backdrop-blur-xl">
-          <div className="flex items-center gap-2 text-xs font-medium text-zinc-400">
-            <Compass className="h-4 w-4 text-emerald-400" />
+        <div
+          className={`pointer-events-auto flex items-center gap-6 rounded-2xl border px-5 py-3.5 backdrop-blur-xl transition-colors ${panelClass}`}
+        >
+          <div
+            className={`flex items-center gap-2 text-xs font-medium ${
+              isLight ? 'text-slate-600' : 'text-zinc-400'
+            }`}
+          >
+            <Compass className="h-4 w-4 text-emerald-500" />
             <span>Canlı Telemetri</span>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="text-xs text-zinc-400">Eğim (Pitch)</span>
-            <div className="relative h-1.5 w-24 overflow-hidden rounded-full bg-zinc-800">
+            <span
+              className={`text-xs ${
+                isLight ? 'text-slate-500' : 'text-zinc-400'
+              }`}
+            >
+              Eğim (Pitch)
+            </span>
+            <div
+              className={`relative h-1.5 w-24 overflow-hidden rounded-full ${
+                isLight ? 'bg-slate-200' : 'bg-zinc-800'
+              }`}
+            >
               <div
                 ref={pitchBarRef}
-                className="h-full w-full rounded-full bg-emerald-400 transition-none"
+                className="h-full w-full rounded-full bg-emerald-500 transition-none"
               />
             </div>
             <span
               ref={pitchTextRef}
-              className="w-12 text-right font-mono text-xs text-zinc-200"
+              className="w-12 text-right font-mono text-xs font-semibold"
             >
               +0.0°
             </span>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="text-xs text-zinc-400">Yatış (Roll)</span>
-            <div className="relative h-1.5 w-24 overflow-hidden rounded-full bg-zinc-800">
+            <span
+              className={`text-xs ${
+                isLight ? 'text-slate-500' : 'text-zinc-400'
+              }`}
+            >
+              Yatış (Roll)
+            </span>
+            <div
+              className={`relative h-1.5 w-24 overflow-hidden rounded-full ${
+                isLight ? 'bg-slate-200' : 'bg-zinc-800'
+              }`}
+            >
               <div
                 ref={rollBarRef}
-                className="h-full w-full rounded-full bg-sky-400 transition-none"
+                className="h-full w-full rounded-full bg-sky-500 transition-none"
               />
             </div>
             <span
               ref={rollTextRef}
-              className="w-12 text-right font-mono text-xs text-zinc-200"
+              className="w-12 text-right font-mono text-xs font-semibold"
             >
               +0.0°
             </span>
@@ -509,12 +748,14 @@ export function DesktopHUD() {
         </div>
 
         {!isControllerPaired && (
-          <div className="pointer-events-auto flex items-center gap-2 rounded-xl border border-zinc-800/80 bg-zinc-900/75 px-4 py-2.5 text-xs text-zinc-400 backdrop-blur-xl">
-            <Keyboard className="h-4 w-4 text-sky-400" />
-            <span>
-              Masaüstü Test Modu: <strong className="text-zinc-200">WASD</strong>{' '}
-              veya <strong className="text-zinc-200">Yön Tuşları</strong> ile
-              eğim verebilirsiniz
+          <div
+            className={`pointer-events-auto flex items-center gap-2 rounded-xl border px-4 py-2.5 text-xs backdrop-blur-xl transition-colors ${panelClass}`}
+          >
+            <Keyboard className="h-4 w-4 text-sky-500" />
+            <span className={isLight ? 'text-slate-600' : 'text-zinc-400'}>
+              Masaüstü Test: <strong>WASD / Yön Tuşları</strong> eğim verir •{' '}
+              <strong>R</strong> Sıfırla • <strong>L</strong> Mod •{' '}
+              <strong>C</strong> Kamera
             </span>
           </div>
         )}
@@ -561,22 +802,49 @@ export function DesktopHUD() {
                 </button>
               </div>
 
-              {/* Bölüm Sekmeleri */}
-              <div className="mb-4 grid grid-cols-5 gap-1.5 rounded-xl border border-zinc-800 bg-zinc-950 p-1.5">
-                {MAZE_LEVELS.map((lvl) => (
-                  <button
-                    key={lvl.id}
-                    type="button"
-                    onClick={() => setSelectedLeaderboardLevel(lvl.id)}
-                    className={`cursor-pointer rounded-lg py-1.5 font-mono text-xs font-semibold transition ${
-                      selectedLeaderboardLevel === lvl.id
-                        ? 'bg-amber-500 text-zinc-950'
-                        : 'text-zinc-400 hover:text-zinc-200'
-                    }`}
-                  >
-                    Bölüm 0{lvl.id}
-                  </button>
-                ))}
+              {/* Bölüm Sekmeleri (Sonsuz Bölüm Destekli) */}
+              <div className="mb-4 flex items-center gap-1.5 rounded-xl border border-zinc-800 bg-zinc-950 p-1.5">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSelectedLeaderboardLevel((prev) => Math.max(1, prev - 1))
+                  }
+                  className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg bg-zinc-900 text-zinc-300 transition hover:bg-zinc-800"
+                  title="Önceki Bölüm"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <div className="grid flex-1 grid-cols-5 gap-1">
+                  {[0, 1, 2, 3, 4].map((offset) => {
+                    const startLvl = Math.max(1, selectedLeaderboardLevel - 2);
+                    const tabLvl = startLvl + offset;
+                    const label = tabLvl < 10 ? `0${tabLvl}` : String(tabLvl);
+                    return (
+                      <button
+                        key={tabLvl}
+                        type="button"
+                        onClick={() => setSelectedLeaderboardLevel(tabLvl)}
+                        className={`cursor-pointer rounded-lg py-1.5 font-mono text-xs font-semibold transition ${
+                          selectedLeaderboardLevel === tabLvl
+                            ? 'bg-amber-500 text-zinc-950'
+                            : 'text-zinc-400 hover:text-zinc-200'
+                        }`}
+                      >
+                        Böl. {label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSelectedLeaderboardLevel((prev) => prev + 1)
+                  }
+                  className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg bg-zinc-900 text-zinc-300 transition hover:bg-zinc-800"
+                  title="Sonraki Bölüm"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
               </div>
 
               {/* Skor Listesi */}

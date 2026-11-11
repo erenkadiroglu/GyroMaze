@@ -17,6 +17,8 @@ import {
   ChevronRight,
   Gem,
   Trophy,
+  Sun,
+  Moon,
   X,
 } from 'lucide-react';
 import { GyroData } from '@gyromaze/shared';
@@ -53,6 +55,9 @@ function MobileControllerContent() {
   const remoteCrystalsTotal = useGameStore((s) => s.remoteCrystalsTotal);
   const errorMessage = useGameStore((s) => s.errorMessage);
   const setErrorMessage = useGameStore((s) => s.setErrorMessage);
+  const colorScheme = useGameStore((s) => s.colorScheme);
+  const toggleColorScheme = useGameStore((s) => s.toggleColorScheme);
+  const isLight = colorScheme === 'light';
 
   const activeRoomCodeRef = useRef<string>(activeRoomCode);
   activeRoomCodeRef.current = activeRoomCode;
@@ -276,28 +281,65 @@ function MobileControllerContent() {
     setIsRoomEditorOpen(false);
   };
 
+  const cardClass = isLight
+    ? 'border-slate-300 bg-white text-slate-900'
+    : 'border-zinc-800 bg-zinc-900 text-zinc-100';
+  const subCardClass = isLight
+    ? 'border-slate-300 bg-slate-100 text-slate-800'
+    : 'border-zinc-800 bg-zinc-950 text-zinc-200';
+  const levelLabel =
+    level === 99
+      ? 'ÖZEL'
+      : `BÖLÜM ${level < 10 ? `0${level}` : String(level)}`;
+
   return (
-    <main className="flex min-h-dvh flex-col justify-between bg-zinc-950 p-4 text-zinc-100 select-none">
+    <main
+      className={`flex min-h-dvh flex-col justify-between p-4 select-none ${
+        isLight
+          ? 'bg-slate-100 text-slate-900'
+          : 'bg-zinc-950 text-zinc-100'
+      }`}
+    >
       {/* Üst Durum ve Hızlı Oda Değiştirme Çubuğu (Sıfır Blur / Saf GPU Katmanı) */}
-      <header className="flex items-center justify-between gap-2 rounded-2xl border border-zinc-800 bg-zinc-900 px-3.5 py-2.5">
+      <header
+        className={`flex items-center justify-between gap-2 rounded-2xl border px-3.5 py-2.5 ${cardClass}`}
+      >
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-500">
             <Smartphone className="h-4 w-4" />
           </div>
           <div>
-            <h1 className="text-xs font-semibold tracking-tight text-zinc-100">
+            <h1 className="text-xs font-semibold tracking-tight">
               GyroMaze Kontrolcü
             </h1>
-            <div className="flex items-center gap-1.5 text-[11px] text-zinc-400">
+            <div
+              className={`flex items-center gap-1.5 text-[11px] ${
+                isLight ? 'text-slate-500' : 'text-zinc-400'
+              }`}
+            >
               <span>Oda:</span>
-              <span className="font-mono font-bold tracking-wider text-emerald-400">
+              <span className="font-mono font-bold tracking-wider text-emerald-500">
                 {activeRoomCode || 'YOK'}
               </span>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          {/* Aydınlık / Karanlık Mod Değiştirici */}
+          <button
+            type="button"
+            onClick={toggleColorScheme}
+            className={`flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl border active:scale-95 ${subCardClass}`}
+            aria-label="Aydınlık / Karanlık Mod"
+          >
+            {isLight ? (
+              <Sun className="h-3.5 w-3.5 text-amber-500" />
+            ) : (
+              <Moon className="h-3.5 w-3.5 text-sky-400" />
+            )}
+          </button>
+
           {/* Oda Kodu Değiştirme / Girme Butonu */}
           <button
             type="button"
@@ -305,28 +347,30 @@ function MobileControllerContent() {
               setManualRoomInput(activeRoomCode);
               setIsRoomEditorOpen((prev) => !prev);
             }}
-            className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-[11px] font-medium text-zinc-200 active:scale-95"
+            className={`flex cursor-pointer items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-[11px] font-medium active:scale-95 ${subCardClass}`}
           >
-            <KeyRound className="h-3.5 w-3.5 text-emerald-400" />
+            <KeyRound className="h-3.5 w-3.5 text-emerald-500" />
             <span>{activeRoomCode ? 'Kod Değiştir' : 'Kod Gir'}</span>
           </button>
 
           {/* Bağlantı Durumu Rozeti */}
-          <div className="flex items-center gap-1.5 rounded-xl border border-zinc-800 bg-zinc-950 px-2.5 py-1.5 text-[11px]">
+          <div
+            className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-[11px] ${subCardClass}`}
+          >
             {isControllerPaired ? (
               <>
-                <Wifi className="h-3.5 w-3.5 text-emerald-400" />
-                <span className="font-medium text-emerald-300">Bağlı</span>
+                <Wifi className="h-3.5 w-3.5 text-emerald-500" />
+                <span className="font-semibold text-emerald-500">Bağlı</span>
               </>
             ) : isSocketConnected ? (
               <>
-                <span className="h-2 w-2 rounded-full bg-amber-400" />
-                <span className="font-medium text-amber-300">Hazır</span>
+                <span className="h-2 w-2 rounded-full bg-amber-500" />
+                <span className="font-semibold text-amber-500">Hazır</span>
               </>
             ) : (
               <>
-                <WifiOff className="h-3.5 w-3.5 text-rose-400" />
-                <span className="font-medium text-rose-300">Kopuk</span>
+                <WifiOff className="h-3.5 w-3.5 text-rose-500" />
+                <span className="font-semibold text-rose-500">Kopuk</span>
               </>
             )}
           </div>
@@ -335,7 +379,7 @@ function MobileControllerContent() {
 
       {/* Hata Bildirimi */}
       {errorMessage && (
-        <div className="mt-2.5 flex items-center justify-between gap-2 rounded-2xl border border-rose-500/30 bg-rose-950/60 px-3.5 py-2.5 text-xs text-rose-200">
+        <div className="mt-2.5 flex items-center justify-between gap-2 rounded-2xl border border-rose-500/30 bg-rose-950/80 px-3.5 py-2.5 text-xs text-rose-200">
           <div className="flex items-center gap-2">
             <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
             <span>{errorMessage}</span>
@@ -352,22 +396,26 @@ function MobileControllerContent() {
 
       {/* Canlı Bölüm, Kristal Durumu ve Hızlı Bölüm Geçiş Çubuğu (Eşleştiğinde Aktif) */}
       {isControllerPaired && !isRoomEditorOpen && (
-        <div className="mt-2.5 flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900 px-3 py-2">
+        <div
+          className={`mt-2.5 flex items-center justify-between rounded-2xl border px-3 py-2 ${cardClass}`}
+        >
           <button
             type="button"
             onClick={() => emitChangeLevel('prev')}
-            className="flex cursor-pointer items-center gap-1 rounded-xl border border-zinc-800 bg-zinc-950 px-2.5 py-1.5 text-[11px] font-medium text-zinc-300 active:scale-95"
+            className={`flex cursor-pointer items-center gap-1 rounded-xl border px-2.5 py-1.5 text-[11px] font-medium active:scale-95 ${subCardClass}`}
           >
             <ChevronLeft className="h-3.5 w-3.5" />
             <span>Önceki</span>
           </button>
 
           <div className="flex items-center gap-2.5 text-xs">
-            <span className="font-mono font-bold text-emerald-400">
-              {level === 99 ? 'ÖZEL' : `BÖLÜM 0${level}`}
+            <span className="font-mono font-bold text-emerald-500">
+              {levelLabel}
             </span>
-            <span className="text-zinc-700">•</span>
-            <span className="flex items-center gap-1 font-mono text-sky-400">
+            <span className={isLight ? 'text-slate-300' : 'text-zinc-700'}>
+              •
+            </span>
+            <span className="flex items-center gap-1 font-mono text-sky-500">
               <Gem className="h-3.5 w-3.5" />
               {remoteCrystalsCollected}/{remoteCrystalsTotal}
             </span>
@@ -376,7 +424,7 @@ function MobileControllerContent() {
           <button
             type="button"
             onClick={() => emitChangeLevel('next')}
-            className="flex cursor-pointer items-center gap-1 rounded-xl border border-zinc-800 bg-zinc-950 px-2.5 py-1.5 text-[11px] font-medium text-zinc-300 active:scale-95"
+            className={`flex cursor-pointer items-center gap-1 rounded-xl border px-2.5 py-1.5 text-[11px] font-medium active:scale-95 ${subCardClass}`}
           >
             <span>Sonraki</span>
             <ChevronRight className="h-3.5 w-3.5" />
@@ -414,18 +462,22 @@ function MobileControllerContent() {
         {!activeRoomCode || isRoomEditorOpen ? (
           <form
             onSubmit={handleManualConnect}
-            className="w-full max-w-sm space-y-4 rounded-3xl border border-zinc-800 bg-zinc-900 p-6"
+            className={`w-full max-w-sm space-y-4 rounded-3xl border p-6 ${cardClass}`}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-500">
                   <KeyRound className="h-4 w-4" />
                 </div>
                 <div>
-                  <h2 className="text-base font-semibold text-zinc-100">
+                  <h2 className="text-base font-semibold">
                     Oda Kodu ile Giriş
                   </h2>
-                  <p className="text-[11px] text-zinc-400">
+                  <p
+                    className={`text-[11px] ${
+                      isLight ? 'text-slate-500' : 'text-zinc-400'
+                    }`}
+                  >
                     Masaüstündeki 6 haneli kodu yazın
                   </p>
                 </div>
@@ -434,7 +486,7 @@ function MobileControllerContent() {
                 <button
                   type="button"
                   onClick={() => setIsRoomEditorOpen(false)}
-                  className="rounded-xl border border-zinc-800 bg-zinc-950 p-2 text-zinc-400"
+                  className={`rounded-xl border p-2 ${subCardClass}`}
                   aria-label="Kapat"
                 >
                   <X className="h-4 w-4" />
@@ -457,7 +509,7 @@ function MobileControllerContent() {
                 )
               }
               placeholder="ÖRN: 84K9X2"
-              className="w-full rounded-2xl border border-zinc-700 bg-zinc-950 px-4 py-3.5 text-center font-mono text-2xl font-bold tracking-[0.25em] text-emerald-400 uppercase outline-none focus:border-emerald-500"
+              className={`w-full rounded-2xl border px-4 py-3.5 text-center font-mono text-2xl font-bold tracking-[0.25em] text-emerald-500 uppercase outline-none focus:border-emerald-500 ${subCardClass}`}
             />
 
             <button
@@ -469,15 +521,21 @@ function MobileControllerContent() {
             </button>
           </form>
         ) : !showGimbalSurface ? (
-          <div className="w-full max-w-sm space-y-4 rounded-3xl border border-zinc-800 bg-zinc-900 p-6 text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
+          <div
+            className={`w-full max-w-sm space-y-4 rounded-3xl border p-6 text-center ${cardClass}`}
+          >
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-500">
               <ShieldCheck className="h-6 w-6" />
             </div>
             <div className="space-y-1.5">
-              <h2 className="text-lg font-semibold text-zinc-100">
+              <h2 className="text-lg font-semibold">
                 Jiroskop Sensörlerini Başlat
               </h2>
-              <p className="text-xs leading-relaxed text-zinc-400">
+              <p
+                className={`text-xs leading-relaxed ${
+                  isLight ? 'text-slate-500' : 'text-zinc-400'
+                }`}
+              >
                 Telefonunuzu rahat bir açıyla tutun ve sıfır gecikmeli jiroskop
                 kontrolünü etkinleştirin.
               </p>
@@ -494,9 +552,9 @@ function MobileControllerContent() {
             <button
               type="button"
               onClick={() => setIsTouchOverride(true)}
-              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-950 py-3 text-xs font-medium text-zinc-300 active:scale-98"
+              className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border py-3 text-xs font-medium active:scale-98 ${subCardClass}`}
             >
-              <Hand className="h-4 w-4 text-sky-400" />
+              <Hand className="h-4 w-4 text-sky-500" />
               <span>Dokunmatik (Touch) Gimbal ile Kullan</span>
             </button>
           </div>
@@ -509,47 +567,75 @@ function MobileControllerContent() {
               onPointerMove={handlePointerMoveOnGimbal}
               onPointerUp={handlePointerEndOnGimbal}
               onPointerCancel={handlePointerEndOnGimbal}
-              className="relative flex h-60 w-60 touch-none items-center justify-center rounded-full border-2 border-zinc-800 bg-zinc-900"
+              className={`relative flex h-60 w-60 touch-none items-center justify-center rounded-full border-2 ${cardClass}`}
             >
               {/* İç Derece Halkaları */}
-              <div className="pointer-events-none absolute h-40 w-40 rounded-full border border-dashed border-zinc-800" />
-              <div className="pointer-events-none absolute h-20 w-20 rounded-full border border-zinc-800" />
-              <div className="pointer-events-none absolute h-px w-full bg-zinc-800" />
-              <div className="pointer-events-none absolute h-full w-px bg-zinc-800" />
+              <div
+                className={`pointer-events-none absolute h-40 w-40 rounded-full border border-dashed ${
+                  isLight ? 'border-slate-300' : 'border-zinc-800'
+                }`}
+              />
+              <div
+                className={`pointer-events-none absolute h-20 w-20 rounded-full border ${
+                  isLight ? 'border-slate-300' : 'border-zinc-800'
+                }`}
+              />
+              <div
+                className={`pointer-events-none absolute h-px w-full ${
+                  isLight ? 'bg-slate-200' : 'bg-zinc-800'
+                }`}
+              />
+              <div
+                className={`pointer-events-none absolute h-full w-px ${
+                  isLight ? 'bg-slate-200' : 'bg-zinc-800'
+                }`}
+              />
 
               {/* Hareketli Jiroskop Küresi (Saf Composite Layer: will-change-transform) */}
               <div
                 ref={gimbalDotRef}
-                className="pointer-events-none relative flex h-11 w-11 items-center justify-center rounded-full border border-emerald-400 bg-emerald-500/20 will-change-transform"
+                className="pointer-events-none relative flex h-11 w-11 items-center justify-center rounded-full border border-emerald-500 bg-emerald-500/20 will-change-transform"
               >
-                <div className="h-3.5 w-3.5 rounded-full bg-emerald-400" />
+                <div className="h-3.5 w-3.5 rounded-full bg-emerald-500" />
               </div>
             </div>
 
-            <p className="mt-2.5 text-[11px] text-zinc-400">
+            <p
+              className={`mt-2.5 text-[11px] ${
+                isLight ? 'text-slate-500' : 'text-zinc-400'
+              }`}
+            >
               Telefonu eğin veya daire içindeki küreyi parmağınızla sürükleyin
             </p>
 
             {/* Sayısal Açı Göstergeleri (8Hz Throttled DOM Text) */}
             <div className="mt-3.5 grid w-60 grid-cols-2 gap-2.5">
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-2.5 text-center">
-                <span className="block text-[10px] tracking-wider text-zinc-400 uppercase">
+              <div className={`rounded-2xl border p-2.5 text-center ${cardClass}`}>
+                <span
+                  className={`block text-[10px] tracking-wider uppercase ${
+                    isLight ? 'text-slate-500' : 'text-zinc-400'
+                  }`}
+                >
                   Eğim (Pitch)
                 </span>
                 <span
                   ref={pitchValueRef}
-                  className="mt-0.5 block font-mono text-sm font-semibold text-emerald-400"
+                  className="mt-0.5 block font-mono text-sm font-semibold text-emerald-500"
                 >
                   +0.0°
                 </span>
               </div>
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-2.5 text-center">
-                <span className="block text-[10px] tracking-wider text-zinc-400 uppercase">
+              <div className={`rounded-2xl border p-2.5 text-center ${cardClass}`}>
+                <span
+                  className={`block text-[10px] tracking-wider uppercase ${
+                    isLight ? 'text-slate-500' : 'text-zinc-400'
+                  }`}
+                >
                   Yatış (Roll)
                 </span>
                 <span
                   ref={rollValueRef}
-                  className="mt-0.5 block font-mono text-sm font-semibold text-sky-400"
+                  className="mt-0.5 block font-mono text-sm font-semibold text-sky-500"
                 >
                   +0.0°
                 </span>
@@ -557,7 +643,9 @@ function MobileControllerContent() {
             </div>
 
             {/* 3 Kademeli Jiroskop Hassasiyet Seçici */}
-            <div className="mt-2.5 grid w-60 grid-cols-3 gap-1.5 rounded-2xl border border-zinc-800 bg-zinc-900 p-1">
+            <div
+              className={`mt-2.5 grid w-60 grid-cols-3 gap-1.5 rounded-2xl border p-1 ${cardClass}`}
+            >
               {(
                 [
                   { mult: 0.75, label: 'Hassas' },
@@ -572,7 +660,9 @@ function MobileControllerContent() {
                   className={`cursor-pointer rounded-xl py-1.5 text-[11px] font-semibold ${
                     sensitivityMultiplier === item.mult
                       ? 'bg-emerald-500 text-zinc-950'
-                      : 'text-zinc-400'
+                      : isLight
+                        ? 'text-slate-500'
+                        : 'text-zinc-400'
                   }`}
                 >
                   {item.label}
@@ -588,7 +678,7 @@ function MobileControllerContent() {
         <button
           type="button"
           onClick={handleRecalibrate}
-          className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/15 py-3.5 text-xs font-semibold text-emerald-300 active:scale-95"
+          className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-emerald-500/40 bg-emerald-500/15 py-3.5 text-xs font-semibold text-emerald-500 active:scale-95"
         >
           <Crosshair className="h-4 w-4" />
           <span>Merkezi Kalibre Et</span>
@@ -597,9 +687,11 @@ function MobileControllerContent() {
         <button
           type="button"
           onClick={emitResetBall}
-          className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900 py-3.5 text-xs font-semibold text-zinc-200 active:scale-95"
+          className={`flex cursor-pointer items-center justify-center gap-2 rounded-2xl border py-3.5 text-xs font-semibold active:scale-95 ${cardClass}`}
         >
-          <RotateCcw className="h-4 w-4 text-zinc-400" />
+          <RotateCcw
+            className={`h-4 w-4 ${isLight ? 'text-slate-500' : 'text-zinc-400'}`}
+          />
           <span>Topu Sıfırla</span>
         </button>
       </footer>

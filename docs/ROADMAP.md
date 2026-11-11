@@ -79,6 +79,14 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **3 Kademeli Mobil Jiroskop Hassasiyet Seçici (`Hassas 0.75x`, `Standart 1.0x`, `Pro 1.35x`):** Mobil kontrolcü ekranından eğim çarpanını anında değiştirme imkanı.
 - [x] **Harita Editörü Panodan JSON İçe Aktarma (`JSON Yükle`):** Paylaşılan özel harita JSON verilerini tek tıkla içe aktarıp 3B sahnede oynama özelliği.
 
+## ✅ Faz 10: Sonsuz Prosedürel Bölüm Motoru (Bölüm 1..∞), Tam Kapsamlı Aydınlık / Karanlık Mod ve Hareketli Engeller (Tamamlandı)
+
+- [x] **Sonsuz Prosedürel Bölüm Motoru (`generateProceduralLevel` & `getMazeLevel`):** Oyun artık 5 bölümle sınırlı değildir (`Bölüm 01 .. ∞`). `Bölüm 06` ve sonrasında Mulberry32 deterministik tohumlu Spanning-Tree (DFS + Braided Loops) algoritmasıyla %100 çözülebilir, $2.64\text{ birim}$ koridor genişlikli, sıfır çakışmalı sonsuz labirentler otomatik üretilir.
+- [x] **Tam Kapsamlı Aydınlık ve Karanlık Mod (`colorScheme: 'light' | 'dark'` & `daylight`):** Masaüstü 3B WebGL sahnesi (beyaz mermer zemin, arduvaz duvarlar, koyu obsidyen krom bilye ve aydınlık atmosfer sisi), Masaüstü HUD panelleri ve Mobil Kontrolcü arayüzü için tek tıkla (`Sun` / `Moon` veya `L` kısayolu) çalışan Aydınlık / Karanlık mod eklendi.
+- [x] **Hareketli Kinetik Devriye Engelleri (`movingObstacles`):** Koridorlarda sinüzoidal olarak devriye gezen ve çarptığında bilyeye fiziksel saptırma darbesi uygulayan dinamik engeller eklendi.
+- [x] **Etkileşimli Sahne Bildirimleri (`hudNotification`) ve Klavye Kısayolları:** Kristaller tamamlanmadan kilitli portala dokunulduğunda sesli (`playLockedPortal`) ve görsel uyarı, son kristal alındığında portal açılış bildirimi ve hızlı klavye kısayolları (`R`, `C`, `M`, `L`) eklendi.
+
+
 
 
 

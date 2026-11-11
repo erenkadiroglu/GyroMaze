@@ -13,7 +13,7 @@ import {
   LeaderboardEntry,
 } from '@gyromaze/shared';
 import { useGameStore } from '@/store/useGameStore';
-import { MAZE_LEVELS } from '@/components/scene/mazeLevels';
+import { getMazeLevel } from '@/components/scene/mazeLevels';
 
 /**
  * Hem yerel geliştirme ortamında (localhost:4000) hem de tek portlu HTTPS tünellerinde
@@ -269,10 +269,7 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
   // Masaüstündeki bölüm, oyun durumu ve kristal ilerlemesini mobil kontrolcüye senkronize et
   useEffect(() => {
     if (role !== 'host' || !roomId || !isControllerPaired) return;
-    const currentLvl =
-      level === 99 && customLevel
-        ? customLevel
-        : (MAZE_LEVELS[(level - 1) % MAZE_LEVELS.length] ?? MAZE_LEVELS[0]);
+    const currentLvl = getMazeLevel(level, customLevel);
 
     socketRef.current?.emit(RoomEvents.GAME_STATE_CHANGE, {
       roomId,

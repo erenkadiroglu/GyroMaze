@@ -48,7 +48,12 @@ export type CameraMode = 'isometric' | 'topdown' | 'follow';
 /**
  * 3B Labirent sahnesi görsel atmosfer ve ışıklandırma teması.
  */
-export type BoardTheme = 'emerald' | 'cyberpunk' | 'crimson';
+export type BoardTheme = 'emerald' | 'cyberpunk' | 'crimson' | 'daylight';
+
+/**
+ * Uygulama genel arayüz ve 3B sahne aydınlık/karanlık renk modu.
+ */
+export type ColorScheme = 'dark' | 'light';
 
 /**
  * Küresel skor tablosundaki (Leaderboard) tek bir rekor kaydı.

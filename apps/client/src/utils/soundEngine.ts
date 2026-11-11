@@ -222,6 +222,31 @@ class SoundEngine {
     osc.start(now);
     osc.stop(now + 0.26);
   }
+
+  /**
+   * Tüm kristaller toplanmadan kilitli hedef portalına dokunulduğunda uyarı sesi üretir.
+   */
+  public playLockedPortal(): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    [220, 175].forEach((freq, idx) => {
+      const now = ctx.currentTime + idx * 0.09;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(freq, now);
+
+      gain.gain.setValueAtTime(0.08, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.085);
+    });
+  }
 }
 
 export const soundEngine = new SoundEngine();

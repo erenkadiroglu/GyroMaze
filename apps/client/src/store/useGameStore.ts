@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import {
   BoardTheme,
   CameraMode,
+  ColorScheme,
   GameStatus,
   GyroData,
   HapticType,
@@ -74,6 +75,14 @@ interface GameStoreState {
   cameraMode: CameraMode;
   /** 3B Labirent sahnesi görsel atmosfer teması */
   boardTheme: BoardTheme;
+  /** Aydınlık / Karanlık arayüz ve sahne görünüm modu */
+  colorScheme: ColorScheme;
+  /** Sahne üstü anlık durum bildirimi (kilitli portal, kristal, yeni sektör vb.) */
+  hudNotification: {
+    message: string;
+    tone: 'info' | 'success' | 'warn';
+    seq: number;
+  } | null;
   /** Kullanıcının harita editöründe tasarladığı özel labirent tanımı */
   customLevel: MazeLevelDefinition | null;
   /** Milisaniye cinsinden anlık ağ gecikmesi */
@@ -119,6 +128,11 @@ interface GameStoreState {
   prevLevel: () => void;
   cycleCameraMode: () => void;
   cycleBoardTheme: () => void;
+  toggleColorScheme: () => void;
+  showHudNotification: (
+    message: string,
+    tone?: 'info' | 'success' | 'warn',
+  ) => void;
   setRemoteProgress: (payload: {
     status: GameStatus;
     level?: number;
@@ -159,6 +173,8 @@ export const useGameStore = create<GameStoreState>((set) => ({
   level: 1,
   cameraMode: 'isometric',
   boardTheme: 'emerald',
+  colorScheme: 'dark',
+  hudNotification: null,
   customLevel: null,
   latencyMs: 0,
   elapsedSeconds: 0,
@@ -214,7 +230,7 @@ export const useGameStore = create<GameStoreState>((set) => ({
     })),
   nextLevel: () =>
     set((state) => ({
-      level: state.level === 99 ? 1 : (state.level % 5) + 1,
+      level: state.level === 99 ? 1 : state.level + 1,
       gameStatus: 'playing',
       elapsedSeconds: 0,
       collectedCrystals: [],
@@ -222,7 +238,7 @@ export const useGameStore = create<GameStoreState>((set) => ({
     })),
   prevLevel: () =>
     set((state) => ({
-      level: state.level === 99 || state.level <= 1 ? 5 : state.level - 1,
+      level: state.level === 99 || state.level <= 1 ? 1 : state.level - 1,
       gameStatus: 'playing',
       elapsedSeconds: 0,
       collectedCrystals: [],
@@ -236,10 +252,40 @@ export const useGameStore = create<GameStoreState>((set) => ({
     }),
   cycleBoardTheme: () =>
     set((state) => {
-      const order: BoardTheme[] = ['emerald', 'cyberpunk', 'crimson'];
+      const order: BoardTheme[] = [
+        'emerald',
+        'cyberpunk',
+        'crimson',
+        'daylight',
+      ];
       const nextIdx = (order.indexOf(state.boardTheme) + 1) % order.length;
-      return { boardTheme: order[nextIdx] };
+      return {
+        boardTheme: order[nextIdx],
+        colorScheme: order[nextIdx] === 'daylight' ? 'light' : state.colorScheme,
+      };
     }),
+  toggleColorScheme: () =>
+    set((state) => {
+      const nextScheme: ColorScheme =
+        state.colorScheme === 'dark' ? 'light' : 'dark';
+      return {
+        colorScheme: nextScheme,
+        boardTheme:
+          nextScheme === 'light'
+            ? 'daylight'
+            : state.boardTheme === 'daylight'
+              ? 'emerald'
+              : state.boardTheme,
+      };
+    }),
+  showHudNotification: (message, tone = 'info') =>
+    set((state) => ({
+      hudNotification: {
+        message,
+        tone,
+        seq: (state.hudNotification?.seq ?? 0) + 1,
+      },
+    })),
   setRemoteProgress: (payload) =>
     set((state) => ({
       gameStatus: payload.status,

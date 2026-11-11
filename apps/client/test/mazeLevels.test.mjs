@@ -1,6 +1,9 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { MAZE_LEVELS } from '../src/components/scene/mazeLevels.ts';
+import {
+  MAZE_LEVELS,
+  getMazeLevel,
+} from '../src/components/scene/mazeLevels.ts';
 
 const BALL_RADIUS = 0.34;
 const BOARD_HALF_LIMIT = 5.4;
@@ -115,6 +118,47 @@ describe('MAZE_LEVELS — 3B Harita Geometrisi, Engel Konumları ve Fizik Doğru
               `Bölüm ${level.id}: Kuantum portal [${tx}, ${tz}] bir duvarla çakışıyor`,
             );
           }
+        }
+      }
+    }
+  });
+
+  it('sonsuz prosedürel bölüm motoru (Bölüm 06..25) deterministik ve engelsiz/çakışmasız haritalar üretmelidir', () => {
+    for (let id = 6; id <= 25; id++) {
+      const lvlA = getMazeLevel(id);
+      const lvlB = getMazeLevel(id);
+
+      assert.equal(lvlA.id, id);
+      assert.equal(lvlA.boardSize, 12);
+      assert.deepEqual(
+        lvlA.innerWalls,
+        lvlB.innerWalls,
+        `Bölüm ${id} deterministik olmalıdır`,
+      );
+      assert.ok(lvlA.crystals.length >= 3);
+      assert.ok(lvlA.voidHoles.length >= 2);
+      assert.ok(Array.isArray(lvlA.movingObstacles) && lvlA.movingObstacles.length >= 1);
+
+      const [sx, , sz] = lvlA.startPosition;
+      const [gx, , gz] = lvlA.goalPosition;
+
+      for (const wall of lvlA.innerWalls) {
+        assert.ok(
+          distancePointToWall(sx, sz, wall) > BALL_RADIUS + 0.15,
+          `Prosedürel Bölüm ${id}: Başlangıç duvara çok yakın`,
+        );
+        assert.ok(
+          distancePointToWall(gx, gz, wall) > BALL_RADIUS + 0.15,
+          `Prosedürel Bölüm ${id}: Hedef duvara çok yakın`,
+        );
+      }
+
+      for (const [cx, cz] of lvlA.crystals) {
+        for (const wall of lvlA.innerWalls) {
+          assert.ok(
+            distancePointToWall(cx, cz, wall) > BALL_RADIUS,
+            `Prosedürel Bölüm ${id}: Kristal [${cx}, ${cz}] duvarla çakışıyor`,
+          );
         }
       }
     }

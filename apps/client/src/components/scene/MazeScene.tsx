@@ -12,7 +12,7 @@ import {
 } from '@react-three/rapier';
 import * as THREE from 'three';
 import { useGameStore, transientGyro } from '@/store/useGameStore';
-import { MAZE_LEVELS, MazeLevelDefinition } from './mazeLevels';
+import { getMazeLevel, MazeLevelDefinition } from './mazeLevels';
 import { soundEngine } from '@/utils/soundEngine';
 
 // Garbage Collection (GC) duraksamalarını önlemek için modül seviyesinde önceden ayrılmış nesneler
@@ -126,6 +126,13 @@ const _ghostBallMaterial = new THREE.MeshStandardMaterial({
   transparent: true,
   opacity: 0.36,
 });
+const _movingObstacleMaterial = new THREE.MeshStandardMaterial({
+  color: '#f97316',
+  emissive: '#ea580c',
+  emissiveIntensity: 1.35,
+  roughness: 0.25,
+  metalness: 0.65,
+});
 
 const MAX_TILT_RADIANS = THREE.MathUtils.degToRad(24);
 const SLOPE_GRAVITY = 36.0;
@@ -169,6 +176,7 @@ function MazeStage({
   const goalRingRef = useRef<THREE.Mesh | null>(null);
   const crystalMeshesRef = useRef<Array<THREE.Mesh | null>>([]);
   const laserBeamMeshesRef = useRef<Array<THREE.Mesh | null>>([]);
+  const movingObstacleMeshesRef = useRef<Array<THREE.Mesh | null>>([]);
   const trailMeshesRef = useRef<Array<THREE.Mesh | null>>([]);
   const trailHistoryRef = useRef<Array<{ x: number; z: number }>>(
     Array.from({ length: TRAIL_COUNT }, () => ({
@@ -182,31 +190,51 @@ function MazeStage({
   const lastWallSoundTimeRef = useRef<number>(0);
   const lastBoostTimeRef = useRef<number>(0);
   const lastTeleportTimeRef = useRef<number>(0);
+  const lastMovingHitTimeRef = useRef<number>(0);
 
   const resetCount = useGameStore((s) => s.resetCount);
   const gameStatus = useGameStore((s) => s.gameStatus);
   const cameraMode = useGameStore((s) => s.cameraMode);
   const boardTheme = useGameStore((s) => s.boardTheme);
+  const colorScheme = useGameStore((s) => s.colorScheme);
+  const isLightBoard = colorScheme === 'light' || boardTheme === 'daylight';
 
-  // Seçilen 3B görsel temaya göre paylaşılan materyal renklerini güncelle
+  // Seçilen 3B görsel temaya ve Aydınlık/Karanlık moda göre paylaşılan materyal renklerini güncelle
   useEffect(() => {
-    if (boardTheme === 'cyberpunk') {
+    if (isLightBoard) {
+      _boardMaterial.color.set('#ffffff');
+      _boardMaterial.roughness = 0.42;
+      _boardMaterial.metalness = 0.08;
+      _outerWallMaterial.color.set('#475569');
+      _innerWallMaterial.color.set('#64748b');
+      _ballMaterial.color.set('#18181b');
+      _trailMaterial.color.set('#0284c7');
+    } else if (boardTheme === 'cyberpunk') {
       _boardMaterial.color.set('#0f1026');
+      _boardMaterial.roughness = 0.55;
+      _boardMaterial.metalness = 0.25;
       _outerWallMaterial.color.set('#1e1b4b');
       _innerWallMaterial.color.set('#312e81');
+      _ballMaterial.color.set('#f4f4f5');
       _trailMaterial.color.set('#f472b6');
     } else if (boardTheme === 'crimson') {
       _boardMaterial.color.set('#1c1214');
+      _boardMaterial.roughness = 0.55;
+      _boardMaterial.metalness = 0.25;
       _outerWallMaterial.color.set('#3f1d24');
       _innerWallMaterial.color.set('#57242c');
+      _ballMaterial.color.set('#f4f4f5');
       _trailMaterial.color.set('#fb923c');
     } else {
       _boardMaterial.color.set('#18181b');
+      _boardMaterial.roughness = 0.55;
+      _boardMaterial.metalness = 0.25;
       _outerWallMaterial.color.set('#27272a');
       _innerWallMaterial.color.set('#3f3f46');
+      _ballMaterial.color.set('#f4f4f5');
       _trailMaterial.color.set('#38bdf8');
     }
-  }, [boardTheme]);
+  }, [boardTheme, isLightBoard]);
 
   const halfBoard = levelData.boardSize / 2;
   const wallHeight = 0.85;
@@ -523,6 +551,40 @@ function MazeStage({
         }
       }
 
+      // Hareketli Devriye Engelleri (Moving Kinetic Obstacles) Kontrolü
+      const movingObstacles = levelData.movingObstacles ?? [];
+      for (let i = 0; i < movingObstacles.length; i++) {
+        const obs = movingObstacles[i];
+        const offset =
+          Math.sin(elapsed * obs.speed + obs.phaseOffset) * obs.amplitude;
+        const ox = obs.axis === 'x' ? obs.center[0] + offset : obs.center[0];
+        const oz = obs.axis === 'z' ? obs.center[1] + offset : obs.center[1];
+
+        const mesh = movingObstacleMeshesRef.current[i];
+        if (mesh) {
+          mesh.position.set(ox, 0.36, oz);
+          mesh.rotation.y += safeDelta * 1.8;
+        }
+
+        if (isInteractive && elapsed - lastMovingHitTimeRef.current > 0.25) {
+          const dx = pos.x - ox;
+          const dz = pos.z - oz;
+          const distSq = dx * dx + dz * dz;
+          const minDist = BALL_RADIUS + 0.38;
+          if (distSq < minDist * minDist) {
+            lastMovingHitTimeRef.current = elapsed;
+            const dist = Math.max(0.05, Math.sqrt(distSq));
+            const nx = dx / dist;
+            const nz = dz / dist;
+            ballBodyRef.current.setLinvel(
+              { x: nx * 6.8, y: 0, z: nz * 6.8 },
+              true,
+            );
+            onWallHit(5.5);
+          }
+        }
+      }
+
       // 3. Seçili Kamera Moduna Göre Dinamik Kamera Konumlandırma
       if (cameraMode === 'topdown') {
         _cameraTargetPos.set(
@@ -629,7 +691,13 @@ function MazeStage({
         </mesh>
 
         <gridHelper
-          args={[levelData.boardSize - 0.4, 12, '#27272a', '#27272a']}
+          key={isLightBoard ? 'grid-light' : 'grid-dark'}
+          args={[
+            levelData.boardSize - 0.4,
+            12,
+            isLightBoard ? '#cbd5e1' : '#27272a',
+            isLightBoard ? '#e2e8f0' : '#27272a',
+          ]}
           position={[0, 0.01, 0]}
         />
 
@@ -804,6 +872,21 @@ function MazeStage({
           );
         })}
 
+        {/* Hareketli Kinetik Devriye Engelleri (Moving Obstacles) */}
+        {(levelData.movingObstacles ?? []).map((obs, idx) => (
+          <mesh
+            key={`moving-obs-${levelData.id}-${idx}`}
+            ref={(el) => {
+              movingObstacleMeshesRef.current[idx] = el;
+            }}
+            position={[obs.center[0], 0.36, obs.center[1]]}
+            material={_movingObstacleMaterial}
+            castShadow
+          >
+            <cylinderGeometry args={[0.36, 0.38, 0.72, 16]} />
+          </mesh>
+        ))}
+
         {/* Hedef Portalı (Kristaller Toplandığında Kehribardan Zümrüt Yeşiline Dönüşür) */}
         <group position={levelData.goalPosition}>
           <mesh
@@ -899,36 +982,72 @@ export function MazeScene() {
   const isSoundMuted = useGameStore((s) => s.isSoundMuted);
   const collectedCrystals = useGameStore((s) => s.collectedCrystals);
   const ghostPaths = useGameStore((s) => s.ghostPaths);
+  const colorScheme = useGameStore((s) => s.colorScheme);
+  const boardTheme = useGameStore((s) => s.boardTheme);
   const collectCrystal = useGameStore((s) => s.collectCrystal);
   const recordLevelCompletion = useGameStore((s) => s.recordLevelCompletion);
   const triggerHaptic = useGameStore((s) => s.triggerHaptic);
   const triggerBallReset = useGameStore((s) => s.triggerBallReset);
+  const showHudNotification = useGameStore((s) => s.showHudNotification);
 
-  const activeLevel = useMemo(() => {
-    if (level === 99 && customLevel) {
-      return customLevel;
-    }
-    const index = (level - 1) % MAZE_LEVELS.length;
-    return MAZE_LEVELS[index];
-  }, [level, customLevel]);
+  const lastLockedWarnTimeRef = useRef<number>(0);
+
+  const activeLevel = useMemo(
+    () => getMazeLevel(level, customLevel),
+    [level, customLevel],
+  );
+
+  const isLightScene = colorScheme === 'light' || boardTheme === 'daylight';
+  const sceneBgColor = isLightScene ? '#f1f5f9' : '#09090b';
 
   const isGoalUnlocked =
     collectedCrystals.length >= activeLevel.crystals.length;
 
   const handleCollectCrystal = useCallback(
     (idx: number) => {
+      const nextCount = collectedCrystals.length + 1;
       if (!isSoundMuted) {
-        soundEngine.playCrystalPickup(collectedCrystals.length + 1);
+        soundEngine.playCrystalPickup(nextCount);
       }
       triggerHaptic('crystal');
       collectCrystal(idx);
+
+      if (nextCount >= activeLevel.crystals.length) {
+        showHudNotification(
+          '🔓 Tüm enerji kristalleri toplandı! Hedef Portalı açıldı!',
+          'success',
+        );
+      }
     },
-    [isSoundMuted, collectedCrystals.length, triggerHaptic, collectCrystal],
+    [
+      isSoundMuted,
+      collectedCrystals.length,
+      activeLevel.crystals.length,
+      triggerHaptic,
+      collectCrystal,
+      showHudNotification,
+    ],
   );
 
   const handleReachGoal = useCallback(
     (runPath: Array<[number, number]>) => {
       if (!isGoalUnlocked) {
+        const now = performance.now();
+        if (now - lastLockedWarnTimeRef.current > 1300) {
+          lastLockedWarnTimeRef.current = now;
+          if (!isSoundMuted) {
+            soundEngine.playLockedPortal();
+          }
+          triggerHaptic('wall');
+          const remaining = Math.max(
+            1,
+            activeLevel.crystals.length - collectedCrystals.length,
+          );
+          showHudNotification(
+            `🔒 Portal Kilitli! Önce kalan ${remaining} enerji kristalini toplayın.`,
+            'warn',
+          );
+        }
         return;
       }
       if (gameStatus !== 'won') {
@@ -946,7 +1065,10 @@ export function MazeScene() {
       triggerHaptic,
       recordLevelCompletion,
       activeLevel.id,
+      activeLevel.crystals.length,
+      collectedCrystals.length,
       elapsedSeconds,
+      showHudNotification,
     ],
   );
 
@@ -993,20 +1115,24 @@ export function MazeScene() {
   );
 
   return (
-    <div className="fixed inset-0 z-0 h-screen w-screen bg-zinc-950">
+    <div
+      className={`fixed inset-0 z-0 h-screen w-screen transition-colors duration-300 ${
+        isLightScene ? 'bg-slate-100' : 'bg-zinc-950'
+      }`}
+    >
       <Canvas
         shadows
         dpr={[1, 1.5]}
         gl={{ powerPreference: 'high-performance', antialias: true }}
         camera={{ position: [0, 14.5, 10.2], fov: 42, near: 0.1, far: 60 }}
       >
-        <color attach="background" args={['#09090b']} />
-        <fog attach="fog" args={['#09090b', 18, 36]} />
+        <color attach="background" args={[sceneBgColor]} />
+        <fog attach="fog" args={[sceneBgColor, 18, 38]} />
 
-        <ambientLight intensity={0.7} />
+        <ambientLight intensity={isLightScene ? 1.25 : 0.7} />
         <directionalLight
           position={[8, 16, 10]}
-          intensity={1.75}
+          intensity={isLightScene ? 2.1 : 1.75}
           castShadow
           shadow-mapSize={[1024, 1024]}
           shadow-camera-left={-9}
@@ -1014,7 +1140,11 @@ export function MazeScene() {
           shadow-camera-top={9}
           shadow-camera-bottom={-9}
         />
-        <pointLight position={[-8, 6, -8]} intensity={1.1} color="#38bdf8" />
+        <pointLight
+          position={[-8, 6, -8]}
+          intensity={isLightScene ? 0.65 : 1.1}
+          color="#38bdf8"
+        />
 
         <Physics gravity={[0, 0, 0]}>
           <MazeStage
