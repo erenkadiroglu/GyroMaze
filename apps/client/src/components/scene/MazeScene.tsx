@@ -385,6 +385,9 @@ function MazeStage({
 
       const pos = ballBodyRef.current.translation();
       const vel = ballBodyRef.current.linvel();
+      transientGyro.ballX = pos.x;
+      transientGyro.ballZ = pos.z;
+      transientGyro.ballSpeed = Math.hypot(vel.x, vel.z);
 
       if (visualBallMeshRef.current) {
         visualBallMeshRef.current.position.set(pos.x, BALL_RADIUS, pos.z);

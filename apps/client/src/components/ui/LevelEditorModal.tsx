@@ -15,6 +15,8 @@ import {
   Flag,
   MapPin,
   Eraser,
+  Activity,
+  Shuffle,
 } from 'lucide-react';
 import { useGameStore } from '@/store/useGameStore';
 import {
@@ -23,6 +25,7 @@ import {
   VoidHoleDefinition,
   LaserGateDefinition,
   BoostPadDefinition,
+  MovingObstacleDefinition,
 } from '@/components/scene/mazeLevels';
 
 type CellTool =
@@ -31,6 +34,7 @@ type CellTool =
   | 'crystal'
   | 'laser'
   | 'boost'
+  | 'moving'
   | 'start'
   | 'goal'
   | 'erase';
@@ -112,6 +116,30 @@ export function LevelEditorModal() {
     });
   };
 
+  const handleRandomizeGrid = () => {
+    setGrid(() => {
+      const next: CellTool[][] = Array.from({ length: GRID_SIZE }, () =>
+        Array.from({ length: GRID_SIZE }, () => 'erase'),
+      );
+      next[0][0] = 'start';
+      next[GRID_SIZE - 1][GRID_SIZE - 1] = 'goal';
+
+      for (let r = 0; r < GRID_SIZE; r++) {
+        for (let c = 0; c < GRID_SIZE; c++) {
+          if ((r <= 1 && c <= 1) || (r >= GRID_SIZE - 2 && c >= GRID_SIZE - 2))
+            continue;
+          const roll = Math.random();
+          if (roll < 0.16) next[r][c] = 'wall';
+          else if (roll < 0.23) next[r][c] = 'crystal';
+          else if (roll < 0.28) next[r][c] = 'hole';
+          else if (roll < 0.31) next[r][c] = 'boost';
+          else if (roll < 0.34) next[r][c] = 'moving';
+        }
+      }
+      return next;
+    });
+  };
+
   const buildLevelDefinition = (): MazeLevelDefinition => {
     let startPos: [number, number, number] = [-4.5, 0.34, -4.5];
     let goalPos: [number, number, number] = [4.5, 0.35, 4.5];
@@ -120,6 +148,7 @@ export function LevelEditorModal() {
     const crystals: [number, number][] = [];
     const laserGates: LaserGateDefinition[] = [];
     const boostPads: BoostPadDefinition[] = [];
+    const movingObstacles: MovingObstacleDefinition[] = [];
 
     for (let r = 0; r < GRID_SIZE; r++) {
       for (let c = 0; c < GRID_SIZE; c++) {
@@ -155,6 +184,14 @@ export function LevelEditorModal() {
             position: [wx, wz],
             direction: [0, 1],
           });
+        } else if (cell === 'moving') {
+          movingObstacles.push({
+            center: [wx, wz],
+            axis: (r + c) % 2 === 0 ? 'x' : 'z',
+            amplitude: 0.9,
+            speed: 2.2,
+            phaseOffset: (r + c) * 0.5,
+          });
         }
       }
     }
@@ -171,6 +208,7 @@ export function LevelEditorModal() {
       crystals,
       laserGates,
       boostPads,
+      movingObstacles,
     };
   };
 
@@ -249,6 +287,12 @@ export function LevelEditorModal() {
       label: 'Hız Rampası',
       colorClass: 'border-purple-500/50 bg-purple-500/20 text-purple-300',
       icon: <Play className="h-3.5 w-3.5" />,
+    },
+    {
+      id: 'moving',
+      label: 'Devriye Engel',
+      colorClass: 'border-orange-500/50 bg-orange-500/20 text-orange-300',
+      icon: <Activity className="h-3.5 w-3.5" />,
     },
     {
       id: 'start',
@@ -345,15 +389,24 @@ export function LevelEditorModal() {
                     <button
                       type="button"
                       onClick={handleClearGrid}
-                      className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-zinc-800 bg-zinc-800/50 py-2.5 text-xs font-medium text-zinc-300 transition hover:bg-zinc-800"
+                      className="flex flex-1 cursor-pointer items-center justify-center gap-1 rounded-xl border border-zinc-800 bg-zinc-800/50 py-2.5 text-xs font-medium text-zinc-300 transition hover:bg-zinc-800"
                     >
                       <Trash2 className="h-3.5 w-3.5 text-rose-400" />
                       <span>Temizle</span>
                     </button>
                     <button
                       type="button"
+                      onClick={handleRandomizeGrid}
+                      className="flex flex-1 cursor-pointer items-center justify-center gap-1 rounded-xl border border-zinc-800 bg-zinc-800/50 py-2.5 text-xs font-medium text-amber-300 transition hover:bg-zinc-800"
+                      title="8x8 Izgarayı Rastgele Engellerle Doldur"
+                    >
+                      <Shuffle className="h-3.5 w-3.5" />
+                      <span>Rastgele</span>
+                    </button>
+                    <button
+                      type="button"
                       onClick={handleCopyJson}
-                      className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-zinc-800 bg-zinc-800/50 py-2.5 text-xs font-medium text-zinc-300 transition hover:bg-zinc-800"
+                      className="flex flex-1 cursor-pointer items-center justify-center gap-1 rounded-xl border border-zinc-800 bg-zinc-800/50 py-2.5 text-xs font-medium text-zinc-300 transition hover:bg-zinc-800"
                     >
                       {copiedJson ? (
                         <>
@@ -363,17 +416,17 @@ export function LevelEditorModal() {
                       ) : (
                         <>
                           <Copy className="h-3.5 w-3.5 text-zinc-400" />
-                          <span>JSON Kopyala</span>
+                          <span>Kopyala</span>
                         </>
                       )}
                     </button>
                     <button
                       type="button"
                       onClick={handleImportFromClipboard}
-                      className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-zinc-800 bg-zinc-800/50 py-2.5 text-xs font-medium text-sky-300 transition hover:bg-zinc-800"
+                      className="flex flex-1 cursor-pointer items-center justify-center gap-1 rounded-xl border border-zinc-800 bg-zinc-800/50 py-2.5 text-xs font-medium text-sky-300 transition hover:bg-zinc-800"
                       title="Panodaki JSON Haritasını İçe Aktar ve Oyna"
                     >
-                      <span>JSON Yükle</span>
+                      <span>Yükle</span>
                     </button>
                   </div>
                   {importError && (
@@ -418,6 +471,10 @@ export function LevelEditorModal() {
                         cellStyle =
                           'border-purple-500 bg-purple-500/30 text-purple-200';
                         label = '▲';
+                      } else if (cell === 'moving') {
+                        cellStyle =
+                          'border-orange-500 bg-orange-500/30 text-orange-200';
+                        label = '↔';
                       } else if (cell === 'start') {
                         cellStyle =
                           'border-cyan-400 bg-cyan-500/30 text-cyan-200 font-bold';

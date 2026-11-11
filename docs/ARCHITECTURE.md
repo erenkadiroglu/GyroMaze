@@ -112,7 +112,14 @@ Mobil sensörlerden gelen ham veriler mikro titreşimler (sensör gürültüsü)
    currentRotation.z = THREE.MathUtils.damp(currentRotation.z, targetRoll, smoothingFactor, delta);
    ```
 
-### 4.3. Kinematik Fizik Etkileşimi (`@react-three/rapier`)
-- **Labirent Gövdesi (`RigidBody type="kinematicPosition"` / `kinematicVelocity`):** Labirent duvarları ve zemini kinematik bir fiziksel gövde olarak tanımlanır. Her fizik adımında sönümlenmiş jiroskop rotasyonu (`setNextKinematicRotation`) uygulanır.
-- **Küre (Top) Gövdesi (`RigidBody type="dynamic" colliders="ball"`):** Labirent içindeki metal bilye tamamen dinamik bir fizik nesnesidir. Labirent eğildikçe yerçekimi, yüzey sürtünmesi (`friction`) ve esneklik (`restitution`) parametrelerine göre doğal bir şekilde hızlanır, duvarlara çarpar ve hedefe doğru yuvarlanır.
+### 4.3. Sıfır Zıplamalı (Zero-Bounce) Tahta-Yerel Fizik ve Görsel Eğim Ayrımı
+Kinematik bir zemini hızla döndürmek, fizik motorunda bilyeye yukarı yönlü (`+Y`) istenmeyen bir darbe uygulayarak bilyenin zıplamasına yol açar. GyroMaze bunu **Tahta-Yerel Sabit Fizik + Görsel Eğim Grubu** mimarisiyle çözer:
+- **Sabit Çarpıştırıcılar (`RigidBody type="fixed"`):** Duvarlar, tuzak delikleri ve hedef portalı tahta-yerel uzayda sabit çarpıştırıcılar olarak çalışır.
+- **Y Ekseni Kilitli Dinamik Küre (`enabledTranslations={[true, false, true]}`):** Fizik küresinin `Y` ekseni kilitlidir ve `ccd={true}` (Continuous Collision Detection) açıktır; eğim açıları $\theta_{\text{pitch}}, \theta_{\text{roll}}$ doğrudan yatay yerçekimi ivmesi bileşenlerine ($a_x = -g \sin\theta_{\text{roll}}$, $a_z = g \sin\theta_{\text{pitch}}$) dönüştürülür.
+- **Görsel 3B Eğim Grubu (`visualTiltGroupRef`):** Tüm tahta, duvarlar, kristaller, lazerler ve görsel metal bilye tek bir `THREE.Group` içinde yer alır ve her karede `Quaternion.slerp` (katsayı `32`) ile sıfır gecikmeli olarak eğilir.
+
+### 4.4. Sonsuz Prosedürel Bölüm Motoru (`generateProceduralLevel`)
+- İlk 5 bölüm el yapımı olarak tanımlanmıştır (`Bölüm 01–05`).
+- `Bölüm 06` ve üzerindeki tüm seviyeler (`06..∞`), seviye numarasını deterministik tohum (*Mulberry32 PRNG*) olarak kullanan 4×4 makro-hücreli **Spanning-Tree (DFS + Braided Loops)** algoritmasıyla üretilir.
+- Her makro hücre $3.0\text{ birim}$ genişliğindedir ve hücreler arası duvarlar $2.4\text{ birim}$ uzunluğunda, $0.36\text{ birim}$ kalınlığındadır; böylece tüm koridorlarda en az **$2.64\text{ birim}$** güvenli geçiş açıklığı ve %100 çözülebilirlik garanti edilir.
 

@@ -12,14 +12,21 @@ import {
 import { MazeLevelDefinition } from '@/components/scene/mazeLevels';
 
 /**
- * React re-render tetiklemeden 60 FPS Three.js döngüsü (useFrame) tarafından
- * doğrudan okunan yüksek frekanslı jiroskop telemetri referansı.
+ * React re-render tetiklemeden 60 FPS Three.js döngüsü (useFrame) ve HUD telemetrisi
+ * tarafından doğrudan okunan yüksek frekanslı jiroskop ve bilye durum referansı.
  */
-export const transientGyro: GyroData = {
+export const transientGyro: GyroData & {
+  ballX: number;
+  ballZ: number;
+  ballSpeed: number;
+} = {
   alpha: 0,
   beta: 0,
   gamma: 0,
   timestamp: 0,
+  ballX: -4.2,
+  ballZ: -4.2,
+  ballSpeed: 0,
 };
 
 const BEST_TIMES_STORAGE_KEY = 'gyromaze_best_times_v1';
@@ -79,6 +86,7 @@ interface GameStoreState {
   colorScheme: ColorScheme;
   /** Sahne üstü anlık durum bildirimi (kilitli portal, kristal, yeni sektör vb.) */
   hudNotification: {
+    id: number;
     message: string;
     tone: 'info' | 'success' | 'warn';
     seq: number;
@@ -278,14 +286,26 @@ export const useGameStore = create<GameStoreState>((set) => ({
               : state.boardTheme,
       };
     }),
-  showHudNotification: (message, tone = 'info') =>
+  showHudNotification: (message, tone = 'info') => {
+    const nextSeq = Date.now();
     set((state) => ({
       hudNotification: {
+        id: nextSeq,
         message,
         tone,
         seq: (state.hudNotification?.seq ?? 0) + 1,
       },
-    })),
+    }));
+    if (typeof window !== 'undefined') {
+      window.setTimeout(() => {
+        set((state) =>
+          state.hudNotification?.id === nextSeq
+            ? { hudNotification: null }
+            : state,
+        );
+      }, 2800);
+    }
+  },
   setRemoteProgress: (payload) =>
     set((state) => ({
       gameStatus: payload.status,

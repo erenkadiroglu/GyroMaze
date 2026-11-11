@@ -27,10 +27,13 @@ Masaüstü ekranda oluşturulan benzersiz oda kodunu telefonunuzla **QR Kod** ü
 ## ✨ Temel Özellikler
 
 - **⚡ Ultra Düşük Gecikmeli Senkronizasyon (<10ms):** NestJS, Socket.io ve özel `TCP_NODELAY` WebSocket Proxy (`server.mjs`) altyapısı ile mobil sensör verilerinin masaüstü sahneye kesintisiz aktarımı.
-- **📱 QR Kod veya 6 Haneli Oda Kodu ile Anında Eşleşme:** Uygulama indirmeden, mobil tarayıcıdan QR kodu okutarak veya 6 haneli Oda Kodunu girerek saniyeler içinde bağlanma ve oda değiştirme.
-- **🎮 Sıfır Zıplamalı (Zero-Bounce) 3B Küre Fiziği:** `@react-three/rapier` tabanlı sabit çarpıştırıcılar, eğim ivmesi, periyodik **Lazer Kapılar**, **Toplanabilir Enerji Kristalleri** ve **Portal Kilidi** mekanikleri.
-- **🛠️ Dahili 8×8 Harita Editörü & Küresel Skor Tablosu:** Tarayıcı üzerinden özel 3B labirent tasarlama, JSON dışa aktarma ve bölüm bazlı gerçek zamanlı liderlik tablosu.
-- **🔊 Prosedürel Web Audio Ses Motoru & Haptic Titreşim:** Harici ses dosyası gerektirmeyen gerçek zamanlı ses sentezleyici ve çarpışma/kristal/lazer anında mobil titreşim geri bildirimi.
+- **📱 QR Kod veya 6 Haneli Oda Kodu ile Çift Yönlü Eşleşme:** Uygulama indirmeden, mobil tarayıcıdan QR kodu okutarak veya 6 haneli Oda Kodunu girerek saniyeler içinde bağlanma; telefon üzerinden doğrudan **Önceki / Sonraki Bölüm** geçişi ve **3 kademeli hassasiyet (`0.75x`, `1.0x`, `1.35x`)** kontrolü.
+- **♾️ Sonsuz Prosedürel Bölüm Motoru (`Bölüm 01 .. ∞`):** İlk 5 el yapımı bölümün ardından *Mulberry32* deterministik tohumlu **Spanning-Tree (DFS + Braided Loops)** algoritmasıyla sıfır çakışmalı, %100 çözülebilir sonsuz labirent üretimi.
+- **☀️ Tam Kapsamlı Aydınlık & Karanlık Mod (`Light / Dark Mode`):** Masaüstü 3B WebGL sahnesi, HUD panelleri ve mobil kontrolcü arayüzü için tek tıkla (`Sun` / `Moon` veya `L` kısayolu) çalışan Aydınlık/Karanlık görünüm ve 4 farklı 3B atmosfer teması (*Zümrüt*, *Siberpunk*, *Kızıl Kor*, *Gün Işığı*).
+- **🎮 Sıfır Zıplamalı (Zero-Bounce) 3B Küre Fiziği ve Zengin Engeller:** `@react-three/rapier` tabanlı sabit çarpıştırıcılar, **Enerji Kristalleri ve Portal Kilidi**, periyodik **Lazer Kapılar**, **Kinetik Hızlandırma Rampaları**, çift yönlü **Kuantum Işınlanma Portalları** ve **Hareketli Devriye Engelleri**.
+- **👻 3B Hayalet Yarışçı (`Ghost Replay`) & Canlı 2B Radar:** Her bölümdeki en iyi kişisel rekorunuzun 10Hz yörüngesini kaydedip sonraki denemelerde 60 FPS yarı saydam hologram olarak oynatan Hayalet Küre, 3 yıldızlı derecelendirme, anlık bilye hızı (`m/s`) ve canlı 2B mini-harita radarı.
+- **🛠️ Dahili 8×8 Harita Editörü & Küresel Skor Tablosu:** Tarayıcı üzerinden duvar, delik, kristal, lazer, hız rampası ve devriye engel yerleştirme, rastgele harita üretme, panodan JSON içe/dışa aktarma ve bölüm bazlı gerçek zamanlı liderlik tablosu.
+- **🔊 Prosedürel Web Audio Ses Motoru & Haptic Titreşim:** Harici ses dosyası gerektirmeyen gerçek zamanlı ses sentezleyici ve çarpışma, kristal, lazer, hız rampası, ışınlanma ve zafer anında mobil titreşim geri bildirimi.
 - **🧩 Tip Güvenli Monorepo ve Otomatik Test Paketi:** `packages/shared`, `apps/server` ve `apps/client` genelinde uçtan uca TypeScript doğrulaması ve `node --test` birim/geometri testleri.
 
 ---
@@ -58,13 +61,28 @@ GyroMaze/
 ├── README.md                    # Proje genel bakış ve kurulum kılavuzu
 ├── CONTRIBUTING.md              # Katkı sağlama ve kodlama standartları
 ├── docs/
-│   └── ARCHITECTURE.md          # Detaylı sistem ve gerçek zamanlı iletişim mimarisi
+│   ├── ARCHITECTURE.md          # Detaylı sistem, WebSocket proxy ve 3B fizik mimarisi
+│   └── ROADMAP.md               # Tamamlanan geliştirme fazları ve harita tasarım kuralları
 ├── apps/
-│   ├── client/                  # Next.js 15 + React 19 + R3F İstemci Uygulaması
+│   ├── client/                  # Next.js 15 + React 19 + R3F İstemci & TCP_NODELAY Proxy
 │   └── server/                  # NestJS + Socket.io WebSocket Sunucusu
 └── packages/
     └── shared/                  # Paylaşılan TypeScript arayüzleri (GyroData, RoomEvents vb.)
 ```
+
+---
+
+## ⌨️ Masaüstü Klavye Kısayolları
+
+Telefon bağlı olmadığında veya masaüstü üzerinden hızlı kontrol sağlamak istediğinizde aşağıdaki kısayolları kullanabilirsiniz:
+
+| Tuş | İşlev |
+| :--- | :--- |
+| **`W` `A` `S` `D` / `Yön Tuşları`** | Labirente masaüstünden eğim verir |
+| **`R`** | Topu başlangıç noktasına sıfırlar |
+| **`L`** | Aydınlık / Karanlık modu değiştirir |
+| **`C`** | Kamera bakış açısını değiştirir (*İzometrik*, *Üstten*, *Takip*) |
+| **`M`** | Prosedürel ses motorunu açar / kapatır |
 
 ---
 

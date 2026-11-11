@@ -86,6 +86,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Hareketli Kinetik Devriye Engelleri (`movingObstacles`):** Koridorlarda sinüzoidal olarak devriye gezen ve çarptığında bilyeye fiziksel saptırma darbesi uygulayan dinamik engeller eklendi.
 - [x] **Etkileşimli Sahne Bildirimleri (`hudNotification`) ve Klavye Kısayolları:** Kristaller tamamlanmadan kilitli portala dokunulduğunda sesli (`playLockedPortal`) ve görsel uyarı, son kristal alındığında portal açılış bildirimi ve hızlı klavye kısayolları (`R`, `C`, `M`, `L`) eklendi.
 
+## ✅ Faz 11: Canlı 2B Radar (Mini-Harita), Anlık Hız Sayacı, Gelişmiş Harita Editörü ve Dokümantasyon Güncellemesi (Tamamlandı)
+
+- [x] **60 FPS Canlı 2B Radar (Mini-Harita) ve Anlık Bilye Hızı (`m/s`):** Alt telemetri paneline React re-render tetiklemeden (`transientGyro.ballX`, `ballZ`, `ballSpeed`) çalışan canlı 2B mini-harita radarı (bilye konumu, kalan kristaller ve hedef portalı) ile anlık hız göstergesi eklendi.
+- [x] **Harita Editörü Geliştirmeleri (`LevelEditorModal.tsx`):** Özel harita tasarımcısına **Hareketli Devriye Engeli (`↔`)** yerleştirme aracı ve tek tıkla 8×8 ızgarayı dengeli engellerle dolduran **Rastgele (`Shuffle`)** harita üretici eklendi.
+- [x] **Mimari ve Proje Dokümantasyonu (`README.md`, `docs/ARCHITECTURE.md`):** Sonsuz prosedürel bölüm motoru, aydınlık/karanlık mod, sıfır zıplamalı fizik mimarisi ve klavye kısayolları tüm proje belgelerine işlendi.
+
 
 
 

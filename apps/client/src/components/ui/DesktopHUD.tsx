@@ -91,6 +91,8 @@ export function DesktopHUD() {
   const rollBarRef = useRef<HTMLDivElement | null>(null);
   const pitchTextRef = useRef<HTMLSpanElement | null>(null);
   const rollTextRef = useRef<HTMLSpanElement | null>(null);
+  const speedTextRef = useRef<HTMLSpanElement | null>(null);
+  const miniMapBallRef = useRef<HTMLDivElement | null>(null);
 
   const currentLevelInfo = getMazeLevel(level, customLevel);
   const isLight = colorScheme === 'light' || boardTheme === 'daylight';
@@ -184,6 +186,13 @@ export function DesktopHUD() {
         rollBarRef.current.style.transform = `translateX(${(rollPct * 0.5).toFixed(1)}%)`;
       }
 
+      if (miniMapBallRef.current) {
+        // 12x12 tahtada [-6..+6] aralığını 36x36px radar iç koordinatlarına dönüştür
+        const rx = ((transientGyro.ballX + 6) / 12) * 36;
+        const rz = ((transientGyro.ballZ + 6) / 12) * 36;
+        miniMapBallRef.current.style.transform = `translate3d(${rx.toFixed(1)}px, ${rz.toFixed(1)}px, 0)`;
+      }
+
       if (now - lastTextTime >= 100) {
         lastTextTime = now;
         if (pitchTextRef.current) {
@@ -191,6 +200,9 @@ export function DesktopHUD() {
         }
         if (rollTextRef.current) {
           rollTextRef.current.textContent = `${gamma >= 0 ? '+' : ''}${gamma.toFixed(1)}°`;
+        }
+        if (speedTextRef.current) {
+          speedTextRef.current.textContent = `${transientGyro.ballSpeed.toFixed(1)} m/s`;
         }
       }
 
@@ -303,22 +315,20 @@ export function DesktopHUD() {
           <div className="flex items-center gap-2">
             <span className="relative flex h-2.5 w-2.5">
               <span
-                className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${
-                  isControllerPaired
+                className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${isControllerPaired
                     ? 'bg-emerald-400'
                     : isSocketConnected
                       ? 'bg-amber-400'
                       : 'bg-rose-500'
-                }`}
+                  }`}
               />
               <span
-                className={`relative inline-flex h-2.5 w-2.5 rounded-full ${
-                  isControllerPaired
+                className={`relative inline-flex h-2.5 w-2.5 rounded-full ${isControllerPaired
                     ? 'bg-emerald-500'
                     : isSocketConnected
                       ? 'bg-amber-500'
                       : 'bg-rose-500'
-                }`}
+                  }`}
               />
             </span>
             <span className="text-base font-semibold tracking-tight">
@@ -333,9 +343,8 @@ export function DesktopHUD() {
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5">
               <span
-                className={`text-xs font-semibold ${
-                  isLight ? 'text-emerald-600' : 'text-emerald-400'
-                }`}
+                className={`text-xs font-semibold ${isLight ? 'text-emerald-600' : 'text-emerald-400'
+                  }`}
               >
                 {currentLevelInfo.title}
               </span>
@@ -346,9 +355,8 @@ export function DesktopHUD() {
               )}
             </div>
             <span
-              className={`text-[11px] ${
-                isLight ? 'text-slate-500' : 'text-zinc-400'
-              }`}
+              className={`text-[11px] ${isLight ? 'text-slate-500' : 'text-zinc-400'
+                }`}
             >
               {currentLevelInfo.subtitle}
             </span>
@@ -364,11 +372,10 @@ export function DesktopHUD() {
               type="button"
               onClick={prevLevel}
               disabled={activeNumericLevel <= 1 && level !== 99}
-              className={`flex h-7 w-6 cursor-pointer items-center justify-center rounded-lg transition disabled:cursor-not-allowed disabled:opacity-35 ${
-                isLight
+              className={`flex h-7 w-6 cursor-pointer items-center justify-center rounded-lg transition disabled:cursor-not-allowed disabled:opacity-35 ${isLight
                   ? 'bg-slate-200/80 text-slate-700 hover:bg-slate-300'
                   : 'bg-zinc-800/70 text-zinc-300 hover:bg-zinc-800'
-              }`}
+                }`}
               title="Önceki Bölüm"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
@@ -382,13 +389,12 @@ export function DesktopHUD() {
                   key={lvlId}
                   type="button"
                   onClick={() => setLevel(lvlId)}
-                  className={`h-7 min-w-7 cursor-pointer rounded-lg px-1.5 font-mono text-xs font-semibold transition ${
-                    isActive
+                  className={`h-7 min-w-7 cursor-pointer rounded-lg px-1.5 font-mono text-xs font-semibold transition ${isActive
                       ? 'bg-emerald-500 text-zinc-950 shadow-sm shadow-emerald-500/30'
                       : isLight
                         ? 'bg-slate-200/75 text-slate-600 hover:bg-slate-300 hover:text-slate-900'
                         : 'bg-zinc-800/70 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
-                  }`}
+                    }`}
                   title={
                     lvlId <= 5
                       ? `Bölüm ${label} (Özel Tasarım)`
@@ -403,11 +409,10 @@ export function DesktopHUD() {
             <button
               type="button"
               onClick={nextLevel}
-              className={`flex h-7 w-6 cursor-pointer items-center justify-center rounded-lg transition ${
-                isLight
+              className={`flex h-7 w-6 cursor-pointer items-center justify-center rounded-lg transition ${isLight
                   ? 'bg-slate-200/80 text-slate-700 hover:bg-slate-300'
                   : 'bg-zinc-800/70 text-zinc-300 hover:bg-zinc-800'
-              }`}
+                }`}
               title="Sonraki Bölüm (Sonsuz İlerleme)"
             >
               <ChevronRight className="h-3.5 w-3.5" />
@@ -429,13 +434,12 @@ export function DesktopHUD() {
         <div className="pointer-events-auto flex flex-wrap items-center gap-2">
           {/* Enerji Kristali ve Portal Kilidi Göstergesi */}
           <div
-            className={`flex items-center gap-2 rounded-xl border px-3.5 py-2 backdrop-blur-xl transition ${
-              isPortalUnlocked
+            className={`flex items-center gap-2 rounded-xl border px-3.5 py-2 backdrop-blur-xl transition ${isPortalUnlocked
                 ? isLight
                   ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-700'
                   : 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
                 : panelClass
-            }`}
+              }`}
           >
             <Gem className="h-3.5 w-3.5 text-sky-500" />
             <span className="font-mono text-xs font-semibold">
@@ -446,18 +450,16 @@ export function DesktopHUD() {
             />
             {isPortalUnlocked ? (
               <span
-                className={`flex items-center gap-1 text-xs font-semibold ${
-                  isLight ? 'text-emerald-700' : 'text-emerald-300'
-                }`}
+                className={`flex items-center gap-1 text-xs font-semibold ${isLight ? 'text-emerald-700' : 'text-emerald-300'
+                  }`}
               >
                 <Unlock className="h-3.5 w-3.5" />
                 Açık
               </span>
             ) : (
               <span
-                className={`flex items-center gap-1 text-xs font-semibold ${
-                  isLight ? 'text-amber-600' : 'text-amber-300'
-                }`}
+                className={`flex items-center gap-1 text-xs font-semibold ${isLight ? 'text-amber-600' : 'text-amber-300'
+                  }`}
               >
                 <Lock className="h-3.5 w-3.5" />
                 Kilitli
@@ -471,9 +473,8 @@ export function DesktopHUD() {
           >
             <div className="flex items-center gap-1.5">
               <span
-                className={`text-[11px] tracking-wider uppercase ${
-                  isLight ? 'text-slate-500' : 'text-zinc-400'
-                }`}
+                className={`text-[11px] tracking-wider uppercase ${isLight ? 'text-slate-500' : 'text-zinc-400'
+                  }`}
               >
                 Süre
               </span>
@@ -485,16 +486,14 @@ export function DesktopHUD() {
             {currentBestTime !== undefined && (
               <>
                 <div
-                  className={`h-3 w-px ${
-                    isLight ? 'bg-slate-300' : 'bg-zinc-800'
-                  }`}
+                  className={`h-3 w-px ${isLight ? 'bg-slate-300' : 'bg-zinc-800'
+                    }`}
                 />
                 <div className="flex items-center gap-1">
                   <Trophy className="h-3.5 w-3.5 text-amber-500" />
                   <span
-                    className={`font-mono text-xs font-semibold ${
-                      isLight ? 'text-amber-600' : 'text-amber-300'
-                    }`}
+                    className={`font-mono text-xs font-semibold ${isLight ? 'text-amber-600' : 'text-amber-300'
+                      }`}
                   >
                     {currentBestTime.toFixed(1)}sn
                   </span>
@@ -514,9 +513,8 @@ export function DesktopHUD() {
               <>
                 <Wifi className="h-3.5 w-3.5 text-emerald-500" />
                 <span
-                  className={`font-mono text-xs font-semibold ${
-                    isLight ? 'text-emerald-700' : 'text-emerald-300'
-                  }`}
+                  className={`font-mono text-xs font-semibold ${isLight ? 'text-emerald-700' : 'text-emerald-300'
+                    }`}
                 >
                   {roomId} • {latencyMs}ms
                 </span>
@@ -525,16 +523,14 @@ export function DesktopHUD() {
               <>
                 <KeyRound className="h-3.5 w-3.5 text-amber-500" />
                 <span
-                  className={`text-[11px] ${
-                    isLight ? 'text-slate-500' : 'text-zinc-400'
-                  }`}
+                  className={`text-[11px] ${isLight ? 'text-slate-500' : 'text-zinc-400'
+                    }`}
                 >
                   Oda:
                 </span>
                 <span
-                  className={`font-mono text-xs font-bold tracking-wider ${
-                    isLight ? 'text-amber-600' : 'text-amber-300'
-                  }`}
+                  className={`font-mono text-xs font-bold tracking-wider ${isLight ? 'text-amber-600' : 'text-amber-300'
+                    }`}
                 >
                   {roomId ?? '...'}
                 </span>
@@ -659,20 +655,19 @@ export function DesktopHUD() {
       <AnimatePresence>
         {hudNotification && (
           <motion.div
-            key={hudNotification.seq}
+            key={hudNotification.id}
             initial={{ opacity: 0, y: -14, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -14, scale: 0.95 }}
             className="pointer-events-none fixed top-20 left-1/2 z-30 -translate-x-1/2"
           >
             <div
-              className={`rounded-2xl border px-5 py-2.5 text-xs font-semibold shadow-2xl backdrop-blur-xl ${
-                hudNotification.tone === 'warn'
+              className={`rounded-2xl border px-5 py-2.5 text-xs font-semibold shadow-2xl backdrop-blur-xl ${hudNotification.tone === 'warn'
                   ? 'border-amber-500/50 bg-amber-950/90 text-amber-200'
                   : hudNotification.tone === 'success'
                     ? 'border-emerald-500/50 bg-emerald-950/90 text-emerald-200'
                     : 'border-purple-500/50 bg-purple-950/90 text-purple-200'
-              }`}
+                }`}
             >
               {hudNotification.message}
             </div>
@@ -686,9 +681,8 @@ export function DesktopHUD() {
           className={`pointer-events-auto flex items-center gap-6 rounded-2xl border px-5 py-3.5 backdrop-blur-xl transition-colors ${panelClass}`}
         >
           <div
-            className={`flex items-center gap-2 text-xs font-medium ${
-              isLight ? 'text-slate-600' : 'text-zinc-400'
-            }`}
+            className={`flex items-center gap-2 text-xs font-medium ${isLight ? 'text-slate-600' : 'text-zinc-400'
+              }`}
           >
             <Compass className="h-4 w-4 text-emerald-500" />
             <span>Canlı Telemetri</span>
@@ -696,16 +690,14 @@ export function DesktopHUD() {
 
           <div className="flex items-center gap-3">
             <span
-              className={`text-xs ${
-                isLight ? 'text-slate-500' : 'text-zinc-400'
-              }`}
+              className={`text-xs ${isLight ? 'text-slate-500' : 'text-zinc-400'
+                }`}
             >
               Eğim (Pitch)
             </span>
             <div
-              className={`relative h-1.5 w-24 overflow-hidden rounded-full ${
-                isLight ? 'bg-slate-200' : 'bg-zinc-800'
-              }`}
+              className={`relative h-1.5 w-24 overflow-hidden rounded-full ${isLight ? 'bg-slate-200' : 'bg-zinc-800'
+                }`}
             >
               <div
                 ref={pitchBarRef}
@@ -722,16 +714,14 @@ export function DesktopHUD() {
 
           <div className="flex items-center gap-3">
             <span
-              className={`text-xs ${
-                isLight ? 'text-slate-500' : 'text-zinc-400'
-              }`}
+              className={`text-xs ${isLight ? 'text-slate-500' : 'text-zinc-400'
+                }`}
             >
               Yatış (Roll)
             </span>
             <div
-              className={`relative h-1.5 w-24 overflow-hidden rounded-full ${
-                isLight ? 'bg-slate-200' : 'bg-zinc-800'
-              }`}
+              className={`relative h-1.5 w-24 overflow-hidden rounded-full ${isLight ? 'bg-slate-200' : 'bg-zinc-800'
+                }`}
             >
               <div
                 ref={rollBarRef}
@@ -744,6 +734,66 @@ export function DesktopHUD() {
             >
               +0.0°
             </span>
+          </div>
+
+          <div
+            className={`h-5 w-px ${isLight ? 'bg-slate-300' : 'bg-zinc-800'}`}
+          />
+
+          {/* Anlık Bilye Hızı */}
+          <div className="flex items-center gap-2">
+            <span
+              className={`text-xs ${isLight ? 'text-slate-500' : 'text-zinc-400'}`}
+            >
+              Hız
+            </span>
+            <span
+              ref={speedTextRef}
+              className="w-14 text-right font-mono text-xs font-semibold text-purple-500"
+            >
+              0.0 m/s
+            </span>
+          </div>
+
+          {/* 60 FPS Canlı 2B Radar / Mini-Harita */}
+          <div
+            className={`relative h-10 w-10 overflow-hidden rounded-lg border ${
+              isLight
+                ? 'border-slate-300 bg-slate-100'
+                : 'border-zinc-700 bg-zinc-950'
+            }`}
+            title="Canlı 2B Labirent Radarı (Yeşil: Hedef, Mavi: Kristal, Beyaz/Siyah: Bilye)"
+          >
+            {/* Hedef Noktası */}
+            <div
+              style={{
+                left: `${((currentLevelInfo.goalPosition[0] + 6) / 12) * 100}%`,
+                top: `${((currentLevelInfo.goalPosition[2] + 6) / 12) * 100}%`,
+              }}
+              className={`absolute h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full ${
+                isPortalUnlocked ? 'bg-emerald-500' : 'bg-amber-500'
+              }`}
+            />
+            {/* Kalan Kristaller */}
+            {currentLevelInfo.crystals.map(([cx, cz], idx) =>
+              collectedCrystals.includes(idx) ? null : (
+                <div
+                  key={`radar-c-${idx}`}
+                  style={{
+                    left: `${((cx + 6) / 12) * 100}%`,
+                    top: `${((cz + 6) / 12) * 100}%`,
+                  }}
+                  className="absolute h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-400"
+                />
+              ),
+            )}
+            {/* Canlı Bilye Konumu */}
+            <div
+              ref={miniMapBallRef}
+              className={`absolute top-0 left-0 h-2 w-2 rounded-full shadow-sm will-change-transform ${
+                isLight ? 'bg-slate-900' : 'bg-white'
+              }`}
+            />
           </div>
         </div>
 
@@ -824,11 +874,10 @@ export function DesktopHUD() {
                         key={tabLvl}
                         type="button"
                         onClick={() => setSelectedLeaderboardLevel(tabLvl)}
-                        className={`cursor-pointer rounded-lg py-1.5 font-mono text-xs font-semibold transition ${
-                          selectedLeaderboardLevel === tabLvl
+                        className={`cursor-pointer rounded-lg py-1.5 font-mono text-xs font-semibold transition ${selectedLeaderboardLevel === tabLvl
                             ? 'bg-amber-500 text-zinc-950'
                             : 'text-zinc-400 hover:text-zinc-200'
-                        }`}
+                          }`}
                       >
                         Böl. {label}
                       </button>
@@ -861,15 +910,14 @@ export function DesktopHUD() {
                     >
                       <div className="flex items-center gap-3">
                         <span
-                          className={`flex h-6 w-6 items-center justify-center rounded-full font-mono text-xs font-bold ${
-                            idx === 0
+                          className={`flex h-6 w-6 items-center justify-center rounded-full font-mono text-xs font-bold ${idx === 0
                               ? 'bg-amber-500/20 text-amber-300'
                               : idx === 1
                                 ? 'bg-zinc-400/20 text-zinc-200'
                                 : idx === 2
                                   ? 'bg-orange-500/20 text-orange-300'
                                   : 'bg-zinc-800 text-zinc-400'
-                          }`}
+                            }`}
                         >
                           {idx + 1}
                         </span>
@@ -1037,11 +1085,10 @@ export function DesktopHUD() {
                 {[1, 2, 3].map((starIdx) => (
                   <Star
                     key={starIdx}
-                    className={`h-6 w-6 ${
-                      starIdx <= earnedStars
+                    className={`h-6 w-6 ${starIdx <= earnedStars
                         ? 'fill-amber-400 text-amber-400'
                         : 'text-zinc-700'
-                    }`}
+                      }`}
                   />
                 ))}
               </div>
@@ -1075,11 +1122,10 @@ export function DesktopHUD() {
                   <button
                     type="submit"
                     disabled={scoreSubmitted}
-                    className={`flex cursor-pointer items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold transition ${
-                      scoreSubmitted
+                    className={`flex cursor-pointer items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold transition ${scoreSubmitted
                         ? 'bg-emerald-500/20 text-emerald-300'
                         : 'bg-amber-500 text-zinc-950 hover:bg-amber-400'
-                    }`}
+                      }`}
                   >
                     {scoreSubmitted ? (
                       <>
