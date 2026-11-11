@@ -48,6 +48,8 @@ interface UseSocketOptions {
 export function useSocket({ role, targetRoomId }: UseSocketOptions) {
   const socketRef = useRef<Socket | null>(null);
   const lastLatencyUpdateRef = useRef<number>(0);
+  const lastEmitTimeRef = useRef<number>(0);
+  const isTunnelOrProxyRef = useRef<boolean>(false);
 
   const roomId = useGameStore((s) => s.roomId);
   const hapticSignal = useGameStore((s) => s.hapticSignal);
@@ -67,13 +69,13 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
     const serverUrl = resolveSocketServerUrl();
     const isTunnelOrProxy =
       typeof window !== 'undefined' && serverUrl === window.location.origin;
+    isTunnelOrProxyRef.current = isTunnelOrProxy;
 
     const socket = io(serverUrl, {
-      path: '/socket.io',
-      // Proxy/Tünel üzerinden bağlanırken önce polling ile el sıkışıp ardından websocket'e yükselt
-      transports: isTunnelOrProxy
-        ? ['polling', 'websocket']
-        : ['websocket', 'polling'],
+      path: '/socket.io/',
+      // Next.js rewrite proxy üzerinden (ngrok/tünel) bağlanırken HTTP polling kullanılır
+      // (Next.js dev sunucusu ws:// upgrade isteklerini HMR için ayırdığından kopmayı önler)
+      transports: isTunnelOrProxy ? ['polling'] : ['websocket', 'polling'],
       reconnectionAttempts: 15,
       reconnectionDelay: 1000,
       extraHeaders: {
@@ -219,6 +221,11 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
 
   const emitGyroUpdate = useCallback((targetRoom: string, data: GyroData) => {
     if (!socketRef.current?.connected) return;
+    const now = performance.now();
+    const minInterval = isTunnelOrProxyRef.current ? 35 : 14;
+    if (now - lastEmitTimeRef.current < minInterval) return;
+    lastEmitTimeRef.current = now;
+
     socketRef.current.emit(RoomEvents.GYRO_UPDATE, {
       roomId: targetRoom,
       data,
