@@ -72,6 +72,8 @@ export interface RoomState {
   isControllerConnected: boolean;
   /** Odanın oluşturulma zamanı (ms) */
   createdAt: number;
+  /** Mobil cihazların QR kod ile doğrudan bağlanabilmesi için sunucunun yerel ağ (LAN) IPv4 adresi */
+  lanIp?: string;
 }
 
 /**

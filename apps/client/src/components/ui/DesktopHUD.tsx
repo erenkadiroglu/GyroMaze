@@ -25,6 +25,7 @@ import { MAZE_LEVELS } from '@/components/scene/mazeLevels';
  */
 export function DesktopHUD() {
   const roomId = useGameStore((s) => s.roomId);
+  const lanIp = useGameStore((s) => s.lanIp);
   const isSocketConnected = useGameStore((s) => s.isSocketConnected);
   const isControllerPaired = useGameStore((s) => s.isControllerPaired);
   const isPairingModalOpen = useGameStore((s) => s.isPairingModalOpen);
@@ -52,9 +53,15 @@ export function DesktopHUD() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setOriginUrl(window.location.origin);
+      const { protocol, hostname, port } = window.location;
+      const effectiveHost =
+        (hostname === 'localhost' || hostname === '127.0.0.1') && lanIp
+          ? lanIp
+          : hostname;
+      const portSuffix = port ? `:${port}` : '';
+      setOriginUrl(`${protocol}//${effectiveHost}${portSuffix}`);
     }
-  }, []);
+  }, [lanIp]);
 
   // Oyun içi süre sayacı
   useEffect(() => {

@@ -42,6 +42,7 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
   const lastLatencyUpdateRef = useRef<number>(0);
 
   const setRoomId = useGameStore((s) => s.setRoomId);
+  const setLanIp = useGameStore((s) => s.setLanIp);
   const setSocketConnected = useGameStore((s) => s.setSocketConnected);
   const setControllerPaired = useGameStore((s) => s.setControllerPaired);
   const setLatencyMs = useGameStore((s) => s.setLatencyMs);
@@ -81,11 +82,13 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
 
     socket.on(RoomEvents.ROOM_CREATED, (room: RoomState) => {
       setRoomId(room.roomId);
+      if (room.lanIp) setLanIp(room.lanIp);
       setControllerPaired(room.isControllerConnected);
     });
 
     socket.on(RoomEvents.ROOM_PAIRED, (room: RoomState) => {
       setRoomId(room.roomId);
+      if (room.lanIp) setLanIp(room.lanIp);
       setControllerPaired(true);
       setErrorMessage(null);
     });

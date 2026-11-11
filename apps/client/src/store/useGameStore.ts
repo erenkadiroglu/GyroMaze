@@ -18,6 +18,8 @@ export const transientGyro: GyroData = {
 interface GameStoreState {
   /** Sunucu tarafından atanan 6 haneli benzersiz oda kodu */
   roomId: string | null;
+  /** Sunucunun tespit ettiği yerel ağ (LAN) IPv4 adresi */
+  lanIp: string | null;
   /** Socket.io sunucu bağlantı durumu */
   isSocketConnected: boolean;
   /** Mobil kontrolcünün odaya aktif olarak bağlı olup olmadığı */
@@ -39,6 +41,7 @@ interface GameStoreState {
 
   // Eylemler (Actions)
   setRoomId: (roomId: string | null) => void;
+  setLanIp: (lanIp: string | null) => void;
   setSocketConnected: (connected: boolean) => void;
   setControllerPaired: (paired: boolean) => void;
   setPairingModalOpen: (open: boolean) => void;
@@ -58,6 +61,7 @@ interface GameStoreState {
  */
 export const useGameStore = create<GameStoreState>((set) => ({
   roomId: null,
+  lanIp: null,
   isSocketConnected: false,
   isControllerPaired: false,
   isPairingModalOpen: true,
@@ -69,6 +73,7 @@ export const useGameStore = create<GameStoreState>((set) => ({
   errorMessage: null,
 
   setRoomId: (roomId) => set({ roomId }),
+  setLanIp: (lanIp) => set({ lanIp }),
   setSocketConnected: (isSocketConnected) => set({ isSocketConnected }),
   setControllerPaired: (isControllerPaired) =>
     set((state) => ({

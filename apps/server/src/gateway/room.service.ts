@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { networkInterfaces } from 'os';
 import { RoomState, RoomErrorPayload } from '@gyromaze/shared';
 
 /**
@@ -40,6 +41,24 @@ export class RoomService {
   }
 
   /**
+   * Mobil cihazların QR kod üzerinden doğrudan bağlanabilmesi için
+   * sunucunun çalıştığı makinenin yerel ağ (Wi-Fi / Ethernet) IPv4 adresini bulur.
+   */
+  private detectLanIp(): string | undefined {
+    const nets = networkInterfaces();
+    for (const name of Object.keys(nets)) {
+      const interfaces = nets[name];
+      if (!interfaces) continue;
+      for (const net of interfaces) {
+        if (net.family === 'IPv4' && !net.internal) {
+          return net.address;
+        }
+      }
+    }
+    return undefined;
+  }
+
+  /**
    * Masaüstü istemcisi (Host) için yeni bir oyun odası oluşturur.
    */
   public createRoom(hostSocketId: string): RoomState {
@@ -53,6 +72,7 @@ export class RoomService {
       controllerSocketId: null,
       isControllerConnected: false,
       createdAt: Date.now(),
+      lanIp: this.detectLanIp(),
     };
 
     this.rooms.set(roomId, roomState);
