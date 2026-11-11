@@ -83,12 +83,18 @@ export function useDeviceOrientation({
   const calibrate = useCallback(() => {
     calibrationRef.current.betaOffset = rawAnglesRef.current.beta;
     calibrationRef.current.gammaOffset = rawAnglesRef.current.gamma;
+    calibratedRef.current.beta = 0;
+    calibratedRef.current.gamma = 0;
+    calibratedRef.current.timestamp = Date.now();
   }, []);
 
   useEffect(() => {
     if (!enabled || permissionState !== 'granted') {
       return;
     }
+
+    let smoothedBeta = 0;
+    let smoothedGamma = 0;
 
     const handleOrientation = (event: DeviceOrientationEvent) => {
       const alpha = event.alpha ?? 0;
@@ -102,15 +108,19 @@ export function useDeviceOrientation({
       let deltaBeta = beta - calibrationRef.current.betaOffset;
       let deltaGamma = gamma - calibrationRef.current.gammaOffset;
 
-      // Mikro el titremelerini sönümlemek için 0.25 derecelik minimal ölü bölge
-      if (Math.abs(deltaBeta) < 0.25) deltaBeta = 0;
-      if (Math.abs(deltaGamma) < 0.25) deltaGamma = 0;
+      // Mikro el titremelerini sönümlemek için 0.2 derecelik minimal ölü bölge
+      if (Math.abs(deltaBeta) < 0.2) deltaBeta = 0;
+      if (Math.abs(deltaGamma) < 0.2) deltaGamma = 0;
 
-      // Maksimum ±35 derece sınırlandırma ve saf kayan nokta yuvarlama (sıfır string tahsisi)
+      // MEMS sensör gürültüsünü gecikme yaratmadan temizleyen hızlı üstel filtre (EMA = 0.72)
+      smoothedBeta = smoothedBeta + (deltaBeta - smoothedBeta) * 0.72;
+      smoothedGamma = smoothedGamma + (deltaGamma - smoothedGamma) * 0.72;
+
+      // Maksimum ±35 derece sınırlandırma ve saf kayan nokta yuvarlama (sıfır nesne/string tahsisi)
       const clampedBeta =
-        Math.round(Math.max(-35, Math.min(35, deltaBeta)) * 10) / 10;
+        Math.round(Math.max(-35, Math.min(35, smoothedBeta)) * 10) / 10;
       const clampedGamma =
-        Math.round(Math.max(-35, Math.min(35, deltaGamma)) * 10) / 10;
+        Math.round(Math.max(-35, Math.min(35, smoothedGamma)) * 10) / 10;
 
       calibratedRef.current.alpha = Math.round(alpha * 10) / 10;
       calibratedRef.current.beta = clampedBeta;

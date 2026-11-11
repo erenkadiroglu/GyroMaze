@@ -46,8 +46,13 @@ interface UseSocketOptions {
  */
 export function useSocket({ role, targetRoomId }: UseSocketOptions) {
   const socketRef = useRef<Socket | null>(null);
+  const targetRoomIdRef = useRef<string | null>(targetRoomId ?? null);
+  targetRoomIdRef.current = targetRoomId ?? null;
+
   const lastLatencyUpdateRef = useRef<number>(0);
   const lastEmitTimeRef = useRef<number>(0);
+  const lastSentBetaRef = useRef<number>(999);
+  const lastSentGammaRef = useRef<number>(999);
 
   const roomId = useGameStore((s) => s.roomId);
   const hapticSignal = useGameStore((s) => s.hapticSignal);
@@ -86,8 +91,10 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
 
       if (role === 'host') {
         socket.emit(RoomEvents.ROOM_CREATE);
-      } else if (role === 'controller' && targetRoomId) {
-        socket.emit(RoomEvents.ROOM_JOIN, { roomId: targetRoomId });
+      } else if (role === 'controller' && targetRoomIdRef.current) {
+        socket.emit(RoomEvents.ROOM_JOIN, {
+          roomId: targetRoomIdRef.current,
+        });
       }
     });
 
@@ -117,7 +124,7 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
         typeof navigator !== 'undefined' &&
         'vibrate' in navigator
       ) {
-        navigator.vibrate([40, 60, 80]);
+        navigator.vibrate([35, 50, 65]);
       }
     });
 
@@ -128,7 +135,9 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
 
     socket.on(RoomEvents.ROOM_HOST_DISCONNECTED, () => {
       setControllerPaired(false);
-      setErrorMessage('Masaüstü oturumu sonlandırıldı.');
+      setErrorMessage(
+        'Masaüstü oturumu yenilendi veya kapandı. Lütfen yeni 6 haneli oda kodunu girin.',
+      );
     });
 
     socket.on(RoomEvents.ROOM_ERROR, (error: RoomErrorPayload) => {
@@ -204,7 +213,6 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
     };
   }, [
     role,
-    targetRoomId,
     setRoomId,
     setLanIp,
     setTunnelUrl,
@@ -212,11 +220,21 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
     setControllerPaired,
     setLatencyMs,
     setErrorMessage,
+    setLeaderboard,
     updateTransientGyro,
     resetTransientGyro,
     triggerBallReset,
     setGameStatus,
   ]);
+
+  // Mobil kontrolcüde hedef oda kodu değiştiğinde mevcut soketi koparmadan anında yeni odaya katıl
+  useEffect(() => {
+    if (role !== 'controller' || !targetRoomId) return;
+    if (socketRef.current?.connected) {
+      setErrorMessage(null);
+      socketRef.current.emit(RoomEvents.ROOM_JOIN, { roomId: targetRoomId });
+    }
+  }, [role, targetRoomId, setErrorMessage]);
 
   useEffect(() => {
     if (role !== 'host' || !hapticSignal || !roomId) return;
@@ -235,19 +253,45 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
   }, [role, pendingScoreSubmission]);
 
   /**
-   * 60Hz frekansında volatile WebSocket çerçevesi gönderir (eski paketlerin kuyrukta beklemesini önler).
+   * 60Hz frekansında ve delta filtreli volatile WebSocket çerçevesi gönderir.
+   * Açı değişmediyse gereksiz ağ paketi üretmez, mobil işlemci ve soket yükünü sıfırlar.
    */
   const emitGyroUpdate = useCallback((targetRoom: string, data: GyroData) => {
     if (!socketRef.current?.connected) return;
     const now = performance.now();
-    if (now - lastEmitTimeRef.current < 14) return;
+    const isZeroReset = data.beta === 0 && data.gamma === 0;
+
+    if (!isZeroReset && now - lastEmitTimeRef.current < 15) return;
+
+    const deltaBeta = Math.abs(data.beta - lastSentBetaRef.current);
+    const deltaGamma = Math.abs(data.gamma - lastSentGammaRef.current);
+
+    if (!isZeroReset && deltaBeta < 0.1 && deltaGamma < 0.1) {
+      return;
+    }
+
     lastEmitTimeRef.current = now;
+    lastSentBetaRef.current = data.beta;
+    lastSentGammaRef.current = data.gamma;
 
     socketRef.current.volatile.emit(RoomEvents.GYRO_UPDATE, {
       roomId: targetRoom,
       data,
     });
   }, []);
+
+  /**
+   * Mobil kontrolcünün soket bağlantısını koparmadan yeni bir 6 haneli oda koduna katılmasını sağlar.
+   */
+  const joinRoomByCode = useCallback(
+    (code: string) => {
+      const normalized = code.trim().toUpperCase();
+      if (!normalized || !socketRef.current?.connected) return;
+      setErrorMessage(null);
+      socketRef.current.emit(RoomEvents.ROOM_JOIN, { roomId: normalized });
+    },
+    [setErrorMessage],
+  );
 
   const emitCalibrate = useCallback(() => {
     if (!socketRef.current?.connected) return;
@@ -261,6 +305,7 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
 
   return {
     emitGyroUpdate,
+    joinRoomByCode,
     emitCalibrate,
     emitResetBall,
   };

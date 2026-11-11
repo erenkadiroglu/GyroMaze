@@ -17,8 +17,7 @@ import {
   Compass,
   Volume2,
   VolumeX,
-  Globe,
-  Network,
+  KeyRound,
   Gem,
   Lock,
   Unlock,
@@ -35,11 +34,10 @@ import { LevelEditorModal } from './LevelEditorModal';
 /**
  * Masaüstü 3B oyun ekranı üzerinde yer alan minimalist HUD,
  * gerçek zamanlı telemetri göstergesi, seviye seçici, harita editörü,
- * küresel skor tablosu ve QR eşleşme katmanı.
+ * küresel skor tablosu ve QR / Oda Kodu eşleşme katmanı.
  */
 export function DesktopHUD() {
   const roomId = useGameStore((s) => s.roomId);
-  const lanIp = useGameStore((s) => s.lanIp);
   const tunnelUrl = useGameStore((s) => s.tunnelUrl);
   const isSocketConnected = useGameStore((s) => s.isSocketConnected);
   const isControllerPaired = useGameStore((s) => s.isControllerPaired);
@@ -65,11 +63,9 @@ export function DesktopHUD() {
   const toggleSoundMuted = useGameStore((s) => s.toggleSoundMuted);
   const triggerBallReset = useGameStore((s) => s.triggerBallReset);
 
-  const [copied, setCopied] = useState(false);
-  const [connectionMode, setConnectionMode] = useState<'tunnel' | 'lan'>(
-    'tunnel',
-  );
-  const [lanOriginUrl, setLanOriginUrl] = useState('http://localhost:3000');
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedRoomCode, setCopiedRoomCode] = useState(false);
+  const [browserOrigin, setBrowserOrigin] = useState('http://localhost:3000');
   const [playerName, setPlayerName] = useState('Eren Kadiroğlu');
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
   const [selectedLeaderboardLevel, setSelectedLeaderboardLevel] = useState(1);
@@ -94,15 +90,9 @@ export function DesktopHUD() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const { protocol, hostname, port } = window.location;
-      const effectiveHost =
-        (hostname === 'localhost' || hostname === '127.0.0.1') && lanIp
-          ? lanIp
-          : hostname;
-      const portSuffix = port ? `:${port}` : '';
-      setLanOriginUrl(`${protocol}//${effectiveHost}${portSuffix}`);
+      setBrowserOrigin(window.location.origin);
     }
-  }, [lanIp]);
+  }, []);
 
   // Oyun içi süre sayacı
   useEffect(() => {
@@ -116,27 +106,37 @@ export function DesktopHUD() {
     return () => window.clearInterval(interval);
   }, [gameStatus, level]);
 
-  // 60 FPS doğrudan DOM tabanlı eğim göstergesi döngüsü
+  // 60 FPS doğrudan DOM tabanlı eğim göstergesi döngüsü (Delta & 10Hz metin filtreli)
   useEffect(() => {
     let animationFrameId: number;
+    let lastPitchPct = 999;
+    let lastRollPct = 999;
+    let lastTextTime = 0;
 
-    const updateTelemetryBars = () => {
+    const updateTelemetryBars = (now: number) => {
       const beta = transientGyro.beta;
       const gamma = transientGyro.gamma;
 
-      if (pitchBarRef.current) {
-        const pct = Math.max(-100, Math.min(100, (beta / 25) * 100));
-        pitchBarRef.current.style.transform = `translateX(${pct * 0.5}%)`;
+      const pitchPct = Math.max(-100, Math.min(100, (beta / 25) * 100));
+      const rollPct = Math.max(-100, Math.min(100, (gamma / 25) * 100));
+
+      if (pitchBarRef.current && Math.abs(pitchPct - lastPitchPct) >= 0.4) {
+        lastPitchPct = pitchPct;
+        pitchBarRef.current.style.transform = `translateX(${(pitchPct * 0.5).toFixed(1)}%)`;
       }
-      if (rollBarRef.current) {
-        const pct = Math.max(-100, Math.min(100, (gamma / 25) * 100));
-        rollBarRef.current.style.transform = `translateX(${pct * 0.5}%)`;
+      if (rollBarRef.current && Math.abs(rollPct - lastRollPct) >= 0.4) {
+        lastRollPct = rollPct;
+        rollBarRef.current.style.transform = `translateX(${(rollPct * 0.5).toFixed(1)}%)`;
       }
-      if (pitchTextRef.current) {
-        pitchTextRef.current.textContent = `${beta >= 0 ? '+' : ''}${beta.toFixed(1)}°`;
-      }
-      if (rollTextRef.current) {
-        rollTextRef.current.textContent = `${gamma >= 0 ? '+' : ''}${gamma.toFixed(1)}°`;
+
+      if (now - lastTextTime >= 100) {
+        lastTextTime = now;
+        if (pitchTextRef.current) {
+          pitchTextRef.current.textContent = `${beta >= 0 ? '+' : ''}${beta.toFixed(1)}°`;
+        }
+        if (rollTextRef.current) {
+          rollTextRef.current.textContent = `${gamma >= 0 ? '+' : ''}${gamma.toFixed(1)}°`;
+        }
       }
 
       animationFrameId = window.requestAnimationFrame(updateTelemetryBars);
@@ -146,8 +146,7 @@ export function DesktopHUD() {
     return () => window.cancelAnimationFrame(animationFrameId);
   }, []);
 
-  const activeBaseUrl =
-    connectionMode === 'tunnel' && tunnelUrl ? tunnelUrl : lanOriginUrl;
+  const activeBaseUrl = tunnelUrl || browserOrigin;
 
   const controllerUrl = roomId
     ? `${activeBaseUrl}/controller?room=${roomId}`
@@ -156,8 +155,19 @@ export function DesktopHUD() {
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(controllerUrl);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
+      setCopiedLink(true);
+      window.setTimeout(() => setCopiedLink(false), 2000);
+    } catch {
+      // Panoya kopyalama başarısız olursa sessizce geç
+    }
+  };
+
+  const handleCopyRoomCode = async () => {
+    if (!roomId) return;
+    try {
+      await navigator.clipboard.writeText(roomId);
+      setCopiedRoomCode(true);
+      window.setTimeout(() => setCopiedRoomCode(false), 2000);
     } catch {
       // Panoya kopyalama başarısız olursa sessizce geç
     }
@@ -313,19 +323,25 @@ export function DesktopHUD() {
             )}
           </div>
 
-          {/* Bağlantı Rozeti */}
-          <div className="flex items-center gap-1.5 rounded-xl border border-zinc-800/80 bg-zinc-900/75 px-3.5 py-2 backdrop-blur-xl">
+          {/* Bağlantı ve Oda Kodu Rozeti */}
+          <button
+            type="button"
+            onClick={() => setPairingModalOpen(true)}
+            className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-zinc-800/80 bg-zinc-900/75 px-3.5 py-2 backdrop-blur-xl transition hover:border-zinc-700"
+            title="Oda Kodu ve Mobil Eşleşme Bilgileri"
+          >
             {isControllerPaired ? (
               <>
                 <Wifi className="h-3.5 w-3.5 text-emerald-400" />
-                <span className="text-xs font-medium text-emerald-300">
-                  {latencyMs}ms
+                <span className="font-mono text-xs font-semibold text-emerald-300">
+                  {roomId} • {latencyMs}ms
                 </span>
               </>
             ) : isSocketConnected ? (
               <>
-                <Smartphone className="h-3.5 w-3.5 text-amber-400" />
-                <span className="font-mono text-xs font-bold text-amber-300">
+                <KeyRound className="h-3.5 w-3.5 text-amber-400" />
+                <span className="text-[11px] text-zinc-400">Oda:</span>
+                <span className="font-mono text-xs font-bold tracking-wider text-amber-300">
                   {roomId ?? '...'}
                 </span>
               </>
@@ -335,7 +351,7 @@ export function DesktopHUD() {
                 <span className="text-xs font-medium text-rose-300">Kopuk</span>
               </>
             )}
-          </div>
+          </button>
 
           {/* Harita Editörü Butonu */}
           <button
@@ -555,7 +571,7 @@ export function DesktopHUD() {
         )}
       </AnimatePresence>
 
-      {/* QR KOD EŞLEŞME VE BAĞLANTI MODALI */}
+      {/* QR KOD VE ODA KODU EŞLEŞME MODALI */}
       <AnimatePresence>
         {isPairingModalOpen && (
           <motion.div
@@ -571,7 +587,7 @@ export function DesktopHUD() {
               transition={{ type: 'spring', stiffness: 320, damping: 28 }}
               className="w-full max-w-md rounded-3xl border border-zinc-800 bg-zinc-900/95 p-7 shadow-2xl"
             >
-              <div className="mb-4 flex items-center justify-between">
+              <div className="mb-3 flex items-center justify-between">
                 <div>
                   <span className="text-xs font-semibold tracking-wider text-emerald-400 uppercase">
                     Çapraz Cihaz Senkronizasyonu
@@ -585,57 +601,54 @@ export function DesktopHUD() {
                 </div>
               </div>
 
-              {tunnelUrl && (
-                <div className="mb-4 grid grid-cols-2 gap-2 rounded-xl border border-zinc-800 bg-zinc-950 p-1">
-                  <button
-                    type="button"
-                    onClick={() => setConnectionMode('tunnel')}
-                    className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition ${
-                      connectionMode === 'tunnel'
-                        ? 'bg-emerald-500/20 text-emerald-300'
-                        : 'text-zinc-400 hover:text-zinc-200'
-                    }`}
-                  >
-                    <Globe className="h-3.5 w-3.5" />
-                    <span>HTTPS Tüneli (Önerilen)</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConnectionMode('lan')}
-                    className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition ${
-                      connectionMode === 'lan'
-                        ? 'bg-sky-500/20 text-sky-300'
-                        : 'text-zinc-400 hover:text-zinc-200'
-                    }`}
-                  >
-                    <Network className="h-3.5 w-3.5" />
-                    <span>Yerel Ağ (LAN)</span>
-                  </button>
-                </div>
-              )}
-
-              <p className="mb-5 text-xs leading-relaxed text-zinc-400">
-                {tunnelUrl && connectionMode === 'tunnel'
-                  ? 'Güvenli HTTPS tüneli aktif! Wi-Fi veya mobil veri (4G/5G) fark etmeksizin QR kodu okutarak doğrudan bağlanabilirsiniz.'
-                  : 'Aynı yerel ağdaki telefonunuzla aşağıdaki QR kodu okutarak kablosuz jiroskop kontrolcüsünü başlatın.'}
+              <p className="mb-4 text-xs leading-relaxed text-zinc-400">
+                Telefonunuzdan aşağıdaki <strong className="text-zinc-200">QR kodu</strong> okutabilir veya{' '}
+                <strong className="text-zinc-200">6 haneli Oda Kodunu</strong> kontrolcü ekranına girerek doğrudan bağlanabilirsiniz.
               </p>
 
-              <div className="mb-5 flex flex-col items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-950 p-5">
+              {/* QR Kod ve 6 Haneli Oda Kodu Kartı */}
+              <div className="mb-4 flex flex-col items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-950 p-5">
                 <div className="rounded-2xl bg-white p-3.5 shadow-inner">
                   <QRCodeSVG
                     value={controllerUrl}
-                    size={172}
+                    size={164}
                     bgColor="#ffffff"
                     fgColor="#09090b"
                     level="M"
                   />
                 </div>
 
-                <div className="mt-4 flex items-center gap-2">
-                  <span className="text-xs text-zinc-400">Oda Kodu:</span>
-                  <span className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-1 font-mono text-base font-bold tracking-widest text-emerald-400">
-                    {roomId ?? 'BAĞLANIYOR'}
-                  </span>
+                {/* Belirgin 6 Haneli Oda Kodu Bölümü */}
+                <div className="mt-4 flex w-full items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900/90 px-4 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <KeyRound className="h-4 w-4 text-emerald-400" />
+                    <div>
+                      <span className="block text-[10px] tracking-wider text-zinc-400 uppercase">
+                        Oda Kodu ile Giriş
+                      </span>
+                      <span className="font-mono text-lg font-bold tracking-[0.2em] text-emerald-400">
+                        {roomId ?? '......'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleCopyRoomCode}
+                    className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs font-medium text-zinc-200 transition hover:bg-zinc-700 active:scale-95"
+                  >
+                    {copiedRoomCode ? (
+                      <>
+                        <Check className="h-3.5 w-3.5 text-emerald-400" />
+                        <span className="text-emerald-300">Kopyalandı</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3.5 w-3.5 text-zinc-400" />
+                        <span>Kodu Kopyala</span>
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
 
@@ -645,7 +658,7 @@ export function DesktopHUD() {
                   onClick={handleCopyLink}
                   className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-zinc-800 bg-zinc-800/60 px-4 py-3 text-xs font-medium text-zinc-200 transition hover:bg-zinc-800 active:scale-[0.99]"
                 >
-                  {copied ? (
+                  {copiedLink ? (
                     <>
                       <Check className="h-4 w-4 text-emerald-400" />
                       <span className="text-emerald-300">

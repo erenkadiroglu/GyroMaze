@@ -160,11 +160,19 @@ export class RoomService {
 
   /**
    * Mobil kontrolcüyü belirtilen oda koduna bağlar.
+   * Aynı odaya yeniden bağlanma veya oda değiştirme durumlarında eski soket kaydını temizler.
    */
   public joinRoom(
     rawRoomId: string,
     controllerSocketId: string,
-  ): { ok: true; room: RoomState } | { ok: false; error: RoomErrorPayload } {
+  ):
+    | {
+        ok: true;
+        room: RoomState;
+        previousRoomId?: string;
+        replacedControllerSocketId?: string;
+      }
+    | { ok: false; error: RoomErrorPayload } {
     const roomId = rawRoomId.trim().toUpperCase();
     const room = this.rooms.get(roomId);
 
@@ -173,26 +181,30 @@ export class RoomService {
         ok: false,
         error: {
           code: 'ROOM_NOT_FOUND',
-          message: 'Belirtilen oda kodu bulunamadı veya süresi doldu.',
+          message:
+            'Belirtilen 6 haneli oda kodu bulunamadı. Masaüstü ekranındaki güncel kodu kontrol edin.',
         },
       };
     }
 
+    // Kontrolcü daha önce başka bir odaya bağlıysa eski odadan temizle
+    const previousMembership = this.socketMembership.get(controllerSocketId);
+    const previousRoomId =
+      previousMembership && previousMembership.roomId !== roomId
+        ? previousMembership.roomId
+        : undefined;
+
+    this.removeSocket(controllerSocketId);
+
+    // Odada önceki sekmeden kalma eski bir kontrolcü soketi varsa üyeliğini düşür
+    let replacedControllerSocketId: string | undefined;
     if (
-      room.isControllerConnected &&
       room.controllerSocketId &&
       room.controllerSocketId !== controllerSocketId
     ) {
-      return {
-        ok: false,
-        error: {
-          code: 'ROOM_FULL',
-          message: 'Bu odaya zaten aktif bir mobil kontrolcü bağlı.',
-        },
-      };
+      replacedControllerSocketId = room.controllerSocketId;
+      this.socketMembership.delete(room.controllerSocketId);
     }
-
-    this.removeSocket(controllerSocketId);
 
     room.controllerSocketId = controllerSocketId;
     room.isControllerConnected = true;
@@ -201,7 +213,12 @@ export class RoomService {
       role: 'controller',
     });
 
-    return { ok: true, room };
+    return {
+      ok: true,
+      room,
+      previousRoomId,
+      replacedControllerSocketId,
+    };
   }
 
   /**

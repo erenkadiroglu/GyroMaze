@@ -110,6 +110,16 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
+    if (result.previousRoomId) {
+      await client.leave(result.previousRoomId);
+      const prevRoom = this.roomService.getRoom(result.previousRoomId);
+      if (prevRoom) {
+        this.server
+          .to(prevRoom.hostSocketId)
+          .emit(RoomEvents.ROOM_CONTROLLER_DISCONNECTED, prevRoom);
+      }
+    }
+
     await client.join(result.room.roomId);
     this.logger.log(
       `Mobil kontrolcü eşleşti: Oda ${result.room.roomId} (Controller: ${client.id})`,

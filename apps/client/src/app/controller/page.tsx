@@ -2,10 +2,8 @@
 
 import { Suspense, useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { motion } from 'framer-motion';
 import {
   Smartphone,
-  Compass,
   Crosshair,
   RotateCcw,
   Wifi,
@@ -13,6 +11,9 @@ import {
   AlertCircle,
   ShieldCheck,
   Hand,
+  KeyRound,
+  ArrowRight,
+  X,
 } from 'lucide-react';
 import { GyroData } from '@gyromaze/shared';
 import { useGameStore } from '@/store/useGameStore';
@@ -21,74 +22,167 @@ import { useDeviceOrientation } from '@/hooks/useDeviceOrientation';
 
 /**
  * Mobil cihazın HTML5 jiroskop sensörlerini ve dokunmatik (touch) sanal gimbal
- * hareketlerini okuyup <10ms gecikmeyle masaüstü 3B sahnesine ileten kontrolcü arayüzü.
+ * hareketlerini sıfır DOM reflow ve <10ms WebSocket gecikmesiyle masaüstü 3B sahnesine ileten kontrolcü arayüzü.
  */
 function MobileControllerContent() {
   const searchParams = useSearchParams();
-  const initialRoomParam = searchParams.get('room')?.toUpperCase() ?? '';
+  const initialRoomParam =
+    searchParams.get('room')?.trim().toUpperCase() ?? '';
 
   const [manualRoomInput, setManualRoomInput] = useState(initialRoomParam);
   const [activeRoomCode, setActiveRoomCode] = useState(initialRoomParam);
+  const [isRoomEditorOpen, setIsRoomEditorOpen] = useState(!initialRoomParam);
   const [isTouchOverride, setIsTouchOverride] = useState(false);
 
   const isSocketConnected = useGameStore((s) => s.isSocketConnected);
   const isControllerPaired = useGameStore((s) => s.isControllerPaired);
   const errorMessage = useGameStore((s) => s.errorMessage);
+  const setErrorMessage = useGameStore((s) => s.setErrorMessage);
+
+  const activeRoomCodeRef = useRef<string>(activeRoomCode);
+  activeRoomCodeRef.current = activeRoomCode;
+
+  const isControllerPairedRef = useRef<boolean>(isControllerPaired);
+  isControllerPairedRef.current = isControllerPaired;
 
   const gimbalPadRef = useRef<HTMLDivElement | null>(null);
   const gimbalDotRef = useRef<HTMLDivElement | null>(null);
   const pitchValueRef = useRef<HTMLSpanElement | null>(null);
   const rollValueRef = useRef<HTMLSpanElement | null>(null);
-  const isPointerDraggingRef = useRef<boolean>(false);
 
-  const { emitGyroUpdate, emitCalibrate, emitResetBall } = useSocket({
-    role: 'controller',
-    targetRoomId: activeRoomCode || null,
+  // Dokunmatik sürükleme sırasında getBoundingClientRect() reflow maliyetini önleyen önbellek
+  const isPointerDraggingRef = useRef<boolean>(false);
+  const gimbalBoundsRef = useRef<{
+    centerX: number;
+    centerY: number;
+    maxRadius: number;
+  }>({
+    centerX: 0,
+    centerY: 0,
+    maxRadius: 100,
   });
 
-  const applyAndEmitGyro = useCallback(
-    (data: GyroData) => {
-      if (activeRoomCode && isControllerPaired) {
-        emitGyroUpdate(activeRoomCode, data);
-      }
+  // 60 FPS rAF döngüsünün okuduğu saf jiroskop durumu (React state tetiklemez)
+  const liveGyroRef = useRef<GyroData>({
+    alpha: 0,
+    beta: 0,
+    gamma: 0,
+    timestamp: 0,
+  });
 
-      if (gimbalDotRef.current) {
-        const maxOffsetPx = 76;
-        const offsetX = (data.gamma / 35) * maxOffsetPx;
-        const offsetY = (data.beta / 35) * maxOffsetPx;
-        gimbalDotRef.current.style.transform = `translate3d(${offsetX.toFixed(1)}px, ${offsetY.toFixed(1)}px, 0)`;
-      }
-      if (pitchValueRef.current) {
-        pitchValueRef.current.textContent = `${data.beta >= 0 ? '+' : ''}${data.beta.toFixed(1)}°`;
-      }
-      if (rollValueRef.current) {
-        rollValueRef.current.textContent = `${data.gamma >= 0 ? '+' : ''}${data.gamma.toFixed(1)}°`;
+  const { emitGyroUpdate, joinRoomByCode, emitCalibrate, emitResetBall } =
+    useSocket({
+      role: 'controller',
+      targetRoomId: activeRoomCode || null,
+    });
+
+  /**
+   * Sensör veya dokunmatik gimbal verisini ağa gönderir ve rAF tamponuna yazar.
+   * DOM manipülasyonu burada yapılmaz; ekran yenileme hızıyla (rAF) senkronize edilir.
+   */
+  const pushGyroSample = useCallback(
+    (beta: number, gamma: number) => {
+      const now = Date.now();
+      liveGyroRef.current.beta = beta;
+      liveGyroRef.current.gamma = gamma;
+      liveGyroRef.current.timestamp = now;
+
+      if (activeRoomCodeRef.current && isControllerPairedRef.current) {
+        emitGyroUpdate(activeRoomCodeRef.current, liveGyroRef.current);
       }
     },
-    [activeRoomCode, isControllerPaired, emitGyroUpdate],
+    [emitGyroUpdate],
   );
 
   const handleOrientationData = useCallback(
     (data: GyroData) => {
-      // Kullanıcı parmağıyla sanal gimbali sürüklüyorken donanım sensörünün üzerine yazmasını engelle
       if (isPointerDraggingRef.current) return;
-      applyAndEmitGyro(data);
+      pushGyroSample(data.beta, data.gamma);
     },
-    [applyAndEmitGyro],
+    [pushGyroSample],
   );
 
   const { permissionState, requestSensorPermission, calibrate } =
     useDeviceOrientation({
       onOrientationData: handleOrientationData,
-      enabled: !isTouchOverride,
+      enabled: !isTouchOverride && !isRoomEditorOpen,
     });
 
   useEffect(() => {
     if (initialRoomParam) {
       setActiveRoomCode(initialRoomParam);
       setManualRoomInput(initialRoomParam);
+      setIsRoomEditorOpen(false);
     }
   }, [initialRoomParam]);
+
+  // Eşleşme gerçekleştiğinde oda kodu giriş panelini otomatik kapat
+  useEffect(() => {
+    if (isControllerPaired) {
+      setIsRoomEditorOpen(false);
+    }
+  }, [isControllerPaired]);
+
+  const showGimbalSurface =
+    (permissionState === 'granted' || isTouchOverride) &&
+    Boolean(activeRoomCode) &&
+    !isRoomEditorOpen;
+
+  /**
+   * Mobil GPU ve ana iş parçacığı (Main Thread) optimizasyonu:
+   * - Küre konumu (translate3d) yalnızca piksel farkı >= 0.2px olduğunda güncellenir.
+   * - Sayısal metinler (textContent) saniyede 120 kez yerine yalnızca 120ms'de bir (~8Hz) güncellenir.
+   */
+  useEffect(() => {
+    if (!showGimbalSurface) return;
+
+    let rafId = 0;
+    let lastRenderedX = 999;
+    let lastRenderedY = 999;
+    let lastTextUpdateTime = 0;
+    let lastPitchStr = '';
+    let lastRollStr = '';
+
+    const updateMobileUI = (now: number) => {
+      const beta = liveGyroRef.current.beta;
+      const gamma = liveGyroRef.current.gamma;
+
+      if (gimbalDotRef.current) {
+        const maxOffsetPx = 74;
+        const offsetX = (gamma / 35) * maxOffsetPx;
+        const offsetY = (beta / 35) * maxOffsetPx;
+
+        if (
+          Math.abs(offsetX - lastRenderedX) >= 0.2 ||
+          Math.abs(offsetY - lastRenderedY) >= 0.2
+        ) {
+          lastRenderedX = offsetX;
+          lastRenderedY = offsetY;
+          gimbalDotRef.current.style.transform = `translate3d(${offsetX.toFixed(1)}px, ${offsetY.toFixed(1)}px, 0)`;
+        }
+      }
+
+      if (now - lastTextUpdateTime >= 120) {
+        lastTextUpdateTime = now;
+        const nextPitchStr = `${beta >= 0 ? '+' : ''}${beta.toFixed(1)}°`;
+        const nextRollStr = `${gamma >= 0 ? '+' : ''}${gamma.toFixed(1)}°`;
+
+        if (pitchValueRef.current && nextPitchStr !== lastPitchStr) {
+          lastPitchStr = nextPitchStr;
+          pitchValueRef.current.textContent = nextPitchStr;
+        }
+        if (rollValueRef.current && nextRollStr !== lastRollStr) {
+          lastRollStr = nextRollStr;
+          rollValueRef.current.textContent = nextRollStr;
+        }
+      }
+
+      rafId = window.requestAnimationFrame(updateMobileUI);
+    };
+
+    rafId = window.requestAnimationFrame(updateMobileUI);
+    return () => window.cancelAnimationFrame(rafId);
+  }, [showGimbalSurface]);
 
   const handleActivateSensors = async () => {
     const granted = await requestSensorPermission();
@@ -97,9 +191,8 @@ function MobileControllerContent() {
       window.setTimeout(() => {
         calibrate();
         emitCalibrate();
-      }, 150);
+      }, 120);
     } else {
-      // Sensör izni reddedilirse veya HTTP bağlantısı nedeniyle kısıtlanırsa dokunmatik gimbale geç
       setIsTouchOverride(true);
     }
   };
@@ -107,150 +200,208 @@ function MobileControllerContent() {
   const handleRecalibrate = () => {
     calibrate();
     emitCalibrate();
-    applyAndEmitGyro({ alpha: 0, beta: 0, gamma: 0, timestamp: Date.now() });
+    pushGyroSample(0, 0);
+  };
+
+  const updatePointerSample = (clientX: number, clientY: number) => {
+    const { centerX, centerY, maxRadius } = gimbalBoundsRef.current;
+    const dx = Math.max(-maxRadius, Math.min(maxRadius, clientX - centerX));
+    const dy = Math.max(-maxRadius, Math.min(maxRadius, clientY - centerY));
+
+    const gamma = Math.round((dx / maxRadius) * 280) / 10;
+    const beta = Math.round((dy / maxRadius) * 280) / 10;
+
+    pushGyroSample(beta, gamma);
+  };
+
+  const handlePointerDownOnGimbal = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!gimbalPadRef.current) return;
+    isPointerDraggingRef.current = true;
+    const rect = gimbalPadRef.current.getBoundingClientRect();
+    gimbalBoundsRef.current.centerX = rect.left + rect.width * 0.5;
+    gimbalBoundsRef.current.centerY = rect.top + rect.height * 0.5;
+    gimbalBoundsRef.current.maxRadius = Math.max(40, rect.width * 0.5 - 24);
+
+    e.currentTarget.setPointerCapture(e.pointerId);
+    updatePointerSample(e.clientX, e.clientY);
   };
 
   const handlePointerMoveOnGimbal = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isPointerDraggingRef.current || !gimbalPadRef.current) return;
-    const rect = gimbalPadRef.current.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const maxRadius = rect.width / 2 - 24;
-
-    const dx = Math.max(-maxRadius, Math.min(maxRadius, e.clientX - centerX));
-    const dy = Math.max(-maxRadius, Math.min(maxRadius, e.clientY - centerY));
-
-    const gamma = Number(((dx / maxRadius) * 28).toFixed(2));
-    const beta = Number(((dy / maxRadius) * 28).toFixed(2));
-
-    applyAndEmitGyro({
-      alpha: 0,
-      beta,
-      gamma,
-      timestamp: Date.now(),
-    });
+    if (!isPointerDraggingRef.current) return;
+    updatePointerSample(e.clientX, e.clientY);
   };
 
   const handlePointerEndOnGimbal = () => {
+    if (!isPointerDraggingRef.current) return;
     isPointerDraggingRef.current = false;
-    applyAndEmitGyro({ alpha: 0, beta: 0, gamma: 0, timestamp: Date.now() });
+    pushGyroSample(0, 0);
   };
 
   const handleManualConnect = (e: React.FormEvent) => {
     e.preventDefault();
-    if (manualRoomInput.trim().length >= 4) {
-      setActiveRoomCode(manualRoomInput.trim().toUpperCase());
+    const cleaned = manualRoomInput.trim().toUpperCase();
+    if (cleaned.length < 4) {
+      setErrorMessage('Lütfen geçerli bir 6 haneli oda kodu girin.');
+      return;
     }
+    setErrorMessage(null);
+    setActiveRoomCode(cleaned);
+    joinRoomByCode(cleaned);
+    setIsRoomEditorOpen(false);
   };
 
-  const showGimbalSurface =
-    permissionState === 'granted' || isTouchOverride;
-
   return (
-    <main className="flex min-h-dvh flex-col justify-between bg-zinc-950 p-5 text-zinc-100 select-none">
-      {/* Üst Durum Çubuğu */}
-      <header className="flex items-center justify-between rounded-2xl border border-zinc-800/80 bg-zinc-900/80 px-4 py-3 backdrop-blur-xl">
+    <main className="flex min-h-dvh flex-col justify-between bg-zinc-950 p-4 text-zinc-100 select-none">
+      {/* Üst Durum ve Hızlı Oda Değiştirme Çubuğu (Sıfır Blur / Saf GPU Katmanı) */}
+      <header className="flex items-center justify-between gap-2 rounded-2xl border border-zinc-800 bg-zinc-900 px-3.5 py-2.5">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400">
             <Smartphone className="h-4 w-4" />
           </div>
           <div>
-            <h1 className="text-sm font-semibold tracking-tight">
+            <h1 className="text-xs font-semibold tracking-tight text-zinc-100">
               GyroMaze Kontrolcü
             </h1>
-            <p className="text-[11px] text-zinc-400">
-              Oda:{' '}
-              <span className="font-mono font-semibold text-emerald-400">
-                {activeRoomCode || 'SEÇİLMEDİ'}
+            <div className="flex items-center gap-1.5 text-[11px] text-zinc-400">
+              <span>Oda:</span>
+              <span className="font-mono font-bold tracking-wider text-emerald-400">
+                {activeRoomCode || 'YOK'}
               </span>
-            </p>
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 rounded-full border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-xs">
-          {isControllerPaired ? (
-            <>
-              <Wifi className="h-3.5 w-3.5 text-emerald-400" />
-              <span className="font-medium text-emerald-300">Eşleşti</span>
-            </>
-          ) : isSocketConnected ? (
-            <>
-              <Compass className="h-3.5 w-3.5 animate-spin text-amber-400" />
-              <span className="font-medium text-amber-300">Bekleniyor</span>
-            </>
-          ) : (
-            <>
-              <WifiOff className="h-3.5 w-3.5 text-rose-400" />
-              <span className="font-medium text-rose-300">Bağlantı Yok</span>
-            </>
-          )}
+        <div className="flex items-center gap-2">
+          {/* Oda Kodu Değiştirme / Girme Butonu */}
+          <button
+            type="button"
+            onClick={() => {
+              setManualRoomInput(activeRoomCode);
+              setIsRoomEditorOpen((prev) => !prev);
+            }}
+            className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-[11px] font-medium text-zinc-200 active:scale-95"
+          >
+            <KeyRound className="h-3.5 w-3.5 text-emerald-400" />
+            <span>{activeRoomCode ? 'Kod Değiştir' : 'Kod Gir'}</span>
+          </button>
+
+          {/* Bağlantı Durumu Rozeti */}
+          <div className="flex items-center gap-1.5 rounded-xl border border-zinc-800 bg-zinc-950 px-2.5 py-1.5 text-[11px]">
+            {isControllerPaired ? (
+              <>
+                <Wifi className="h-3.5 w-3.5 text-emerald-400" />
+                <span className="font-medium text-emerald-300">Bağlı</span>
+              </>
+            ) : isSocketConnected ? (
+              <>
+                <span className="h-2 w-2 rounded-full bg-amber-400" />
+                <span className="font-medium text-amber-300">Hazır</span>
+              </>
+            ) : (
+              <>
+                <WifiOff className="h-3.5 w-3.5 text-rose-400" />
+                <span className="font-medium text-rose-300">Kopuk</span>
+              </>
+            )}
+          </div>
         </div>
       </header>
 
       {/* Hata Bildirimi */}
       {errorMessage && (
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-3 flex items-center gap-2.5 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-xs text-rose-200"
-        >
-          <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
-          <span>{errorMessage}</span>
-        </motion.div>
+        <div className="mt-2.5 flex items-center justify-between gap-2 rounded-2xl border border-rose-500/30 bg-rose-950/60 px-3.5 py-2.5 text-xs text-rose-200">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
+            <span>{errorMessage}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsRoomEditorOpen(true)}
+            className="shrink-0 rounded-lg bg-rose-500/20 px-2.5 py-1 text-[11px] font-semibold text-rose-200"
+          >
+            Yeni Kod Gir
+          </button>
+        </div>
       )}
 
-      {/* Orta Alan: Oda Girişi, Sensör İzni veya Canlı Gimbal Terazisi */}
-      <section className="my-auto flex flex-col items-center justify-center py-4">
-        {!activeRoomCode ? (
+      {/* Orta Alan: Oda Kodu Girişi, Sensör İzni veya Canlı Gimbal Terazisi */}
+      <section className="my-auto flex flex-col items-center justify-center py-3">
+        {!activeRoomCode || isRoomEditorOpen ? (
           <form
             onSubmit={handleManualConnect}
-            className="w-full max-w-sm space-y-4 rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 backdrop-blur-xl"
+            className="w-full max-w-sm space-y-4 rounded-3xl border border-zinc-800 bg-zinc-900 p-6"
           >
-            <h2 className="text-lg font-semibold text-zinc-100">
-              Oda Kodunu Girin
-            </h2>
-            <p className="text-xs leading-relaxed text-zinc-400">
-              Masaüstü ekranında görünen 6 haneli oda kodunu girerek eşleşmeyi
-              başlatın.
-            </p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400">
+                  <KeyRound className="h-4 w-4" />
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold text-zinc-100">
+                    Oda Kodu ile Giriş
+                  </h2>
+                  <p className="text-[11px] text-zinc-400">
+                    Masaüstündeki 6 haneli kodu yazın
+                  </p>
+                </div>
+              </div>
+              {activeRoomCode && (
+                <button
+                  type="button"
+                  onClick={() => setIsRoomEditorOpen(false)}
+                  className="rounded-xl border border-zinc-800 bg-zinc-950 p-2 text-zinc-400"
+                  aria-label="Kapat"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
             <input
               type="text"
+              inputMode="text"
+              autoCapitalize="characters"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
               maxLength={6}
               value={manualRoomInput}
-              onChange={(e) => setManualRoomInput(e.target.value.toUpperCase())}
-              placeholder="Örn: 84K9X2"
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-center font-mono text-lg font-bold tracking-widest text-emerald-400 uppercase outline-none focus:border-emerald-500"
+              onChange={(e) =>
+                setManualRoomInput(
+                  e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase(),
+                )
+              }
+              placeholder="ÖRN: 84K9X2"
+              className="w-full rounded-2xl border border-zinc-700 bg-zinc-950 px-4 py-3.5 text-center font-mono text-2xl font-bold tracking-[0.25em] text-emerald-400 uppercase outline-none focus:border-emerald-500"
             />
+
             <button
               type="submit"
-              className="w-full cursor-pointer rounded-xl bg-emerald-500 py-3.5 text-xs font-semibold text-zinc-950 transition hover:bg-emerald-400 active:scale-98"
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-emerald-500 py-3.5 text-xs font-semibold text-zinc-950 active:scale-98"
             >
-              Odaya Bağlan
+              <span>Oda Koduna Bağlan</span>
+              <ArrowRight className="h-4 w-4" />
             </button>
           </form>
         ) : !showGimbalSurface ? (
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="w-full max-w-sm space-y-4 rounded-3xl border border-zinc-800 bg-zinc-900/80 p-7 text-center backdrop-blur-xl"
-          >
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
-              <ShieldCheck className="h-7 w-7" />
+          <div className="w-full max-w-sm space-y-4 rounded-3xl border border-zinc-800 bg-zinc-900 p-6 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
+              <ShieldCheck className="h-6 w-6" />
             </div>
-            <div className="space-y-2">
-              <h2 className="text-xl font-semibold text-zinc-100">
-                Jiroskop Sensör İzni
+            <div className="space-y-1.5">
+              <h2 className="text-lg font-semibold text-zinc-100">
+                Jiroskop Sensörlerini Başlat
               </h2>
               <p className="text-xs leading-relaxed text-zinc-400">
-                Telefonunuzu rahat bir açıyla tutun ve donanımsal jiroskop
-                akışını başlatmak için aşağıdaki butona dokunun.
+                Telefonunuzu rahat bir açıyla tutun ve sıfır gecikmeli jiroskop
+                kontrolünü etkinleştirin.
               </p>
             </div>
 
             <button
               type="button"
               onClick={handleActivateSensors}
-              className="w-full cursor-pointer rounded-2xl bg-emerald-500 py-4 text-sm font-semibold text-zinc-950 shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-400 active:scale-98"
+              className="w-full cursor-pointer rounded-2xl bg-emerald-500 py-3.5 text-sm font-semibold text-zinc-950 active:scale-98"
             >
               Jiroskop Sensörlerini Başlat
             </button>
@@ -258,66 +409,62 @@ function MobileControllerContent() {
             <button
               type="button"
               onClick={() => setIsTouchOverride(true)}
-              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-800/60 py-3 text-xs font-medium text-zinc-300 transition hover:bg-zinc-800"
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-950 py-3 text-xs font-medium text-zinc-300 active:scale-98"
             >
               <Hand className="h-4 w-4 text-sky-400" />
               <span>Dokunmatik (Touch) Gimbal ile Kullan</span>
             </button>
-          </motion.div>
+          </div>
         ) : (
-          /* Canlı 2B Jiroskop + Dokunmatik Ufuk Terazisi Göstergesi */
+          /* Canlı 2B Jiroskop + Dokunmatik Ufuk Terazisi (Saf Donanım İvmeli Katman) */
           <div className="flex flex-col items-center">
             <div
               ref={gimbalPadRef}
-              onPointerDown={(e) => {
-                isPointerDraggingRef.current = true;
-                e.currentTarget.setPointerCapture(e.pointerId);
-                handlePointerMoveOnGimbal(e);
-              }}
+              onPointerDown={handlePointerDownOnGimbal}
               onPointerMove={handlePointerMoveOnGimbal}
               onPointerUp={handlePointerEndOnGimbal}
               onPointerCancel={handlePointerEndOnGimbal}
-              className="relative flex h-64 w-64 touch-none items-center justify-center rounded-full border border-zinc-800 bg-zinc-900/60 shadow-2xl backdrop-blur-xl"
+              className="relative flex h-60 w-60 touch-none items-center justify-center rounded-full border-2 border-zinc-800 bg-zinc-900"
             >
               {/* İç Derece Halkaları */}
-              <div className="pointer-events-none absolute h-44 w-44 rounded-full border border-dashed border-zinc-800" />
-              <div className="pointer-events-none absolute h-24 w-24 rounded-full border border-zinc-800/80" />
-              <div className="pointer-events-none absolute h-px w-full bg-zinc-800/70" />
-              <div className="pointer-events-none absolute h-full w-px bg-zinc-800/70" />
+              <div className="pointer-events-none absolute h-40 w-40 rounded-full border border-dashed border-zinc-800" />
+              <div className="pointer-events-none absolute h-20 w-20 rounded-full border border-zinc-800" />
+              <div className="pointer-events-none absolute h-px w-full bg-zinc-800" />
+              <div className="pointer-events-none absolute h-full w-px bg-zinc-800" />
 
-              {/* Hareketli Jiroskop Küresi */}
+              {/* Hareketli Jiroskop Küresi (Saf Composite Layer: will-change-transform) */}
               <div
                 ref={gimbalDotRef}
-                className="pointer-events-none relative flex h-12 w-12 items-center justify-center rounded-full border border-emerald-300/60 bg-emerald-400/20 shadow-[0_0_30px_rgba(16,185,129,0.45)] transition-none"
+                className="pointer-events-none relative flex h-11 w-11 items-center justify-center rounded-full border border-emerald-400 bg-emerald-500/20 will-change-transform"
               >
                 <div className="h-3.5 w-3.5 rounded-full bg-emerald-400" />
               </div>
             </div>
 
-            <p className="mt-3 text-[11px] text-zinc-400">
+            <p className="mt-2.5 text-[11px] text-zinc-400">
               Telefonu eğin veya daire içindeki küreyi parmağınızla sürükleyin
             </p>
 
-            {/* Sayısal Açı Göstergeleri */}
-            <div className="mt-4 grid w-64 grid-cols-2 gap-3">
-              <div className="rounded-2xl border border-zinc-800/80 bg-zinc-900/70 p-3 text-center">
+            {/* Sayısal Açı Göstergeleri (8Hz Throttled DOM Text) */}
+            <div className="mt-3.5 grid w-60 grid-cols-2 gap-2.5">
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-2.5 text-center">
                 <span className="block text-[10px] tracking-wider text-zinc-400 uppercase">
-                  Öne / Arkaya (Pitch)
+                  Eğim (Pitch)
                 </span>
                 <span
                   ref={pitchValueRef}
-                  className="mt-1 block font-mono text-base font-semibold text-emerald-400"
+                  className="mt-0.5 block font-mono text-sm font-semibold text-emerald-400"
                 >
                   +0.0°
                 </span>
               </div>
-              <div className="rounded-2xl border border-zinc-800/80 bg-zinc-900/70 p-3 text-center">
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-2.5 text-center">
                 <span className="block text-[10px] tracking-wider text-zinc-400 uppercase">
-                  Sola / Sağa (Roll)
+                  Yatış (Roll)
                 </span>
                 <span
                   ref={rollValueRef}
-                  className="mt-1 block font-mono text-base font-semibold text-sky-400"
+                  className="mt-0.5 block font-mono text-sm font-semibold text-sky-400"
                 >
                   +0.0°
                 </span>
@@ -328,11 +475,11 @@ function MobileControllerContent() {
       </section>
 
       {/* Alt Kontrol Butonları */}
-      <footer className="grid grid-cols-2 gap-3">
+      <footer className="grid grid-cols-2 gap-2.5">
         <button
           type="button"
           onClick={handleRecalibrate}
-          className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/15 py-4 text-xs font-semibold text-emerald-300 transition active:scale-95"
+          className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/15 py-3.5 text-xs font-semibold text-emerald-300 active:scale-95"
         >
           <Crosshair className="h-4 w-4" />
           <span>Merkezi Kalibre Et</span>
@@ -341,7 +488,7 @@ function MobileControllerContent() {
         <button
           type="button"
           onClick={emitResetBall}
-          className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900 py-4 text-xs font-semibold text-zinc-200 transition active:scale-95"
+          className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900 py-3.5 text-xs font-semibold text-zinc-200 active:scale-95"
         >
           <RotateCcw className="h-4 w-4 text-zinc-400" />
           <span>Topu Sıfırla</span>
