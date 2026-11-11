@@ -1,12 +1,14 @@
 import { Module } from '@nestjs/common';
+import { GyroGateway } from './gateway/gyro.gateway';
+import { RoomService } from './gateway/room.service';
 
 /**
  * GyroMaze arka uç sunucusunun ana uygulama modülü.
- * WebSocket ağ geçidi (Gateway) ve oda yönetim servisleri bu modüle bağlanır.
+ * WebSocket ağ geçidi (GyroGateway) ve oda yönetim servisi (RoomService) burada tanımlanır.
  */
 @Module({
   imports: [],
   controllers: [],
-  providers: [],
+  providers: [RoomService, GyroGateway],
 })
 export class AppModule {}
