@@ -1,5 +1,12 @@
 import { create } from 'zustand';
-import { GameStatus, GyroData, HapticType } from '@gyromaze/shared';
+import {
+  GameStatus,
+  GyroData,
+  HapticType,
+  LeaderboardEntry,
+  SubmitScorePayload,
+} from '@gyromaze/shared';
+import { MazeLevelDefinition } from '@/components/scene/mazeLevels';
 
 /**
  * React re-render tetiklemeden 60 FPS Three.js döngüsü (useFrame) tarafından
@@ -40,16 +47,26 @@ interface GameStoreState {
   isControllerPaired: boolean;
   /** QR eşleşme modalının açık olup olmadığı */
   isPairingModalOpen: boolean;
+  /** Küresel skor tablosu modalının açık olup olmadığı */
+  isLeaderboardOpen: boolean;
+  /** Harita editörü modalının açık olup olmadığı */
+  isEditorOpen: boolean;
   /** Mevcut oyun durumu */
   gameStatus: GameStatus;
-  /** Aktif labirent seviyesi */
+  /** Aktif labirent seviyesi (1..5 standart, 99 özel harita) */
   level: number;
+  /** Kullanıcının harita editöründe tasarladığı özel labirent tanımı */
+  customLevel: MazeLevelDefinition | null;
   /** Milisaniye cinsinden anlık ağ gecikmesi */
   latencyMs: number;
   /** Bölüm başlangıcından itibaren geçen süre (saniye) */
   elapsedSeconds: number;
-  /** Seviye bazlı en iyi tamamlama süreleri (Rekorlar) */
+  /** Seviye bazlı en iyi tamamlama süreleri (Yerel Rekorlar) */
   bestTimes: Record<number, number>;
+  /** Sunucudan senkronize edilen küresel skor tablosu */
+  leaderboard: LeaderboardEntry[];
+  /** Sunucuya gönderilecek yeni skor kaydı sinyali */
+  pendingScoreSubmission: SubmitScorePayload | null;
   /** Ses efektlerinin sessize alınıp alınmadığı */
   isSoundMuted: boolean;
   /** Mevcut bölümde toplanan enerji kristallerinin indeks listesi */
@@ -68,12 +85,17 @@ interface GameStoreState {
   setSocketConnected: (connected: boolean) => void;
   setControllerPaired: (paired: boolean) => void;
   setPairingModalOpen: (open: boolean) => void;
+  setLeaderboardOpen: (open: boolean) => void;
+  setEditorOpen: (open: boolean) => void;
   setGameStatus: (status: GameStatus) => void;
   setLevel: (level: number) => void;
+  setCustomLevel: (customLevel: MazeLevelDefinition) => void;
   nextLevel: () => void;
   setLatencyMs: (ms: number) => void;
   setElapsedSeconds: (seconds: number) => void;
   recordLevelCompletion: (level: number, seconds: number) => void;
+  setLeaderboard: (entries: LeaderboardEntry[]) => void;
+  submitLeaderboardScore: (payload: SubmitScorePayload) => void;
   collectCrystal: (crystalIndex: number) => void;
   toggleSoundMuted: () => void;
   triggerBallReset: () => void;
@@ -93,11 +115,16 @@ export const useGameStore = create<GameStoreState>((set) => ({
   isSocketConnected: false,
   isControllerPaired: false,
   isPairingModalOpen: true,
+  isLeaderboardOpen: false,
+  isEditorOpen: false,
   gameStatus: 'waiting',
   level: 1,
+  customLevel: null,
   latencyMs: 0,
   elapsedSeconds: 0,
   bestTimes: loadBestTimes(),
+  leaderboard: [],
+  pendingScoreSubmission: null,
   isSoundMuted: false,
   collectedCrystals: [],
   resetCount: 0,
@@ -121,6 +148,8 @@ export const useGameStore = create<GameStoreState>((set) => ({
           : state.gameStatus,
     })),
   setPairingModalOpen: (isPairingModalOpen) => set({ isPairingModalOpen }),
+  setLeaderboardOpen: (isLeaderboardOpen) => set({ isLeaderboardOpen }),
+  setEditorOpen: (isEditorOpen) => set({ isEditorOpen }),
   setGameStatus: (gameStatus) => set({ gameStatus }),
   setLevel: (level) =>
     set((state) => ({
@@ -130,9 +159,19 @@ export const useGameStore = create<GameStoreState>((set) => ({
       collectedCrystals: [],
       resetCount: state.resetCount + 1,
     })),
+  setCustomLevel: (customLevel) =>
+    set((state) => ({
+      customLevel,
+      level: 99,
+      isEditorOpen: false,
+      gameStatus: 'playing',
+      elapsedSeconds: 0,
+      collectedCrystals: [],
+      resetCount: state.resetCount + 1,
+    })),
   nextLevel: () =>
     set((state) => ({
-      level: state.level + 1,
+      level: state.level === 99 ? 1 : (state.level % 5) + 1,
       gameStatus: 'playing',
       elapsedSeconds: 0,
       collectedCrystals: [],
@@ -162,6 +201,9 @@ export const useGameStore = create<GameStoreState>((set) => ({
         bestTimes: nextBestTimes,
       };
     }),
+  setLeaderboard: (leaderboard) => set({ leaderboard }),
+  submitLeaderboardScore: (pendingScoreSubmission) =>
+    set({ pendingScoreSubmission }),
   collectCrystal: (crystalIndex) =>
     set((state) => {
       if (state.collectedCrystals.includes(crystalIndex)) {

@@ -45,8 +45,8 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Toplanabilir Enerji Kristalleri (`crystals`) ve Portal Kilidi:** Hedef portalını kehribar (kilitli) durumdan zümrüt yeşili (açık) duruma geçiren kristal toplama mekaniği.
 - [x] **Bilye Neon Hareket İzi (`Motion Trail`):** Sıfır GC maliyetli, halka tampon (ring-buffer) tabanlı akıcı neon zemin izi.
 
-## 🚀 Faz 5: İleri Seviye Hedefler (Backlog)
+## ✅ Faz 5: İleri Seviye Sistemler (Tamamlandı)
 
-- [ ] **Özel Harita Editörü (Level Editor):** Kullanıcının tarayıcı üzerinden kendi duvar, kristal, lazer ve tuzaklarını yerleştirip JSON olarak dışa aktarabilmesi.
-- [ ] **Küresel Skor Tablosu (Leaderboard):** Bölüm rekorlarının sunucu tarafında da saklanarak en hızlı oyuncuların listelenmesi.
+- [x] **Özel Harita Editörü (`LevelEditorModal.tsx`):** Kullanıcının tarayıcı üzerinden kendi duvar, kristal, lazer ve tuzaklarını 8×8 görsel ızgara üzerinde yerleştirip anında 3B sahnede oynayabilmesi ve JSON olarak dışa aktarabilmesi.
+- [x] **Küresel Skor Tablosu (`Leaderboard`):** Bölüm rekorlarının NestJS sunucusu üzerinde gerçek zamanlı olarak tutulması ve tüm bağlı istemcilere canlı yayınlanması.
 

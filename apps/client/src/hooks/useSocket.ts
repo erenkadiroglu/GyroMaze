@@ -9,6 +9,7 @@ import {
   RoomErrorPayload,
   GameStatePayload,
   HapticPayload,
+  LeaderboardEntry,
 } from '@gyromaze/shared';
 import { useGameStore } from '@/store/useGameStore';
 
@@ -50,6 +51,7 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
 
   const roomId = useGameStore((s) => s.roomId);
   const hapticSignal = useGameStore((s) => s.hapticSignal);
+  const pendingScoreSubmission = useGameStore((s) => s.pendingScoreSubmission);
   const setRoomId = useGameStore((s) => s.setRoomId);
   const setLanIp = useGameStore((s) => s.setLanIp);
   const setTunnelUrl = useGameStore((s) => s.setTunnelUrl);
@@ -57,6 +59,7 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
   const setControllerPaired = useGameStore((s) => s.setControllerPaired);
   const setLatencyMs = useGameStore((s) => s.setLatencyMs);
   const setErrorMessage = useGameStore((s) => s.setErrorMessage);
+  const setLeaderboard = useGameStore((s) => s.setLeaderboard);
   const updateTransientGyro = useGameStore((s) => s.updateTransientGyro);
   const resetTransientGyro = useGameStore((s) => s.resetTransientGyro);
   const triggerBallReset = useGameStore((s) => s.triggerBallReset);
@@ -188,6 +191,13 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
       setGameStatus(payload.status);
     });
 
+    socket.on(
+      RoomEvents.LEADERBOARD_UPDATE,
+      (entries: LeaderboardEntry[]) => {
+        setLeaderboard(entries);
+      },
+    );
+
     return () => {
       socket.disconnect();
       socketRef.current = null;
@@ -215,6 +225,14 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
       type: hapticSignal.type,
     });
   }, [role, hapticSignal, roomId]);
+
+  useEffect(() => {
+    if (role !== 'host' || !pendingScoreSubmission) return;
+    socketRef.current?.emit(
+      RoomEvents.LEADERBOARD_SUBMIT,
+      pendingScoreSubmission,
+    );
+  }, [role, pendingScoreSubmission]);
 
   /**
    * 60Hz frekansında volatile WebSocket çerçevesi gönderir (eski paketlerin kuyrukta beklemesini önler).
