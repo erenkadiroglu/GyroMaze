@@ -650,6 +650,7 @@ function MazeStage({
  */
 export function MazeScene() {
   const level = useGameStore((s) => s.level);
+  const customLevel = useGameStore((s) => s.customLevel);
   const gameStatus = useGameStore((s) => s.gameStatus);
   const elapsedSeconds = useGameStore((s) => s.elapsedSeconds);
   const isSoundMuted = useGameStore((s) => s.isSoundMuted);
@@ -660,9 +661,12 @@ export function MazeScene() {
   const triggerBallReset = useGameStore((s) => s.triggerBallReset);
 
   const activeLevel = useMemo(() => {
+    if (level === 99 && customLevel) {
+      return customLevel;
+    }
     const index = (level - 1) % MAZE_LEVELS.length;
     return MAZE_LEVELS[index];
-  }, [level]);
+  }, [level, customLevel]);
 
   const isGoalUnlocked =
     collectedCrystals.length >= activeLevel.crystals.length;
