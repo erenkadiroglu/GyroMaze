@@ -12,6 +12,7 @@ import {
   WifiOff,
   AlertCircle,
   ShieldCheck,
+  Hand,
 } from 'lucide-react';
 import { GyroData } from '@gyromaze/shared';
 import { useGameStore } from '@/store/useGameStore';
@@ -19,8 +20,8 @@ import { useSocket } from '@/hooks/useSocket';
 import { useDeviceOrientation } from '@/hooks/useDeviceOrientation';
 
 /**
- * Mobil cihazın HTML5 jiroskop sensörlerini okuyup <10ms gecikmeyle
- * masaüstü 3B sahnesine ileten kontrolcü arayüzü.
+ * Mobil cihazın HTML5 jiroskop sensörlerini ve dokunmatik (touch) sanal gimbal
+ * hareketlerini okuyup <10ms gecikmeyle masaüstü 3B sahnesine ileten kontrolcü arayüzü.
  */
 function MobileControllerContent() {
   const searchParams = useSearchParams();
@@ -28,30 +29,31 @@ function MobileControllerContent() {
 
   const [manualRoomInput, setManualRoomInput] = useState(initialRoomParam);
   const [activeRoomCode, setActiveRoomCode] = useState(initialRoomParam);
+  const [isTouchOverride, setIsTouchOverride] = useState(false);
 
   const isSocketConnected = useGameStore((s) => s.isSocketConnected);
   const isControllerPaired = useGameStore((s) => s.isControllerPaired);
   const errorMessage = useGameStore((s) => s.errorMessage);
 
-  // 60 FPS görsel gimbal (su terazisi) referansları
+  const gimbalPadRef = useRef<HTMLDivElement | null>(null);
   const gimbalDotRef = useRef<HTMLDivElement | null>(null);
   const pitchValueRef = useRef<HTMLSpanElement | null>(null);
   const rollValueRef = useRef<HTMLSpanElement | null>(null);
+  const isPointerDraggingRef = useRef<boolean>(false);
 
   const { emitGyroUpdate, emitCalibrate, emitResetBall } = useSocket({
     role: 'controller',
     targetRoomId: activeRoomCode || null,
   });
 
-  const handleOrientationData = useCallback(
+  const applyAndEmitGyro = useCallback(
     (data: GyroData) => {
       if (activeRoomCode && isControllerPaired) {
         emitGyroUpdate(activeRoomCode, data);
       }
 
-      // 60 FPS doğrudan DOM mutasyonu ile görsel nişangahı hareket ettir
       if (gimbalDotRef.current) {
-        const maxOffsetPx = 72;
+        const maxOffsetPx = 76;
         const offsetX = (data.gamma / 35) * maxOffsetPx;
         const offsetY = (data.beta / 35) * maxOffsetPx;
         gimbalDotRef.current.style.transform = `translate3d(${offsetX.toFixed(1)}px, ${offsetY.toFixed(1)}px, 0)`;
@@ -66,10 +68,19 @@ function MobileControllerContent() {
     [activeRoomCode, isControllerPaired, emitGyroUpdate],
   );
 
+  const handleOrientationData = useCallback(
+    (data: GyroData) => {
+      // Kullanıcı parmağıyla sanal gimbali sürüklüyorken donanım sensörünün üzerine yazmasını engelle
+      if (isPointerDraggingRef.current) return;
+      applyAndEmitGyro(data);
+    },
+    [applyAndEmitGyro],
+  );
+
   const { permissionState, requestSensorPermission, calibrate } =
     useDeviceOrientation({
       onOrientationData: handleOrientationData,
-      enabled: true,
+      enabled: !isTouchOverride,
     });
 
   useEffect(() => {
@@ -82,16 +93,47 @@ function MobileControllerContent() {
   const handleActivateSensors = async () => {
     const granted = await requestSensorPermission();
     if (granted) {
+      setIsTouchOverride(false);
       window.setTimeout(() => {
         calibrate();
         emitCalibrate();
       }, 150);
+    } else {
+      // Sensör izni reddedilirse veya HTTP bağlantısı nedeniyle kısıtlanırsa dokunmatik gimbale geç
+      setIsTouchOverride(true);
     }
   };
 
   const handleRecalibrate = () => {
     calibrate();
     emitCalibrate();
+    applyAndEmitGyro({ alpha: 0, beta: 0, gamma: 0, timestamp: Date.now() });
+  };
+
+  const handlePointerMoveOnGimbal = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isPointerDraggingRef.current || !gimbalPadRef.current) return;
+    const rect = gimbalPadRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const maxRadius = rect.width / 2 - 24;
+
+    const dx = Math.max(-maxRadius, Math.min(maxRadius, e.clientX - centerX));
+    const dy = Math.max(-maxRadius, Math.min(maxRadius, e.clientY - centerY));
+
+    const gamma = Number(((dx / maxRadius) * 28).toFixed(2));
+    const beta = Number(((dy / maxRadius) * 28).toFixed(2));
+
+    applyAndEmitGyro({
+      alpha: 0,
+      beta,
+      gamma,
+      timestamp: Date.now(),
+    });
+  };
+
+  const handlePointerEndOnGimbal = () => {
+    isPointerDraggingRef.current = false;
+    applyAndEmitGyro({ alpha: 0, beta: 0, gamma: 0, timestamp: Date.now() });
   };
 
   const handleManualConnect = (e: React.FormEvent) => {
@@ -100,6 +142,9 @@ function MobileControllerContent() {
       setActiveRoomCode(manualRoomInput.trim().toUpperCase());
     }
   };
+
+  const showGimbalSurface =
+    permissionState === 'granted' || isTouchOverride;
 
   return (
     <main className="flex min-h-dvh flex-col justify-between bg-zinc-950 p-5 text-zinc-100 select-none">
@@ -155,7 +200,7 @@ function MobileControllerContent() {
       )}
 
       {/* Orta Alan: Oda Girişi, Sensör İzni veya Canlı Gimbal Terazisi */}
-      <section className="my-auto flex flex-col items-center justify-center py-6">
+      <section className="my-auto flex flex-col items-center justify-center py-4">
         {!activeRoomCode ? (
           <form
             onSubmit={handleManualConnect}
@@ -183,11 +228,11 @@ function MobileControllerContent() {
               Odaya Bağlan
             </button>
           </form>
-        ) : permissionState !== 'granted' ? (
+        ) : !showGimbalSurface ? (
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="w-full max-w-sm space-y-5 rounded-3xl border border-zinc-800 bg-zinc-900/80 p-7 text-center backdrop-blur-xl"
+            className="w-full max-w-sm space-y-4 rounded-3xl border border-zinc-800 bg-zinc-900/80 p-7 text-center backdrop-blur-xl"
           >
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
               <ShieldCheck className="h-7 w-7" />
@@ -197,7 +242,7 @@ function MobileControllerContent() {
                 Jiroskop Sensör İzni
               </h2>
               <p className="text-xs leading-relaxed text-zinc-400">
-                Telefonunuzu rahat bir açıyla yatay veya dikey tutun ve sensör
+                Telefonunuzu rahat bir açıyla tutun ve donanımsal jiroskop
                 akışını başlatmak için aşağıdaki butona dokunun.
               </p>
             </div>
@@ -207,13 +252,33 @@ function MobileControllerContent() {
               onClick={handleActivateSensors}
               className="w-full cursor-pointer rounded-2xl bg-emerald-500 py-4 text-sm font-semibold text-zinc-950 shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-400 active:scale-98"
             >
-              Sensörleri Etkinleştir ve Başla
+              Jiroskop Sensörlerini Başlat
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsTouchOverride(true)}
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-800/60 py-3 text-xs font-medium text-zinc-300 transition hover:bg-zinc-800"
+            >
+              <Hand className="h-4 w-4 text-sky-400" />
+              <span>Dokunmatik (Touch) Gimbal ile Kullan</span>
             </button>
           </motion.div>
         ) : (
-          /* Canlı 2B Jiroskop Ufuk / Su Terazisi Göstergesi */
+          /* Canlı 2B Jiroskop + Dokunmatik Ufuk Terazisi Göstergesi */
           <div className="flex flex-col items-center">
-            <div className="relative flex h-64 w-64 items-center justify-center rounded-full border border-zinc-800 bg-zinc-900/60 shadow-2xl backdrop-blur-xl">
+            <div
+              ref={gimbalPadRef}
+              onPointerDown={(e) => {
+                isPointerDraggingRef.current = true;
+                e.currentTarget.setPointerCapture(e.pointerId);
+                handlePointerMoveOnGimbal(e);
+              }}
+              onPointerMove={handlePointerMoveOnGimbal}
+              onPointerUp={handlePointerEndOnGimbal}
+              onPointerCancel={handlePointerEndOnGimbal}
+              className="relative flex h-64 w-64 touch-none items-center justify-center rounded-full border border-zinc-800 bg-zinc-900/60 shadow-2xl backdrop-blur-xl"
+            >
               {/* İç Derece Halkaları */}
               <div className="pointer-events-none absolute h-44 w-44 rounded-full border border-dashed border-zinc-800" />
               <div className="pointer-events-none absolute h-24 w-24 rounded-full border border-zinc-800/80" />
@@ -223,14 +288,18 @@ function MobileControllerContent() {
               {/* Hareketli Jiroskop Küresi */}
               <div
                 ref={gimbalDotRef}
-                className="relative flex h-12 w-12 items-center justify-center rounded-full border border-emerald-300/60 bg-emerald-400/20 shadow-[0_0_30px_rgba(16,185,129,0.45)] transition-none"
+                className="pointer-events-none relative flex h-12 w-12 items-center justify-center rounded-full border border-emerald-300/60 bg-emerald-400/20 shadow-[0_0_30px_rgba(16,185,129,0.45)] transition-none"
               >
                 <div className="h-3.5 w-3.5 rounded-full bg-emerald-400" />
               </div>
             </div>
 
+            <p className="mt-3 text-[11px] text-zinc-400">
+              Telefonu eğin veya daire içindeki küreyi parmağınızla sürükleyin
+            </p>
+
             {/* Sayısal Açı Göstergeleri */}
-            <div className="mt-6 grid w-64 grid-cols-2 gap-3">
+            <div className="mt-4 grid w-64 grid-cols-2 gap-3">
               <div className="rounded-2xl border border-zinc-800/80 bg-zinc-900/70 p-3 text-center">
                 <span className="block text-[10px] tracking-wider text-zinc-400 uppercase">
                   Öne / Arkaya (Pitch)
@@ -298,4 +367,3 @@ export default function ControllerPage() {
     </Suspense>
   );
 }
-

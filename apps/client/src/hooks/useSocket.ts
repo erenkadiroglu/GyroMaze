@@ -8,21 +8,29 @@ import {
   GyroData,
   RoomErrorPayload,
   GameStatePayload,
+  HapticPayload,
 } from '@gyromaze/shared';
 import { useGameStore } from '@/store/useGameStore';
 
 /**
- * Yerel ağdaki (LAN) mobil cihazların da sunucuya erişebilmesi için
- * dinamik olarak WebSocket sunucu adresini belirler.
+ * Hem yerel geliştirme ortamında (localhost:4000) hem de tek portlu HTTPS tünellerinde
+ * (ngrok / cloudflared / Next.js /socket.io proxy) kesintisiz çalışan sunucu adresi çözücü.
  */
 function resolveSocketServerUrl(): string {
   if (process.env.NEXT_PUBLIC_SOCKET_URL) {
     return process.env.NEXT_PUBLIC_SOCKET_URL;
   }
   if (typeof window !== 'undefined') {
-    const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-    const host = window.location.hostname;
-    return `${protocol}//${host}:4000`;
+    const { protocol, hostname, origin } = window.location;
+    // HTTPS tüneli (ngrok vb.) veya uzak alan adı üzerinden girildiyse
+    // Next.js /socket.io rewrite kuralı üzerinden aynı origin (tek port) kullan
+    if (
+      protocol === 'https:' ||
+      (hostname !== 'localhost' && hostname !== '127.0.0.1')
+    ) {
+      return origin;
+    }
+    return `http://${hostname}:4000`;
   }
   return 'http://localhost:4000';
 }
@@ -35,14 +43,17 @@ interface UseSocketOptions {
 }
 
 /**
- * Masaüstü ve mobil istemciler için Socket.io bağlantı ve olay yönetim hook'u.
+ * Masaüstü ve mobil istemciler için Socket.io bağlantı, telemetri ve titreşim (haptic) hook'u.
  */
 export function useSocket({ role, targetRoomId }: UseSocketOptions) {
   const socketRef = useRef<Socket | null>(null);
   const lastLatencyUpdateRef = useRef<number>(0);
 
+  const roomId = useGameStore((s) => s.roomId);
+  const hapticSignal = useGameStore((s) => s.hapticSignal);
   const setRoomId = useGameStore((s) => s.setRoomId);
   const setLanIp = useGameStore((s) => s.setLanIp);
+  const setTunnelUrl = useGameStore((s) => s.setTunnelUrl);
   const setSocketConnected = useGameStore((s) => s.setSocketConnected);
   const setControllerPaired = useGameStore((s) => s.setControllerPaired);
   const setLatencyMs = useGameStore((s) => s.setLatencyMs);
@@ -54,10 +65,20 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
 
   useEffect(() => {
     const serverUrl = resolveSocketServerUrl();
+    const isTunnelOrProxy =
+      typeof window !== 'undefined' && serverUrl === window.location.origin;
+
     const socket = io(serverUrl, {
-      transports: ['websocket', 'polling'],
-      reconnectionAttempts: 10,
+      path: '/socket.io',
+      // Proxy/Tünel üzerinden bağlanırken önce polling ile el sıkışıp ardından websocket'e yükselt
+      transports: isTunnelOrProxy
+        ? ['polling', 'websocket']
+        : ['websocket', 'polling'],
+      reconnectionAttempts: 15,
       reconnectionDelay: 1000,
+      extraHeaders: {
+        'ngrok-skip-browser-warning': 'true',
+      },
     });
 
     socketRef.current = socket;
@@ -83,14 +104,24 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
     socket.on(RoomEvents.ROOM_CREATED, (room: RoomState) => {
       setRoomId(room.roomId);
       if (room.lanIp) setLanIp(room.lanIp);
+      if (room.tunnelUrl) setTunnelUrl(room.tunnelUrl);
       setControllerPaired(room.isControllerConnected);
     });
 
     socket.on(RoomEvents.ROOM_PAIRED, (room: RoomState) => {
       setRoomId(room.roomId);
       if (room.lanIp) setLanIp(room.lanIp);
+      if (room.tunnelUrl) setTunnelUrl(room.tunnelUrl);
       setControllerPaired(true);
       setErrorMessage(null);
+
+      if (
+        role === 'controller' &&
+        typeof navigator !== 'undefined' &&
+        'vibrate' in navigator
+      ) {
+        navigator.vibrate([40, 60, 80]);
+      }
     });
 
     socket.on(RoomEvents.ROOM_CONTROLLER_DISCONNECTED, () => {
@@ -112,7 +143,6 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
       socket.on(RoomEvents.GYRO_SYNC, (data: GyroData) => {
         updateTransientGyro(data);
 
-        // UI re-render yükünü önlemek için gecikme göstergesini saniyede en fazla 4 kez güncelle
         const now = Date.now();
         if (now - lastLatencyUpdateRef.current > 250) {
           lastLatencyUpdateRef.current = now;
@@ -126,6 +156,26 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
 
       socket.on(RoomEvents.GYRO_CALIBRATE, () => {
         resetTransientGyro();
+      });
+    } else if (role === 'controller') {
+      socket.on(RoomEvents.GAME_HAPTIC, (payload: HapticPayload) => {
+        if (typeof navigator === 'undefined' || !('vibrate' in navigator)) {
+          return;
+        }
+        switch (payload.type) {
+          case 'wall':
+            navigator.vibrate(18);
+            break;
+          case 'hole':
+            navigator.vibrate([70, 40, 110]);
+            break;
+          case 'goal':
+            navigator.vibrate([50, 50, 50, 50, 140]);
+            break;
+          case 'calibrate':
+            navigator.vibrate(30);
+            break;
+        }
       });
     }
 
@@ -146,6 +196,8 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
     role,
     targetRoomId,
     setRoomId,
+    setLanIp,
+    setTunnelUrl,
     setSocketConnected,
     setControllerPaired,
     setLatencyMs,
@@ -156,28 +208,28 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
     setGameStatus,
   ]);
 
-  /**
-   * Mobil kontrolcüden anlık jiroskop verisini sunucuya gönderir.
-   */
-  const emitGyroUpdate = useCallback(
-    (roomId: string, data: GyroData) => {
-      if (!socketRef.current?.connected) return;
-      socketRef.current.emit(RoomEvents.GYRO_UPDATE, { roomId, data });
-    },
-    [],
-  );
+  // Masaüstünde oluşan fiziksel çarpışma/zafer sinyallerini mobil kontrolcüye ilet
+  useEffect(() => {
+    if (role !== 'host' || !hapticSignal || !roomId) return;
+    socketRef.current?.emit(RoomEvents.GAME_HAPTIC, {
+      roomId,
+      type: hapticSignal.type,
+    });
+  }, [role, hapticSignal, roomId]);
 
-  /**
-   * Mobil kontrolcüden kalibrasyon sinyali gönderir.
-   */
+  const emitGyroUpdate = useCallback((targetRoom: string, data: GyroData) => {
+    if (!socketRef.current?.connected) return;
+    socketRef.current.emit(RoomEvents.GYRO_UPDATE, {
+      roomId: targetRoom,
+      data,
+    });
+  }, []);
+
   const emitCalibrate = useCallback(() => {
     if (!socketRef.current?.connected) return;
     socketRef.current.emit(RoomEvents.GYRO_CALIBRATE);
   }, []);
 
-  /**
-   * Topu başlangıç noktasına sıfırlama sinyali gönderir.
-   */
   const emitResetBall = useCallback(() => {
     if (!socketRef.current?.connected) return;
     socketRef.current.emit(RoomEvents.GAME_RESET_BALL);
@@ -189,4 +241,3 @@ export function useSocket({ role, targetRoomId }: UseSocketOptions) {
     emitResetBall,
   };
 }
-

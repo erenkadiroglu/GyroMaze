@@ -15,17 +15,23 @@ import {
   Check,
   Keyboard,
   Compass,
+  Volume2,
+  VolumeX,
+  Globe,
+  Network,
 } from 'lucide-react';
 import { useGameStore, transientGyro } from '@/store/useGameStore';
 import { MAZE_LEVELS } from '@/components/scene/mazeLevels';
+import { soundEngine } from '@/utils/soundEngine';
 
 /**
  * Masaüstü 3B oyun ekranı üzerinde yer alan minimalist HUD,
- * gerçek zamanlı telemetri göstergesi ve QR eşleşme katmanı.
+ * gerçek zamanlı telemetri göstergesi, seviye seçici, rekor sayacı ve QR eşleşme katmanı.
  */
 export function DesktopHUD() {
   const roomId = useGameStore((s) => s.roomId);
   const lanIp = useGameStore((s) => s.lanIp);
+  const tunnelUrl = useGameStore((s) => s.tunnelUrl);
   const isSocketConnected = useGameStore((s) => s.isSocketConnected);
   const isControllerPaired = useGameStore((s) => s.isControllerPaired);
   const isPairingModalOpen = useGameStore((s) => s.isPairingModalOpen);
@@ -33,14 +39,21 @@ export function DesktopHUD() {
   const gameStatus = useGameStore((s) => s.gameStatus);
   const setGameStatus = useGameStore((s) => s.setGameStatus);
   const level = useGameStore((s) => s.level);
+  const setLevel = useGameStore((s) => s.setLevel);
   const nextLevel = useGameStore((s) => s.nextLevel);
   const latencyMs = useGameStore((s) => s.latencyMs);
   const elapsedSeconds = useGameStore((s) => s.elapsedSeconds);
   const setElapsedSeconds = useGameStore((s) => s.setElapsedSeconds);
+  const bestTimes = useGameStore((s) => s.bestTimes);
+  const isSoundMuted = useGameStore((s) => s.isSoundMuted);
+  const toggleSoundMuted = useGameStore((s) => s.toggleSoundMuted);
   const triggerBallReset = useGameStore((s) => s.triggerBallReset);
 
   const [copied, setCopied] = useState(false);
-  const [originUrl, setOriginUrl] = useState('http://localhost:3000');
+  const [connectionMode, setConnectionMode] = useState<'tunnel' | 'lan'>(
+    'tunnel',
+  );
+  const [lanOriginUrl, setLanOriginUrl] = useState('http://localhost:3000');
 
   // Re-render tetiklemeden 60 FPS telemetri çubuklarını güncellemek için DOM referansları
   const pitchBarRef = useRef<HTMLDivElement | null>(null);
@@ -50,6 +63,7 @@ export function DesktopHUD() {
 
   const currentLevelInfo =
     MAZE_LEVELS[(level - 1) % MAZE_LEVELS.length] ?? MAZE_LEVELS[0];
+  const currentBestTime = bestTimes[currentLevelInfo.id];
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -59,7 +73,7 @@ export function DesktopHUD() {
           ? lanIp
           : hostname;
       const portSuffix = port ? `:${port}` : '';
-      setOriginUrl(`${protocol}//${effectiveHost}${portSuffix}`);
+      setLanOriginUrl(`${protocol}//${effectiveHost}${portSuffix}`);
     }
   }, [lanIp]);
 
@@ -105,9 +119,12 @@ export function DesktopHUD() {
     return () => window.cancelAnimationFrame(animationFrameId);
   }, []);
 
+  const activeBaseUrl =
+    connectionMode === 'tunnel' && tunnelUrl ? tunnelUrl : lanOriginUrl;
+
   const controllerUrl = roomId
-    ? `${originUrl}/controller?room=${roomId}`
-    : `${originUrl}/controller`;
+    ? `${activeBaseUrl}/controller?room=${roomId}`
+    : `${activeBaseUrl}/controller`;
 
   const handleCopyLink = async () => {
     try {
@@ -120,16 +137,26 @@ export function DesktopHUD() {
   };
 
   const handleStartKeyboardMode = () => {
+    if (!isSoundMuted) {
+      soundEngine.playCalibrate();
+    }
     setPairingModalOpen(false);
     setGameStatus('playing');
+  };
+
+  const handleResetClick = () => {
+    if (!isSoundMuted) {
+      soundEngine.playCalibrate();
+    }
+    triggerBallReset();
   };
 
   return (
     <div className="pointer-events-none fixed inset-0 z-10 flex flex-col justify-between p-6">
       {/* ÜST GÖSTERGE PANELİ (TOP HUD) */}
       <header className="flex flex-wrap items-center justify-between gap-4">
-        {/* Sol: Marka ve Bölüm Bilgisi */}
-        <div className="pointer-events-auto flex items-center gap-4 rounded-2xl border border-zinc-800/80 bg-zinc-900/75 px-5 py-3 shadow-2xl backdrop-blur-xl">
+        {/* Sol: Marka, Bölüm Bilgisi ve Seviye Seçici */}
+        <div className="pointer-events-auto flex flex-wrap items-center gap-4 rounded-2xl border border-zinc-800/80 bg-zinc-900/75 px-5 py-3 shadow-2xl backdrop-blur-xl">
           <div className="flex items-center gap-2.5">
             <span className="relative flex h-2.5 w-2.5">
               <span
@@ -166,18 +193,56 @@ export function DesktopHUD() {
               {currentLevelInfo.subtitle}
             </span>
           </div>
+
+          <div className="h-4 w-px bg-zinc-800" />
+
+          {/* Hızlı Bölüm Seçici (01 - 05) */}
+          <div className="flex items-center gap-1">
+            {MAZE_LEVELS.map((lvl) => {
+              const isActive = currentLevelInfo.id === lvl.id;
+              return (
+                <button
+                  key={lvl.id}
+                  type="button"
+                  onClick={() => setLevel(lvl.id)}
+                  className={`h-7 w-7 cursor-pointer rounded-lg font-mono text-xs font-semibold transition ${
+                    isActive
+                      ? 'bg-emerald-500 text-zinc-950 shadow-sm shadow-emerald-500/30'
+                      : 'bg-zinc-800/70 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
+                  }`}
+                  title={lvl.title}
+                >
+                  0{lvl.id}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Sağ: Durum, Süre ve Hızlı Aksiyonlar */}
-        <div className="pointer-events-auto flex items-center gap-3">
-          {/* Süre Sayacı */}
-          <div className="flex items-center gap-2 rounded-xl border border-zinc-800/80 bg-zinc-900/75 px-4 py-2.5 backdrop-blur-xl">
-            <span className="text-xs tracking-wider text-zinc-400 uppercase">
-              Süre
-            </span>
-            <span className="font-mono text-sm font-semibold text-zinc-100">
-              {elapsedSeconds.toFixed(1)}sn
-            </span>
+        {/* Sağ: Durum, Süre, Rekor, Ses ve Hızlı Aksiyonlar */}
+        <div className="pointer-events-auto flex flex-wrap items-center gap-2.5">
+          {/* Süre ve En İyi Rekor Sayacı */}
+          <div className="flex items-center gap-3 rounded-xl border border-zinc-800/80 bg-zinc-900/75 px-4 py-2.5 backdrop-blur-xl">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] tracking-wider text-zinc-400 uppercase">
+                Süre
+              </span>
+              <span className="font-mono text-sm font-semibold text-zinc-100">
+                {elapsedSeconds.toFixed(1)}sn
+              </span>
+            </div>
+
+            {currentBestTime !== undefined && (
+              <>
+                <div className="h-3.5 w-px bg-zinc-800" />
+                <div className="flex items-center gap-1.5">
+                  <Trophy className="h-3.5 w-3.5 text-amber-400" />
+                  <span className="font-mono text-xs font-medium text-amber-300">
+                    {currentBestTime.toFixed(1)}sn
+                  </span>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Bağlantı ve Gecikme Rozeti */}
@@ -209,10 +274,24 @@ export function DesktopHUD() {
             )}
           </div>
 
+          {/* Ses Aç/Kapat Butonu */}
+          <button
+            type="button"
+            onClick={toggleSoundMuted}
+            className="flex cursor-pointer items-center justify-center rounded-xl border border-zinc-800/80 bg-zinc-900/75 p-2.5 text-zinc-300 transition hover:border-zinc-700 hover:bg-zinc-800/90 active:scale-95"
+            title={isSoundMuted ? 'Sesi Aç' : 'Sesi Kapat'}
+          >
+            {isSoundMuted ? (
+              <VolumeX className="h-4 w-4 text-rose-400" />
+            ) : (
+              <Volume2 className="h-4 w-4 text-emerald-400" />
+            )}
+          </button>
+
           {/* Topu Sıfırla Butonu */}
           <button
             type="button"
-            onClick={triggerBallReset}
+            onClick={handleResetClick}
             className="flex cursor-pointer items-center gap-2 rounded-xl border border-zinc-800/80 bg-zinc-900/75 px-3.5 py-2.5 text-xs font-medium text-zinc-200 transition hover:border-zinc-700 hover:bg-zinc-800/90 active:scale-95"
             title="Topu Başlangıç Noktasına Sıfırla"
           >
@@ -302,9 +381,9 @@ export function DesktopHUD() {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.94, opacity: 0, y: 12 }}
               transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-              className="w-full max-w-md rounded-3xl border border-zinc-800 bg-zinc-900/95 p-8 shadow-2xl"
+              className="w-full max-w-md rounded-3xl border border-zinc-800 bg-zinc-900/95 p-7 shadow-2xl"
             >
-              <div className="mb-6 flex items-center justify-between">
+              <div className="mb-4 flex items-center justify-between">
                 <div>
                   <span className="text-xs font-semibold tracking-wider text-emerald-400 uppercase">
                     Çapraz Cihaz Senkronizasyonu
@@ -318,17 +397,48 @@ export function DesktopHUD() {
                 </div>
               </div>
 
-              <p className="mb-6 text-sm leading-relaxed text-zinc-400">
-                Telefonunuzu kablosuz bir jiroskop kumandasına dönüştürmek için
-                aşağıdaki QR kodu mobil kameranızla okutun.
+              {/* Ağ Modu Seçici (HTTPS Tüneli vs Yerel Ağ) */}
+              {tunnelUrl && (
+                <div className="mb-4 grid grid-cols-2 gap-2 rounded-xl border border-zinc-800 bg-zinc-950 p-1">
+                  <button
+                    type="button"
+                    onClick={() => setConnectionMode('tunnel')}
+                    className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition ${
+                      connectionMode === 'tunnel'
+                        ? 'bg-emerald-500/20 text-emerald-300'
+                        : 'text-zinc-400 hover:text-zinc-200'
+                    }`}
+                  >
+                    <Globe className="h-3.5 w-3.5" />
+                    <span>HTTPS Tüneli (Önerilen)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConnectionMode('lan')}
+                    className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition ${
+                      connectionMode === 'lan'
+                        ? 'bg-sky-500/20 text-sky-300'
+                        : 'text-zinc-400 hover:text-zinc-200'
+                    }`}
+                  >
+                    <Network className="h-3.5 w-3.5" />
+                    <span>Yerel Ağ (LAN)</span>
+                  </button>
+                </div>
+              )}
+
+              <p className="mb-5 text-xs leading-relaxed text-zinc-400">
+                {tunnelUrl && connectionMode === 'tunnel'
+                  ? 'Güvenli HTTPS tüneli aktif! Wi-Fi veya mobil veri (4G/5G) fark etmeksizin QR kodu okutarak doğrudan bağlanabilirsiniz.'
+                  : 'Aynı yerel ağdaki telefonunuzla aşağıdaki QR kodu okutarak kablosuz jiroskop kontrolcüsünü başlatın.'}
               </p>
 
               {/* QR Kod Kutusu */}
-              <div className="mb-6 flex flex-col items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-950 p-6">
+              <div className="mb-5 flex flex-col items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-950 p-5">
                 <div className="rounded-2xl bg-white p-3.5 shadow-inner">
                   <QRCodeSVG
                     value={controllerUrl}
-                    size={176}
+                    size={172}
                     bgColor="#ffffff"
                     fgColor="#09090b"
                     level="M"
@@ -344,7 +454,7 @@ export function DesktopHUD() {
               </div>
 
               {/* Bağlantı Kopyalama ve Klavye ile Devam Etme */}
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-2.5">
                 <button
                   type="button"
                   onClick={handleCopyLink}
@@ -413,10 +523,17 @@ export function DesktopHUD() {
                 başarıyla tamamladınız.
               </p>
 
+              {currentBestTime !== undefined && (
+                <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-3.5 py-1 text-xs font-medium text-amber-300">
+                  <Trophy className="h-3.5 w-3.5" />
+                  <span>Bölüm Rekoru: {currentBestTime.toFixed(1)}sn</span>
+                </div>
+              )}
+
               <div className="mt-6 flex gap-3">
                 <button
                   type="button"
-                  onClick={triggerBallReset}
+                  onClick={handleResetClick}
                   className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-zinc-800 bg-zinc-800/70 px-4 py-3 text-xs font-medium text-zinc-200 transition hover:bg-zinc-800"
                 >
                   <RotateCcw className="h-4 w-4" />
@@ -438,4 +555,3 @@ export function DesktopHUD() {
     </div>
   );
 }
-

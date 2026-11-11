@@ -12,6 +12,7 @@
   "scripts": {
     "dev:client": "npm run dev --workspace=@gyromaze/client",
     "dev:server": "npm run start:dev --workspace=@gyromaze/server",
+    "dev:tunnel": "ngrok http 3000",
     "build:shared": "npm run build --workspace=@gyromaze/shared",
     "build:client": "npm run build --workspace=@gyromaze/client",
     "build:server": "npm run build --workspace=@gyromaze/server",
