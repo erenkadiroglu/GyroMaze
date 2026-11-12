@@ -98,6 +98,7 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.server
         .to(removal.roomId)
         .emit(RoomEvents.ROOM_HOST_DISCONNECTED, { roomId: removal.roomId });
+      void this.server.socketsLeave?.(removal.roomId);
     }
   }
 
@@ -114,6 +115,7 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
         .emit(RoomEvents.ROOM_HOST_DISCONNECTED, {
           roomId: previousMembership.roomId,
         });
+      void this.server.socketsLeave?.(previousMembership.roomId);
     } else if (previousMembership?.role === 'controller') {
       await client.leave(previousMembership.roomId);
       const removal = this.roomService.removeSocket(client.id);
@@ -236,7 +238,7 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
         ? timestamp
         : Date.now();
 
-    const slot = membership.playerSlot ?? payload.data.playerSlot ?? 1;
+    const slot: 1 | 2 = membership.playerSlot === 2 ? 2 : 1;
     this.server.to(room.hostSocketId).volatile.emit(RoomEvents.GYRO_SYNC, {
       alpha: safeAlpha,
       beta: clampedBeta,
@@ -382,18 +384,23 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
       payload.direction === 'next' || payload.direction === 'prev';
     const validLevel =
       typeof payload.level === 'number' &&
-      Number.isInteger(payload.level) &&
-      payload.level >= 1;
+      Number.isSafeInteger(payload.level) &&
+      payload.level >= 1 &&
+      payload.level <= 9999;
     if (!validDirection && !validLevel) {
       return;
     }
 
     const room = this.roomService.getRoom(membership.roomId);
     if (room) {
-      this.server.to(room.hostSocketId).emit(RoomEvents.GAME_CHANGE_LEVEL, {
-        ...payload,
+      const sanitizedPayload: ChangeLevelPayload = {
         roomId: membership.roomId,
-      });
+        ...(validDirection ? { direction: payload.direction } : {}),
+        ...(validLevel ? { level: payload.level } : {}),
+      };
+      this.server
+        .to(room.hostSocketId)
+        .emit(RoomEvents.GAME_CHANGE_LEVEL, sanitizedPayload);
     }
   }
 

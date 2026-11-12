@@ -610,5 +610,63 @@ describe('RoomService — Oda Yönetimi, 6 Haneli Kod Eşleşmesi ve Skor Tablos
     assert.equal(emitted[0].targetId, 'host-existing');
     assert.equal(emitted[0].event, RoomEvents.ROOM_CONTROLLER_DISCONNECTED);
   });
+
+  it('GyroGateway yuva belirtilmeden katilan 1. kontrolcunun GYRO_UPDATE icinden playerSlot 2 taklidi yapmasini engellemelidir', async () => {
+    const service = new RoomService();
+    const room = await service.createRoom('host-slot-auth');
+    service.joinRoom(room.roomId, 'ctrl-slot1');
+
+    const emitted = [];
+    const gateway = new GyroGateway(service);
+    gateway.server = {
+      to(targetId) {
+        return {
+          emit(event, payload) {
+            emitted.push({ targetId, event, payload });
+          },
+          volatile: {
+            emit(event, payload) {
+              emitted.push({ targetId, event, payload });
+            },
+          },
+        };
+      },
+    };
+
+    gateway.handleGyroUpdate(
+      { id: 'ctrl-slot1' },
+      {
+        roomId: room.roomId,
+        data: {
+          alpha: 0,
+          beta: 12,
+          gamma: -8,
+          timestamp: Date.now(),
+          playerSlot: 2,
+        },
+      },
+    );
+
+    assert.equal(emitted.length, 1);
+    assert.equal(emitted[0].event, RoomEvents.GYRO_SYNC);
+    assert.equal(emitted[0].payload.playerSlot, 1);
+
+    gateway.handleChangeLevel(
+      { id: 'ctrl-slot1' },
+      {
+        roomId: room.roomId,
+        direction: 'next',
+        level: 999999,
+        extraSpoof: 'ignore',
+      },
+    );
+
+    assert.equal(emitted.length, 2);
+    assert.equal(emitted[1].event, RoomEvents.GAME_CHANGE_LEVEL);
+    assert.deepEqual(emitted[1].payload, {
+      roomId: room.roomId,
+      direction: 'next',
+    });
+  });
 });
 

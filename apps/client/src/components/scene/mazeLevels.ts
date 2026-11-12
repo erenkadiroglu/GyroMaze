@@ -664,7 +664,9 @@ export function getMazeLevel(
   if (levelId === 99 && customLevel) {
     return customLevel;
   }
-  const safeId = Math.max(1, Math.floor(levelId));
+  const safeId = Number.isFinite(levelId)
+    ? Math.max(1, Math.floor(levelId))
+    : 1;
   if (safeId <= MAZE_LEVELS.length) {
     return MAZE_LEVELS[safeId - 1];
   }

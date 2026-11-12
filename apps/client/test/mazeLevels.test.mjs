@@ -200,6 +200,8 @@ describe('MAZE_LEVELS — 3B Harita Geometrisi, Engel Konumları ve Fizik Doğru
     }
 
     assert.equal(getMazeLevel(0).id, 1);
+    assert.equal(getMazeLevel(Number.NaN).id, 1);
+    assert.equal(getMazeLevel(Number.POSITIVE_INFINITY).id, 1);
     assert.equal(getMazeLevel(99, null).id, 99);
   });
 
