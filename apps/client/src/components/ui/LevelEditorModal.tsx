@@ -306,10 +306,14 @@ export function LevelEditorModal() {
       const next = prev.map((row) => [...row]);
 
       if (activeTool === 'start' || activeTool === 'goal') {
+        if (next[r][c] === activeTool) {
+          return prev;
+        }
+        const displacedTool = next[r][c] === 'start' || next[r][c] === 'goal' ? next[r][c] : 'erase';
         for (let i = 0; i < GRID_SIZE; i++) {
           for (let j = 0; j < GRID_SIZE; j++) {
             if (next[i][j] === activeTool) {
-              next[i][j] = 'erase';
+              next[i][j] = displacedTool;
             }
           }
         }

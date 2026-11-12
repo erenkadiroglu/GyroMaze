@@ -275,10 +275,29 @@ describe('MAZE_LEVELS — 3B Harita Geometrisi, Engel Konumları ve Fizik Doğru
       startPosition: [-25, 0.34, 25],
       goalPosition: [40, 0.35, -40],
       innerWalls: [],
+      voidHoles: [{ position: [99, -99], radius: 50 }],
+      crystals: [[50, -50]],
+      teleporters: [{ entry: [-30, 0], exit: [30, 0] }],
+      laserGates: [
+        { position: [20, 0], length: 90, axis: 'x', periodSeconds: 0.01, phaseOffset: 0 },
+      ],
+      movingObstacles: [
+        { center: [0, -30], axis: 'x', amplitude: 50, speed: 99, phaseOffset: 0 },
+      ],
     });
     assert.ok(clamped);
     assert.deepEqual(clamped.startPosition, [-5.35, 0.34, 5.35]);
     assert.deepEqual(clamped.goalPosition, [5.35, 0.35, -5.35]);
+    assert.deepEqual(clamped.voidHoles[0], { position: [5.35, -5.35], radius: 0.75 });
+    assert.deepEqual(clamped.crystals[0], [5.35, -5.35]);
+    assert.deepEqual(clamped.teleporters?.[0], {
+      entry: [-5.35, 0],
+      exit: [5.35, 0],
+    });
+    assert.equal(clamped.laserGates[0].length, 11.2);
+    assert.equal(clamped.laserGates[0].periodSeconds, 0.4);
+    assert.equal(clamped.movingObstacles?.[0].amplitude, 5.2);
+    assert.equal(clamped.movingObstacles?.[0].speed, 10);
 
     assert.equal(parseCustomMazeLevel(null), null);
     assert.equal(parseCustomMazeLevel({ startPosition: [0, 0, 0] }), null);

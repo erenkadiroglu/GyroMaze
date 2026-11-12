@@ -847,21 +847,28 @@ export function parseCustomMazeLevel(raw: unknown): MazeLevelDefinition | null {
       if (isPlainRecord(h) && isVec2(h.position)) {
         const radius =
           typeof h.radius === 'number' && Number.isFinite(h.radius) && h.radius > 0
-            ? h.radius
+            ? Number(Math.max(0.25, Math.min(0.75, h.radius)).toFixed(2))
             : undefined;
+        const pos: [number, number] = [
+          clampCoord(h.position[0]),
+          clampCoord(h.position[1]),
+        ];
         voidHoles.push(
           radius !== undefined
-            ? { position: h.position, radius }
-            : { position: h.position },
+            ? { position: pos, radius }
+            : { position: pos },
         );
       }
     }
   }
 
   const crystals: [number, number][] = Array.isArray(raw.crystals)
-    ? raw.crystals.filter(isVec2)
+    ? raw.crystals
+        .filter(isVec2)
+        .map(([cx, cz]) => [clampCoord(cx), clampCoord(cz)])
     : [];
 
+  const maxLaserLen = Math.max(1.2, boardSize - 0.8);
   const laserGates: LaserGateDefinition[] = [];
   if (Array.isArray(raw.laserGates)) {
     for (const g of raw.laserGates) {
@@ -879,11 +886,11 @@ export function parseCustomMazeLevel(raw: unknown): MazeLevelDefinition | null {
         Number.isFinite(g.phaseOffset)
       ) {
         laserGates.push({
-          position: g.position,
-          length: g.length,
+          position: [clampCoord(g.position[0]), clampCoord(g.position[1])],
+          length: Number(Math.max(0.4, Math.min(maxLaserLen, g.length)).toFixed(2)),
           axis: g.axis,
-          periodSeconds: g.periodSeconds,
-          phaseOffset: g.phaseOffset,
+          periodSeconds: Number(Math.max(0.4, Math.min(20, g.periodSeconds)).toFixed(2)),
+          phaseOffset: Number(Math.max(-20, Math.min(20, g.phaseOffset)).toFixed(2)),
         });
       }
     }
@@ -896,7 +903,7 @@ export function parseCustomMazeLevel(raw: unknown): MazeLevelDefinition | null {
         const mag = Math.hypot(b.direction[0], b.direction[1]);
         if (mag > 0.001) {
           boostPads.push({
-            position: b.position,
+            position: [clampCoord(b.position[0]), clampCoord(b.position[1])],
             direction: [
               Number((b.direction[0] / mag).toFixed(3)),
               Number((b.direction[1] / mag).toFixed(3)),
@@ -911,11 +918,15 @@ export function parseCustomMazeLevel(raw: unknown): MazeLevelDefinition | null {
   if (Array.isArray(raw.teleporters)) {
     for (const t of raw.teleporters) {
       if (isPlainRecord(t) && isVec2(t.entry) && isVec2(t.exit)) {
-        teleporters.push({ entry: t.entry, exit: t.exit });
+        teleporters.push({
+          entry: [clampCoord(t.entry[0]), clampCoord(t.entry[1])],
+          exit: [clampCoord(t.exit[0]), clampCoord(t.exit[1])],
+        });
       }
     }
   }
 
+  const maxMovingAmp = Math.max(0.4, boardSize / 2 - 0.8);
   const movingObstacles: MovingObstacleDefinition[] = [];
   if (Array.isArray(raw.movingObstacles)) {
     for (const m of raw.movingObstacles) {
@@ -931,11 +942,11 @@ export function parseCustomMazeLevel(raw: unknown): MazeLevelDefinition | null {
         Number.isFinite(m.phaseOffset)
       ) {
         movingObstacles.push({
-          center: m.center,
+          center: [clampCoord(m.center[0]), clampCoord(m.center[1])],
           axis: m.axis,
-          amplitude: m.amplitude,
-          speed: m.speed,
-          phaseOffset: m.phaseOffset,
+          amplitude: Number(Math.max(0, Math.min(maxMovingAmp, m.amplitude)).toFixed(2)),
+          speed: Number(Math.max(0.1, Math.min(10, m.speed)).toFixed(2)),
+          phaseOffset: Number(Math.max(-20, Math.min(20, m.phaseOffset)).toFixed(2)),
         });
       }
     }
