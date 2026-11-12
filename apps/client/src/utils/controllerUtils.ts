@@ -178,4 +178,47 @@ export function formatCrystalRatio(collected: number, total: number): string {
   return `${safeCollected}/${safeTotal}`;
 }
 
+/**
+ * Gimbal dokunmatik alanının piksel sınırlarına göre merkez koordinatlarını ve izin verilen maksimum yarıçapı hesaplar.
+ */
+export function calculateGimbalBounds(
+  rect: { left: number; top: number; width: number; height: number },
+  padding = 24,
+  minRadius = 40,
+): GimbalBounds {
+  const centerX = rect.left + rect.width * 0.5;
+  const centerY = rect.top + rect.height * 0.5;
+  const maxRadius = Math.max(minRadius, rect.width * 0.5 - padding);
+  return { centerX, centerY, maxRadius };
+}
+
+/**
+ * Mobil kontrolcüde sanal gimbal ve sensör yüzeyinin görünür olup olmayacağını belirler.
+ */
+export function resolveGimbalSurfaceVisibility(
+  permissionState: string,
+  controllerTouchOverride: boolean,
+  activeRoomCode: string,
+  isRoomEditorOpen: boolean,
+): boolean {
+  if (isRoomEditorOpen || !activeRoomCode) return false;
+  return permissionState === 'granted' || controllerTouchOverride;
+}
+
+/**
+ * 2B ufuk küresinin piksel konumunun DOM reflow/repaint eşiğini aşıp aşmadığını denetler (0.2px delta filtresi).
+ */
+export function shouldUpdateGimbalDotOffset(
+  newX: number,
+  newY: number,
+  lastX: number,
+  lastY: number,
+  threshold = 0.2,
+): boolean {
+  return (
+    Math.abs(newX - lastX) >= threshold || Math.abs(newY - lastY) >= threshold
+  );
+}
+
+
 

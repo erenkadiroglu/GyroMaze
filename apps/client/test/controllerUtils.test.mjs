@@ -10,6 +10,9 @@ import {
   formatControllerLevelLabel,
   resolveControllerConnectionBadge,
   formatCrystalRatio,
+  calculateGimbalBounds,
+  resolveGimbalSurfaceVisibility,
+  shouldUpdateGimbalDotOffset,
 } from '../src/utils/controllerUtils.ts';
 
 describe('controllerUtils — Mobil Kontrolcü ve Sanal Gimbal Motoru', () => {
@@ -139,6 +142,42 @@ describe('controllerUtils — Mobil Kontrolcü ve Sanal Gimbal Motoru', () => {
     assert.equal(formatCrystalRatio(3, 5), '3/5');
     assert.equal(formatCrystalRatio(0, 4), '0/4');
     assert.equal(formatCrystalRatio(-1, -2), '0/0');
+  });
+
+  it('calculateGimbalBounds dokunmatik alan merkez ve yarıçap sınırlarını hesaplar', () => {
+    const rect = { left: 50, top: 100, width: 200, height: 200 };
+    const bounds = calculateGimbalBounds(rect, 24, 40);
+    assert.equal(bounds.centerX, 150);
+    assert.equal(bounds.centerY, 200);
+    assert.equal(bounds.maxRadius, 76); // 200 * 0.5 - 24 = 76
+  });
+
+  it('resolveGimbalSurfaceVisibility izin, touch override ve oda durumuna göre yüzey görünürlüğünü belirler', () => {
+    // 1. İzin verilmiş ve aktif oda var -> true
+    assert.equal(resolveGimbalSurfaceVisibility('granted', false, 'CTF6MT', false), true);
+
+    // 2. Dokunmatik mod açık ve aktif oda var -> true
+    assert.equal(resolveGimbalSurfaceVisibility('prompt', true, 'CTF6MT', false), true);
+
+    // 3. Oda kodu yok -> false
+    assert.equal(resolveGimbalSurfaceVisibility('granted', false, '', false), false);
+
+    // 4. Oda editörü açık -> false
+    assert.equal(resolveGimbalSurfaceVisibility('granted', false, 'CTF6MT', true), false);
+
+    // 5. İzin verilmemiş ve touch override kapalı -> false
+    assert.equal(resolveGimbalSurfaceVisibility('prompt', false, 'CTF6MT', false), false);
+  });
+
+  it('shouldUpdateGimbalDotOffset 0.2px delta eşiğine göre DOM güncelleme ihtiyacını belirler', () => {
+    // Delta 0.2'den küçük -> güncelleme gereksiz
+    assert.equal(shouldUpdateGimbalDotOffset(10.1, 20.05, 10.0, 20.0, 0.2), false);
+
+    // Delta X 0.2'ye eşit veya büyük -> güncelleme gerekli
+    assert.equal(shouldUpdateGimbalDotOffset(10.25, 20.0, 10.0, 20.0, 0.2), true);
+
+    // Delta Y 0.2'den büyük -> güncelleme gerekli
+    assert.equal(shouldUpdateGimbalDotOffset(10.0, 20.3, 10.0, 20.0, 0.2), true);
   });
 });
 

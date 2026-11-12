@@ -7,6 +7,7 @@ import { useGameStore } from '@/store/useGameStore';
 import { useSocket } from '@/hooks/useSocket';
 import { useDeviceOrientation } from '@/hooks/useDeviceOrientation';
 import { useAppPreferences } from '@/hooks/useAppPreferences';
+import { useWakeLock } from '@/hooks/useWakeLock';
 import {
   cleanRoomCode,
   validateRoomCode,
@@ -14,6 +15,9 @@ import {
   calculateGimbalDotOffset,
   formatGimbalAngle,
   scaleGyroAngles,
+  calculateGimbalBounds,
+  resolveGimbalSurfaceVisibility,
+  shouldUpdateGimbalDotOffset,
 } from '@/utils/controllerUtils';
 import { ControllerHeader } from './ControllerHeader';
 import { ControllerStatusBanners } from './ControllerStatusBanners';
@@ -198,10 +202,15 @@ function MobileControllerContent() {
     }
   }, [isControllerPaired]);
 
-  const showGimbalSurface =
-    (permissionState === 'granted' || controllerTouchOverride) &&
-    Boolean(activeRoomCode) &&
-    !isRoomEditorOpen;
+  const showGimbalSurface = resolveGimbalSurfaceVisibility(
+    permissionState,
+    controllerTouchOverride,
+    activeRoomCode,
+    isRoomEditorOpen,
+  );
+
+  // Kontrolcü aktifken telefon ekranının kapanmasını Wake Lock API ile engelle
+  useWakeLock(showGimbalSurface);
 
   // Gimbal yüzeyi kapandığında, sekme gizlendiğinde veya pencere odağı kaybedildiğinde takılı sürüklemeyi ve eğimi sıfırla
   const wasGimbalVisibleRef = useRef(false);
@@ -238,47 +247,6 @@ function MobileControllerContent() {
     };
   }, [showGimbalSurface, pushGyroSample]);
 
-  // Kontrolcü aktifken telefon ekranının kapanmasını Wake Lock API ile engelle
-  useEffect(() => {
-    if (!showGimbalSurface || typeof navigator === 'undefined') return;
-    const nav = navigator as Navigator & {
-      wakeLock?: {
-        request: (type: 'screen') => Promise<{ release: () => Promise<void> }>;
-      };
-    };
-    if (!nav.wakeLock) return;
-
-    let sentinel: { release: () => Promise<void> } | null = null;
-    let cancelled = false;
-
-    const acquireWakeLock = async () => {
-      try {
-        const lock = await nav.wakeLock!.request('screen');
-        if (cancelled) {
-          void lock.release().catch(() => {});
-        } else {
-          sentinel = lock;
-        }
-      } catch {
-        // Pil tasarrufu veya tarayıcı kısıtı varsa sessizce geç
-      }
-    };
-
-    const onVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        void acquireWakeLock();
-      }
-    };
-
-    void acquireWakeLock();
-    document.addEventListener('visibilitychange', onVisibilityChange);
-    return () => {
-      cancelled = true;
-      document.removeEventListener('visibilitychange', onVisibilityChange);
-      void sentinel?.release().catch(() => {});
-    };
-  }, [showGimbalSurface]);
-
   // 60 FPS GPU-hızlandırmalı mobil ufuk küresi ve 8Hz sayısal açı güncellemesi
   useEffect(() => {
     if (!showGimbalSurface) return;
@@ -298,8 +266,13 @@ function MobileControllerContent() {
         const { offsetX, offsetY } = calculateGimbalDotOffset(beta, gamma, 68, 35);
 
         if (
-          Math.abs(offsetX - lastRenderedX) >= 0.2 ||
-          Math.abs(offsetY - lastRenderedY) >= 0.2
+          shouldUpdateGimbalDotOffset(
+            offsetX,
+            offsetY,
+            lastRenderedX,
+            lastRenderedY,
+            0.2,
+          )
         ) {
           lastRenderedX = offsetX;
           lastRenderedY = offsetY;
@@ -361,9 +334,7 @@ function MobileControllerContent() {
     activePointerIdRef.current = e.pointerId;
     isPointerDraggingRef.current = true;
     const rect = gimbalPadRef.current.getBoundingClientRect();
-    gimbalBoundsRef.current.centerX = rect.left + rect.width * 0.5;
-    gimbalBoundsRef.current.centerY = rect.top + rect.height * 0.5;
-    gimbalBoundsRef.current.maxRadius = Math.max(40, rect.width * 0.5 - 24);
+    gimbalBoundsRef.current = calculateGimbalBounds(rect, 24, 40);
 
     e.currentTarget.setPointerCapture(e.pointerId);
     updatePointerSample(e.clientX, e.clientY);

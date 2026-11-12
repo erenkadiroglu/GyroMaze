@@ -389,5 +389,10 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **3B Sahne Matematik ve Görsel Efekt Motoru (`sceneUtils.ts`, `sceneUtils.test.mjs`):** Periyodik lazer kapısı zamanlayıcısı `isLaserGateActive`, hareketli kinetik devriye engeli sinüzoidal ötelemesi `calculateMovingObstacleOffset`, çok modlu dinamik kamera konumlandırıcısı `calculateCameraTargetTransform`, hayalet yarışçı enterpolasyonu `calculateGhostPlaybackCoord`, neon iz halkası ölçekleyicisi `calculateTrailScale`, atmosferik sahne paleti `resolveThemePalette` ve bilye kaplama rengi `resolveBallSkinColors` geliştirildi; 6 yeni birim test ile doğrulandı (toplam 96 istemci testi, 124 monorepo testi).
 - [x] **Sahne Mimarisi Entegrasyonu (`MazeScene.tsx`):** `MazeScene.tsx` bileşenindeki inline matematiksel formüller, gömülü renk dallanmaları ve kamera dönüşümleri saf yardımcı motora devredilerek kod okunabilirliği ve test güvencesi artırıldı.
 
+### Faz 74: Mobil Kontrolcü Yaşam Döngüsü Motoru, Wake Lock Kancası ve Sanal Gimbal Sınır Hesaplayıcısı (Tamamlandı)
+- [x] **Gimbal Sınır ve Yaşam Döngüsü Motoru (`controllerUtils.ts`, `controllerUtils.test.mjs`):** Dokunmatik gimbal alanı merkez ve yarıçap sınır hesaplayıcısı `calculateGimbalBounds`, sensör/dokunmatik yüzey görünürlük çözümleyicisi `resolveGimbalSurfaceVisibility` ve 0.2px delta eşikli GPU reflow filtresi `shouldUpdateGimbalDotOffset` geliştirildi; 3 yeni birim test ile doğrulandı (toplam 99 istemci testi, 127 monorepo testi).
+- [x] **Bağımsız Screen Wake Lock Kancası ve Sayfa Sadeleştirmesi (`useWakeLock.ts`, `controller/page.tsx`):** Telefon ekranının oyun esnasında uykuya geçmesini önleyen `useWakeLock` kancası ayrıştırıldı; `controller/page.tsx` içindeki gömülü yaşam döngüsü kodları temizlenerek mimari saflaştırıldı.
+
+
 
 
