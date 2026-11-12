@@ -397,7 +397,8 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Özel Harita URL ve Şema Ayrıştırma Motoru (`customMapCodec.ts`, `customMapCodec.test.mjs`):** Sıkı JSON şema doğrulayıcısı `parseCustomMazeLevel`, URL-safe Base64url serileştiricisi `encodeCustomMazeLevelForUrl`, UTF-8 Base64url çözücüsü `decodeCustomMazeLevelFromUrl`, sorgu parametresi sabiti `CUSTOM_MAP_URL_PARAM` ve uzunluk sınırı `MAX_ENCODED_MAP_LENGTH` geliştirildi; 6 yeni birim test ile doğrulandı (toplam 105 istemci testi, 133 monorepo testi).
 - [x] **Harita Tanım Modülü Sadeleştirmesi (`mazeLevels.ts`):** `mazeLevels.ts` dosyasından 270+ satırlık JSON ayrıştırma ve Base64url dönüşüm kodu bağımsız `customMapCodec` motoruna devredildi ve re-export ile geriye dönük tam uyumluluk korundu.
 
-
-
+### Faz 76: 3B Harita Derleyici, BFS Yol Doğrulayıcı ve Izgara-Dünya Eşleyici Motoru (Tamamlandı)
+- [x] **Harita Derleyici, Akıllı Eksen ve BFS Yol Doğrulama Motoru (`editorCompiler.ts`, `editorCompiler.test.mjs`):** Hedefe yönelik akıllı hızlandırıcı yön vektörü `computeEditorBoostDirection`, koridor yönüne dik dinamik lazer ekseni `computeEditorLaserAxis`, hareketli devriye engeli genlik ve eksen seçici `computeEditorMovingConfig`, 8×8 ızgara ile 12×12 / 16×16 dünya koordinatları arasında kayıpsız çift yönlü eşleyiciler `editorGridCellToWorld` ve `worldToEditorGridCell`, kuantum portal sıçramalarını ve tüm kristallerin erişilebilirliğini denetleyen BFS doğrulayıcısı `validateEditorGrid`, tam donanımlı 3B `MazeLevelDefinition` derleyicisi `buildLevelFromEditorGrid` ve tersine ızgara dönüştürücüsü `levelDefinitionToEditorGrid` geliştirildi; 6 yeni birim test ile doğrulandı (toplam 111 istemci testi, 139 monorepo testi).
+- [x] **Harita Tanım Modülü Temizliği ve Re-export Mimarisi (`mazeLevels.ts`):** `mazeLevels.ts` dosyasından 520+ satırlık derleme ve geometri hesaplama kodu silinerek saf `editorCompiler` motoruna devredildi; geriye dönük tam uyumlu re-export mimarisi sağlandı.
 
 
