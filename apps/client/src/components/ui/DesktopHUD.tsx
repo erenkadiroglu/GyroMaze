@@ -16,7 +16,6 @@ import {
   Wrench,
   Medal,
   Camera,
-  Star,
   Sun,
   Moon,
   ChevronLeft,
@@ -25,9 +24,7 @@ import {
   Sparkles,
   SlidersHorizontal,
   Users,
-  Send,
   Timer,
-  AlertTriangle,
   HelpCircle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -40,9 +37,9 @@ import { SettingsModal } from './SettingsModal';
 import { HelpShortcutsModal } from './HelpShortcutsModal';
 import { LeaderboardModal } from './LeaderboardModal';
 import { PairingModal } from './PairingModal';
+import { GameOutcomeModals } from './GameOutcomeModals';
 import { AttitudeGauge } from './AttitudeGauge';
 import {
-  Modal,
   IconButton,
   Button,
   Kbd,
@@ -96,7 +93,6 @@ export function DesktopHUD() {
   const elapsedSeconds = useGameStore((s) => s.elapsedSeconds);
   const setElapsedSeconds = useGameStore((s) => s.setElapsedSeconds);
   const bestTimes = useGameStore((s) => s.bestTimes);
-  const submitLeaderboardScore = useGameStore((s) => s.submitLeaderboardScore);
   const collectedCrystals = useGameStore((s) => s.collectedCrystals);
   const isSoundMuted = useGameStore((s) => s.isSoundMuted);
   const toggleSoundMuted = useGameStore((s) => s.toggleSoundMuted);
@@ -107,8 +103,6 @@ export function DesktopHUD() {
   const showMiniMap = useGameStore((s) => s.showMiniMap);
 
   const [isLevelMenuOpen, setIsLevelMenuOpen] = useState(false);
-  const [playerName, setPlayerName] = useState('Oyuncu');
-  const [scoreSubmitted, setScoreSubmitted] = useState(false);
   const [isPageHidden, setIsPageHidden] = useState(false);
 
   const levelPopoverRef = useRef<HTMLDivElement | null>(null);
@@ -122,9 +116,7 @@ export function DesktopHUD() {
   );
   const isPortalUnlocked = collectedCrystals.length >= totalCrystals;
 
-  const [threeStarLimit, twoStarLimit] = currentLevelInfo.starThresholds ?? [
-    15, 24,
-  ];
+  const [, twoStarLimit] = currentLevelInfo.starThresholds ?? [15, 24];
   const timeAttackLimit = Math.max(14, Math.round(twoStarLimit * 1.15));
   const timeRemaining = Math.max(0, timeAttackLimit - elapsedSeconds);
   const isTimeAttack = gameMode === 'time_attack';
@@ -134,13 +126,6 @@ export function DesktopHUD() {
     isEditorOpen ||
     isLeaderboardOpen ||
     isHelpOpen;
-
-  const earnedStars =
-    elapsedSeconds <= threeStarLimit
-      ? 3
-      : elapsedSeconds <= twoStarLimit
-        ? 2
-        : 1;
 
   const cameraModeLabel =
     cameraMode === 'isometric'
@@ -153,25 +138,6 @@ export function DesktopHUD() {
     currentLevelInfo.id === 99
       ? 'Özel'
       : `Bölüm ${currentLevelInfo.id < 10 ? `0${currentLevelInfo.id}` : currentLevelInfo.id}`;
-
-  useEffect(() => {
-    setScoreSubmitted(false);
-  }, [level, gameStatus]);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const savedName = window.localStorage.getItem(
-          'gyromaze_player_name_v1',
-        );
-        if (savedName && savedName.trim()) {
-          setPlayerName(savedName.trim().slice(0, 24));
-        }
-      } catch {
-        // LocalStorage erişimi yoksa varsayılan adla devam et
-      }
-    }
-  }, []);
 
   // Bölüm menüsü dışına tıklanınca veya Esc basılınca kapat
   useEffect(() => {
@@ -328,26 +294,6 @@ export function DesktopHUD() {
       `Prosedürel Bölüm ${nextProc < 10 ? `0${nextProc}` : nextProc} oluşturuldu`,
       'info',
     );
-  };
-
-  const handleScoreSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (scoreSubmitted) return;
-    const cleanName = playerName.trim().slice(0, 24) || 'Oyuncu';
-    setPlayerName(cleanName);
-    if (typeof window !== 'undefined') {
-      try {
-        window.localStorage.setItem('gyromaze_player_name_v1', cleanName);
-      } catch {
-        // LocalStorage yazma hatasını yoksay
-      }
-    }
-    submitLeaderboardScore({
-      playerName: cleanName,
-      levelId: currentLevelInfo.id,
-      timeSeconds: Number(Math.max(0.1, elapsedSeconds).toFixed(1)),
-    });
-    setScoreSubmitted(true);
   };
 
   const isAnyControllerPaired =
@@ -828,142 +774,8 @@ export function DesktopHUD() {
         initialLevel={currentLevelInfo.id === 99 ? 1 : currentLevelInfo.id}
       />
 
-      {/* BÖLÜM TAMAMLANDI MODALI */}
-      <Modal
-        open={gameStatus === 'won'}
-        onClose={handleResetClick}
-        hideClose
-        size="md"
-        title={`${currentLevelInfo.title} tamamlandı`}
-        icon={<Trophy className="h-5 w-5" aria-hidden="true" />}
-        footer={
-          <>
-            <Button
-              variant="secondary"
-              icon={<RotateCcw className="h-4 w-4" aria-hidden="true" />}
-              onClick={handleResetClick}
-            >
-              Tekrar oyna
-            </Button>
-            <Button
-              variant="primary"
-              icon={<ArrowRight className="h-4 w-4" aria-hidden="true" />}
-              onClick={nextLevel}
-            >
-              Sonraki bölüm
-            </Button>
-          </>
-        }
-      >
-        <div className="text-center">
-          {isMultiplayer && winnerPlayer && (
-            <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-brass/40 bg-brass/15 px-3 py-1 text-xs font-semibold text-brass">
-              <Users className="h-3.5 w-3.5" aria-hidden="true" />
-              <span>
-                {winnerPlayer}. Oyuncu (
-                {winnerPlayer === 1 ? 'Ana bilye' : 'Altın bilye'}) kazandı
-              </span>
-            </div>
-          )}
-
-          <div
-            className="mt-1 flex items-center justify-center gap-2"
-            aria-label={`Performans: 3 üzerinden ${earnedStars} yıldız`}
-          >
-            {[1, 2, 3].map((starIdx) => (
-              <Star
-                key={starIdx}
-                className={cx(
-                  'h-7 w-7',
-                  starIdx <= earnedStars
-                    ? 'fill-brass text-brass'
-                    : 'text-line',
-                )}
-              />
-            ))}
-          </div>
-
-          <p className="mt-3 text-sm text-muted">
-            Labirenti{' '}
-            <strong className="gm-num text-base text-ok">
-              {Math.max(0.1, elapsedSeconds).toFixed(1)} saniyede
-            </strong>{' '}
-            bitirdin (3 yıldız hedefi &le; {threeStarLimit.toFixed(1)} sn).
-          </p>
-
-          {currentLevelInfo.id !== 99 && (
-            <form
-              onSubmit={handleScoreSubmit}
-              className="mt-5 flex gap-2 rounded-xl border border-line bg-surface-2/60 p-1.5"
-            >
-              <input
-                type="text"
-                maxLength={24}
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
-                disabled={scoreSubmitted}
-                aria-label="Oyuncu adı"
-                placeholder="Oyuncu adın"
-                className="min-w-0 flex-1 bg-transparent px-2.5 text-sm text-fg outline-none disabled:text-muted"
-              />
-              <Button
-                type="submit"
-                variant={scoreSubmitted ? 'secondary' : 'primary'}
-                size="sm"
-                disabled={scoreSubmitted}
-                icon={
-                  scoreSubmitted ? (
-                    <Check className="h-3.5 w-3.5 text-ok" aria-hidden="true" />
-                  ) : (
-                    <Send className="h-3.5 w-3.5" aria-hidden="true" />
-                  )
-                }
-              >
-                {scoreSubmitted ? 'Kaydedildi' : 'Skoru kaydet'}
-              </Button>
-            </form>
-          )}
-        </div>
-      </Modal>
-
-      {/* SÜRE DOLDU MODALI (Süreye Karşı Modu) */}
-      <Modal
-        open={gameStatus === 'lost'}
-        onClose={handleResetClick}
-        hideClose
-        size="sm"
-        title="Süre doldu"
-        description={`${timeAttackLimit} saniyelik süre içinde portala ulaşılamadı.`}
-        icon={<AlertTriangle className="h-5 w-5 text-danger" aria-hidden="true" />}
-        footer={
-          <>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                handleResetClick();
-                setSettingsOpen(true);
-              }}
-            >
-              Modu değiştir
-            </Button>
-            <Button
-              variant="primary"
-              icon={<RotateCcw className="h-4 w-4" aria-hidden="true" />}
-              onClick={handleResetClick}
-            >
-              Tekrar dene
-            </Button>
-          </>
-        }
-      >
-        <p className="text-sm text-muted">
-          Toplanan kristal:{' '}
-          <strong className="gm-num text-fg">
-            {collectedCrystals.length}/{totalCrystals}
-          </strong>
-          . Daha hızlı bir başlangıç için bilyeyi sıfırlayıp yeniden dene.
-        </p>
-      </Modal>
+      {/* OYUN SONUCU MODALLARI (ZAFER VE SÜRE DOLDU) */}
+      <GameOutcomeModals />
     </div>
   );
 }
