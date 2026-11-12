@@ -95,12 +95,28 @@ function levelDefinitionToGrid(levelDef: MazeLevelDefinition): CellTool[][] {
     const [r, c] = worldToGrid(m.center[0], m.center[1]);
     next[r][c] = 'moving';
   }
-  const [gr, gc] = worldToGrid(levelDef.goalPosition[0], levelDef.goalPosition[2]);
-  next[gr][gc] = 'goal';
   const [sr, sc] = worldToGrid(
     levelDef.startPosition[0],
     levelDef.startPosition[2],
   );
+  let [gr, gc] = worldToGrid(levelDef.goalPosition[0], levelDef.goalPosition[2]);
+  if (gr === sr && gc === sc) {
+    const candidates: Array<[number, number]> = [
+      [gr, gc + 1],
+      [gr + 1, gc],
+      [gr, gc - 1],
+      [gr - 1, gc],
+      [GRID_SIZE - 1, GRID_SIZE - 1],
+      [0, 0],
+    ];
+    const alt = candidates.find(
+      ([r, c]) => r >= 0 && r < GRID_SIZE && c >= 0 && c < GRID_SIZE && (r !== sr || c !== sc),
+    );
+    if (alt) {
+      [gr, gc] = alt;
+    }
+  }
+  next[gr][gc] = 'goal';
   next[sr][sc] = 'start';
   return next;
 }

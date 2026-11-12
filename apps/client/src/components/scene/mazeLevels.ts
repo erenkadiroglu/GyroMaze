@@ -810,6 +810,17 @@ export function parseCustomMazeLevel(raw: unknown): MazeLevelDefinition | null {
     return null;
   }
 
+  const boardSize =
+    typeof raw.boardSize === 'number' && Number.isFinite(raw.boardSize)
+      ? Math.max(8, Math.min(18, raw.boardSize))
+      : 12;
+  const maxCoord = Math.max(2, boardSize / 2 - 0.65);
+  const clampCoord = (n: number): number =>
+    Number(Math.max(-maxCoord, Math.min(maxCoord, n)).toFixed(2));
+  const halfBoardLimit = Number((boardSize / 2).toFixed(2));
+  const clampWallCoord = (n: number): number =>
+    Number(Math.max(-halfBoardLimit, Math.min(halfBoardLimit, n)).toFixed(2));
+
   const innerWalls: WallDefinition[] = [];
   for (const w of raw.innerWalls) {
     if (
@@ -820,24 +831,27 @@ export function parseCustomMazeLevel(raw: unknown): MazeLevelDefinition | null {
     ) {
       return null;
     }
-    innerWalls.push({ position: w.position, size: w.size });
+    const wallW = Number(Math.max(0.1, Math.min(boardSize, w.size[0])).toFixed(2));
+    const wallH = Number(Math.max(0.2, Math.min(2.5, w.size[1])).toFixed(2));
+    const wallD = Number(Math.max(0.1, Math.min(boardSize, w.size[2])).toFixed(2));
+    innerWalls.push({
+      position: [
+        clampWallCoord(w.position[0]),
+        Number((wallH / 2).toFixed(3)),
+        clampWallCoord(w.position[2]),
+      ],
+      size: [wallW, wallH, wallD],
+    });
   }
 
-  const boardSize =
-    typeof raw.boardSize === 'number' && Number.isFinite(raw.boardSize)
-      ? Math.max(8, Math.min(18, raw.boardSize))
-      : 12;
-  const maxCoord = Math.max(2, boardSize / 2 - 0.65);
-  const clampCoord = (n: number): number =>
-    Number(Math.max(-maxCoord, Math.min(maxCoord, n)).toFixed(2));
   const safeStart: [number, number, number] = [
     clampCoord(raw.startPosition[0]),
-    raw.startPosition[1],
+    0.34,
     clampCoord(raw.startPosition[2]),
   ];
   const safeGoal: [number, number, number] = [
     clampCoord(raw.goalPosition[0]),
-    raw.goalPosition[1],
+    0.35,
     clampCoord(raw.goalPosition[2]),
   ];
 
