@@ -581,11 +581,12 @@ export const useGameStore = create<GameStoreState>()(
       setElapsedSeconds: (elapsedSeconds) => set({ elapsedSeconds }),
       recordLevelCompletion: (level, seconds, runPath, winnerPlayer = 1) =>
         set((state) => {
+          const safeSeconds = Number(Math.max(0.1, seconds).toFixed(1));
           const currentBest = state.bestTimes[level];
           const nextBestTimes = { ...state.bestTimes };
           const nextGhostPaths = { ...state.ghostPaths };
-          if (currentBest === undefined || seconds < currentBest) {
-            nextBestTimes[level] = Number(seconds.toFixed(1));
+          if (currentBest === undefined || safeSeconds < currentBest) {
+            nextBestTimes[level] = safeSeconds;
             if (runPath && runPath.length > 1) {
               nextGhostPaths[level] = runPath;
             }

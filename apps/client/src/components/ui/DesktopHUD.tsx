@@ -416,7 +416,7 @@ export function DesktopHUD() {
     submitLeaderboardScore({
       playerName: cleanName,
       levelId: currentLevelInfo.id,
-      timeSeconds: elapsedSeconds,
+      timeSeconds: Number(Math.max(0.1, elapsedSeconds).toFixed(1)),
     });
     setScoreSubmitted(true);
   };

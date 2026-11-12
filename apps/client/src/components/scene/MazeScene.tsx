@@ -619,8 +619,10 @@ function MazeStage({
       }
     }
 
+    const isPageHidden = typeof document !== 'undefined' && document.hidden;
     const isInteractive =
       gameStatus === 'playing' &&
+      !isPageHidden &&
       !isPairingModalOpen &&
       !isSettingsOpen &&
       !isEditorOpen &&
