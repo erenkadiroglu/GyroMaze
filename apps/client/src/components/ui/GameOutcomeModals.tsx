@@ -21,6 +21,8 @@ import {
   isPersonalBest,
 } from '@/utils/gameOutcomeUtils';
 import { formatRecordTime } from '@/utils/leaderboardUtils';
+import { isCelebrationWorthy } from '@/utils/celebrationParticles';
+import { CelebrationCanvas } from './CelebrationCanvas';
 import { Modal, Button, cx } from '@/components/ui/primitives';
 
 /**
@@ -105,8 +107,14 @@ export function GameOutcomeModals() {
     setScoreSubmitted(true);
   };
 
+  const isCelebration =
+    gameStatus === 'won' && isCelebrationWorthy(earnedStars, isPB);
+
   return (
     <>
+      {/* 3 YILDIZ VEYA PB ZAFER KONFETİSİ */}
+      <CelebrationCanvas active={isCelebration} />
+
       {/* ZAFER MODALI */}
       <Modal
         open={gameStatus === 'won'}
