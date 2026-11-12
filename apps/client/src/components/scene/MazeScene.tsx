@@ -32,6 +32,7 @@ import {
   MazeLevelDefinition,
 } from './mazeLevels';
 import { soundEngine } from '@/utils/soundEngine';
+import { calculateEarnedStars } from '@/utils/gameOutcomeUtils';
 
 // Garbage Collection (GC) duraksamalarını önlemek için modül seviyesinde önceden ayrılmış nesneler
 const _targetEuler = new THREE.Euler(0, 0, 0, 'XYZ');
@@ -1489,7 +1490,11 @@ export function MazeScene() {
       }
 
       if (!isSoundMuted) {
-        soundEngine.playVictory();
+        const earnedStars = calculateEarnedStars(
+          state.elapsedSeconds,
+          activeLevel.starThresholds,
+        );
+        soundEngine.playVictory(earnedStars);
       }
       triggerHaptic('goal');
       recordLevelCompletion(
@@ -1505,6 +1510,7 @@ export function MazeScene() {
       recordLevelCompletion,
       activeLevel.id,
       activeLevel.crystals.length,
+      activeLevel.starThresholds,
       showHudNotification,
     ],
   );

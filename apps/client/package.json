@@ -10,7 +10,7 @@
     "build": "next build",
     "start": "node server.mjs --prod",
     "lint": "node ../../scripts/lint.mjs --client",
-    "test": "node --test test/mazeLevels.test.mjs test/proxy.test.mjs test/shortcuts.test.mjs test/controllerPreferences.test.mjs test/leaderboard.test.mjs test/pairing.test.mjs test/gameOutcome.test.mjs",
+    "test": "node --test test/mazeLevels.test.mjs test/proxy.test.mjs test/shortcuts.test.mjs test/controllerPreferences.test.mjs test/leaderboard.test.mjs test/pairing.test.mjs test/gameOutcome.test.mjs test/soundEngine.test.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

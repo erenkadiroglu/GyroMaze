@@ -4,10 +4,20 @@
  * Harici ses dosyalarına (.mp3/.wav) ihtiyaç duymadan tarayıcının yerleşik
  * Web Audio API sentezleyicisi ile minimalist oyun ses efektleri üreten motor.
  */
-class SoundEngine {
+export class SoundEngine {
   private ctx: AudioContext | null = null;
   private volume = 1.0;
   private gestureUnlockAttached = false;
+
+  constructor(customCtx?: AudioContext | null) {
+    if (customCtx) {
+      this.ctx = customCtx;
+    }
+  }
+
+  public getVolume(): number {
+    return this.volume;
+  }
 
   public setVolume(vol: number): void {
     if (!Number.isFinite(vol)) return;
@@ -48,18 +58,26 @@ class SoundEngine {
   }
 
   private getContext(): AudioContext | null {
-    if (typeof window === 'undefined' || this.volume <= 0.01) return null;
-    if (!this.ctx) {
-      const AudioCtx =
-        window.AudioContext ||
-        (window as unknown as { webkitAudioContext?: typeof AudioContext })
-          .webkitAudioContext;
-      if (AudioCtx) {
-        try {
-          this.ctx = new AudioCtx();
-        } catch {
-          return null;
-        }
+    if (this.volume <= 0.01) return null;
+    if (this.ctx) {
+      if (this.ctx.state === 'suspended') {
+        this.attachGestureUnlock();
+        void this.ctx.resume().catch(() => {});
+        return null;
+      }
+      return this.ctx.state === 'running' ? this.ctx : null;
+    }
+    if (typeof window === 'undefined') return null;
+
+    const AudioCtx =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext?: typeof AudioContext })
+        .webkitAudioContext;
+    if (AudioCtx) {
+      try {
+        this.ctx = new AudioCtx();
+      } catch {
+        return null;
       }
     }
     if (!this.ctx) return null;
@@ -185,13 +203,24 @@ class SoundEngine {
   }
 
   /**
-   * Bölüm tamamlandığında (Hedef Portalı) armonik zafer akoru çalar.
+   * Bölüm tamamlandığında (Hedef Portalı) kazanılan yıldız sayısına göre dinamik zafer fanfarı çalar:
+   * - 3 Yıldız: 6 notalı parlak zafer fanfarı (C5, E5, G5, C6, E6, G6).
+   * - 2 Yıldız: 4 notalı klasik arpej (C5, E5, G5, C6).
+   * - 1 Yıldız: 3 notalı mütevazı tamamlama akoru (C5, E5, G5).
    */
-  public playVictory(): void {
+  public playVictory(stars = 3): void {
     const ctx = this.getContext();
     if (!ctx) return;
 
-    const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
+    let notes: number[];
+    if (stars >= 3) {
+      notes = [523.25, 659.25, 783.99, 1046.5, 1318.51, 1567.98]; // C5, E5, G5, C6, E6, G6
+    } else if (stars === 2) {
+      notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
+    } else {
+      notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+    }
+
     notes.forEach((freq, idx) => {
       const now = ctx.currentTime + idx * 0.07;
       const { gain } = this.createVoice(
@@ -204,6 +233,72 @@ class SoundEngine {
       );
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
     });
+  }
+
+  /**
+   * Süre dolduğunda veya bölüm başarısız olduğunda inen minör tonda yenilgi sesi üretir.
+   */
+  public playDefeat(): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    const notes = [293.66, 220.0, 146.83]; // D4, A3, D3
+    notes.forEach((freq, idx) => {
+      const now = ctx.currentTime + idx * 0.11;
+      const { osc, gain } = this.createVoice(
+        ctx,
+        'sawtooth',
+        freq,
+        0.15,
+        now,
+        now + 0.28,
+      );
+      osc.frequency.linearRampToValueAtTime(freq * 0.88, now + 0.25);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.27);
+    });
+  }
+
+  /**
+   * Süreye Karşı (Time Attack) modunda son saniyelerde (<= 5 sn) metronom uyarısı üretir.
+   * Acil durumda (<= 3 sn) frekans yükseltilerek tansiyon artırılır.
+   */
+  public playTimerTick(isUrgent = false): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const freq = isUrgent ? 1046.5 : 659.25; // C6 acil, E5 normal uyarı
+    const duration = isUrgent ? 0.06 : 0.045;
+    const { osc, gain } = this.createVoice(
+      ctx,
+      'triangle',
+      freq,
+      isUrgent ? 0.14 : 0.09,
+      now,
+      now + duration,
+    );
+    osc.frequency.exponentialRampToValueAtTime(freq * 0.9, now + duration * 0.9);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+  }
+
+  /**
+   * Menü ve buton etkileşimlerinde hafif dokunsal akustik tık sesi üretir.
+   */
+  public playUIClick(): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const { osc, gain } = this.createVoice(
+      ctx,
+      'sine',
+      1200,
+      0.06,
+      now,
+      now + 0.035,
+    );
+    osc.frequency.exponentialRampToValueAtTime(1800, now + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.032);
   }
 
   /**

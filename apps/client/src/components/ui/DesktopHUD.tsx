@@ -106,6 +106,7 @@ export function DesktopHUD() {
   const [isPageHidden, setIsPageHidden] = useState(false);
 
   const levelPopoverRef = useRef<HTMLDivElement | null>(null);
+  const lastWarnedSecondRef = useRef<number | null>(null);
 
   const currentLevelInfo = getMazeLevel(level, customLevel);
   const activeNumericLevel = level === 99 ? 1 : Math.max(1, level);
@@ -175,6 +176,10 @@ export function DesktopHUD() {
 
   // Oyun içi süre ve Süreye Karşı (Time Attack) geri sayımı
   useEffect(() => {
+    lastWarnedSecondRef.current = null;
+  }, [gameStatus, level, resetCount]);
+
+  useEffect(() => {
     if (gameStatus !== 'playing' || isAnyOverlayOpen || isPageHidden) return;
     const baseElapsed = useGameStore.getState().elapsedSeconds;
     const start = performance.now() - baseElapsed * 1000;
@@ -184,12 +189,26 @@ export function DesktopHUD() {
         setElapsedSeconds(timeAttackLimit);
         setGameStatus('lost');
         if (!isSoundMuted) {
-          soundEngine.playHoleFall();
+          soundEngine.playDefeat();
         }
         triggerHaptic('hole');
         return;
       }
       setElapsedSeconds(elapsed);
+
+      if (isTimeAttack) {
+        const remainingCeil = Math.ceil(timeAttackLimit - elapsed);
+        if (
+          remainingCeil <= 5 &&
+          remainingCeil > 0 &&
+          lastWarnedSecondRef.current !== remainingCeil
+        ) {
+          lastWarnedSecondRef.current = remainingCeil;
+          if (!isSoundMuted) {
+            soundEngine.playTimerTick(remainingCeil <= 3);
+          }
+        }
+      }
     }, 100);
 
     return () => window.clearInterval(interval);
@@ -282,6 +301,7 @@ export function DesktopHUD() {
   ]);
 
   const handleResetClick = () => {
+    lastWarnedSecondRef.current = null;
     if (!isSoundMuted) soundEngine.playCalibrate();
     triggerBallReset();
   };
