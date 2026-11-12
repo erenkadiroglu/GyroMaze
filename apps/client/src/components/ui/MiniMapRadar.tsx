@@ -82,3 +82,4 @@ export const MiniMapRadar = forwardRef<HTMLDivElement, MiniMapRadarProps>(
     );
   },
 );
+
