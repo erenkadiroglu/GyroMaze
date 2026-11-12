@@ -137,3 +137,45 @@ export function scaleGyroAngles(
   return { beta: scaledBeta, gamma: scaledGamma };
 }
 
+/**
+ * Bölüm numarasına göre insan okunabilir başlık döner (Bölüm 01, Bölüm 05, Özel).
+ */
+export function formatControllerLevelLabel(level: number): string {
+  if (level === 99) return 'Özel';
+  if (!Number.isFinite(level) || level <= 0) return 'Bölüm 01';
+  return `Bölüm ${level < 10 ? `0${level}` : String(level)}`;
+}
+
+/**
+ * Mobil kontrolcü bağlantı ve gecikme durumunu rozet formatına dönüştürür.
+ */
+export function resolveControllerConnectionBadge(
+  isPaired: boolean,
+  isSocketConnected: boolean,
+  latencyMs = 0,
+): {
+  state: 'paired' | 'ready' | 'disconnected';
+  label: string;
+  latencyClass?: string;
+} {
+  if (isPaired) {
+    const latencyClass =
+      latencyMs < 35 ? 'text-ok' : latencyMs < 75 ? 'text-brass' : 'text-warn';
+    return { state: 'paired', label: 'Bağlı', latencyClass };
+  }
+  if (isSocketConnected) {
+    return { state: 'ready', label: 'Hazır' };
+  }
+  return { state: 'disconnected', label: 'Kopuk' };
+}
+
+/**
+ * Toplanan kristal oranını biçimlendirir (örn: 3/5).
+ */
+export function formatCrystalRatio(collected: number, total: number): string {
+  const safeCollected = Number.isFinite(collected) ? Math.max(0, collected) : 0;
+  const safeTotal = Number.isFinite(total) ? Math.max(0, total) : 0;
+  return `${safeCollected}/${safeTotal}`;
+}
+
+

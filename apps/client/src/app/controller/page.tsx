@@ -2,29 +2,11 @@
 
 import { Suspense, useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import {
-  Smartphone,
-  Crosshair,
-  RotateCcw,
-  Wifi,
-  WifiOff,
-  AlertCircle,
-  KeyRound,
-  ArrowRight,
-  ChevronLeft,
-  ChevronRight,
-  Gem,
-  Trophy,
-  Sun,
-  Moon,
-  Activity,
-} from 'lucide-react';
 import { GyroData } from '@gyromaze/shared';
 import { useGameStore } from '@/store/useGameStore';
 import { useSocket } from '@/hooks/useSocket';
 import { useDeviceOrientation } from '@/hooks/useDeviceOrientation';
 import { useAppPreferences } from '@/hooks/useAppPreferences';
-import { cx } from '@/components/ui/primitives';
 import {
   cleanRoomCode,
   validateRoomCode,
@@ -33,9 +15,12 @@ import {
   formatGimbalAngle,
   scaleGyroAngles,
 } from '@/utils/controllerUtils';
+import { ControllerHeader } from './ControllerHeader';
+import { ControllerStatusBanners } from './ControllerStatusBanners';
 import { ControllerRoomCard } from './ControllerRoomCard';
 import { ControllerSensorCard } from './ControllerSensorCard';
 import { ControllerGimbalPad } from './ControllerGimbalPad';
+import { ControllerFooter } from './ControllerFooter';
 
 /**
  * Mobil cihazın HTML5 jiroskop sensörlerini ve dokunmatik (touch) sanal gimbal
@@ -443,229 +428,37 @@ function MobileControllerContent() {
     setIsRoomEditorOpen(false);
   };
 
-  const levelLabel =
-    level === 99
-      ? 'Özel'
-      : `Bölüm ${level < 10 ? `0${level}` : String(level)}`;
-
   return (
     <main className="flex min-h-dvh flex-col justify-between bg-base px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] text-fg select-none">
-      {/* ÜST DURUM ÇUBUĞU (Mobil GPU için sıfır backdrop-blur) */}
-      <header className="flex items-center justify-between gap-2 rounded-2xl border border-line bg-surface px-3.5 py-2.5">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-brass/30 bg-brass/10 text-brass">
-            <Smartphone className="h-4 w-4" aria-hidden="true" />
-          </div>
-          <div>
-            <h1 className="text-sm leading-tight font-semibold">GyroMaze</h1>
-            <div className="flex items-center gap-1.5 text-xs text-muted">
-              <span>Oda:</span>
-              <span className="gm-num font-semibold tracking-wider text-brass">
-                {activeRoomCode || 'Yok'}
-              </span>
-              <span
-                className={cx(
-                  'gm-num rounded-md border px-1.5 py-0.5 text-[10px] font-semibold',
-                  playerSlot === 2
-                    ? 'border-warn/40 bg-warn/10 text-warn'
-                    : 'border-brass/40 bg-brass/10 text-brass',
-                )}
-              >
-                P{playerSlot}
-              </span>
-            </div>
-          </div>
-        </div>
+      {/* ÜST DURUM ÇUBUĞU */}
+      <ControllerHeader
+        activeRoomCode={activeRoomCode}
+        playerSlot={playerSlot}
+        isHapticEnabled={isHapticEnabled}
+        onToggleHaptic={toggleHapticEnabled}
+        colorScheme={colorScheme}
+        onToggleColorScheme={toggleColorScheme}
+        isRoomEditorOpen={isRoomEditorOpen}
+        onOpenRoomEditor={openRoomEditor}
+        onCloseRoomEditor={closeRoomEditor}
+        isControllerPaired={isControllerPaired}
+        isSocketConnected={isSocketConnected}
+        latencyMs={latencyMs}
+      />
 
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={toggleHapticEnabled}
-            aria-label={isHapticEnabled ? 'Titreşimi kapat' : 'Titreşimi aç'}
-            title={isHapticEnabled ? 'Titreşim açık' : 'Titreşim kapalı'}
-            className={cx(
-              'flex min-h-[40px] min-w-[40px] cursor-pointer items-center justify-center rounded-xl border border-line bg-surface-2 active:scale-95',
-              isHapticEnabled ? 'text-brass' : 'text-muted/50 opacity-60',
-            )}
-          >
-            <Activity className="h-4 w-4" aria-hidden="true" />
-          </button>
-
-          <button
-            type="button"
-            onClick={toggleColorScheme}
-            aria-label={colorScheme === 'light' ? 'Gece moduna geç' : 'Gündüz moduna geç'}
-            className="flex min-h-[40px] min-w-[40px] cursor-pointer items-center justify-center rounded-xl border border-line bg-surface-2 active:scale-95"
-          >
-            {colorScheme === 'light' ? (
-              <Sun className="h-4 w-4 text-brass" aria-hidden="true" />
-            ) : (
-              <Moon className="h-4 w-4 text-signal" aria-hidden="true" />
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              if (isRoomEditorOpen) {
-                closeRoomEditor();
-              } else {
-                openRoomEditor();
-              }
-            }}
-            className="flex min-h-[40px] cursor-pointer items-center gap-1.5 rounded-xl border border-line bg-surface-2 px-3 text-xs font-medium text-fg active:scale-95"
-          >
-            <KeyRound className="h-3.5 w-3.5 text-brass" aria-hidden="true" />
-            <span>{activeRoomCode ? 'Kod' : 'Kod gir'}</span>
-          </button>
-
-          <div
-            aria-label={
-              isControllerPaired
-                ? `Bağlantı durumu: Bağlı (${latencyMs}ms)`
-                : isSocketConnected
-                  ? 'Bağlantı durumu: Hazır'
-                  : 'Bağlantı durumu: Kopuk'
-            }
-            className="flex min-h-[40px] items-center gap-1.5 rounded-xl border border-line bg-surface-2 px-3 text-xs font-semibold"
-          >
-            {isControllerPaired ? (
-              <>
-                <Wifi className="h-3.5 w-3.5 text-ok" aria-hidden="true" />
-                <span className="text-ok">Bağlı</span>
-                {latencyMs > 0 && (
-                  <span
-                    className={cx(
-                      'gm-num font-mono text-[11px]',
-                      latencyMs < 35
-                        ? 'text-ok'
-                        : latencyMs < 75
-                          ? 'text-brass'
-                          : 'text-warn',
-                    )}
-                  >
-                    {latencyMs}ms
-                  </span>
-                )}
-              </>
-            ) : isSocketConnected ? (
-              <>
-                <span className="h-2 w-2 rounded-full bg-brass" aria-hidden="true" />
-                <span className="text-brass">Hazır</span>
-              </>
-            ) : (
-              <>
-                <WifiOff className="h-3.5 w-3.5 text-danger" aria-hidden="true" />
-                <span className="text-danger">Kopuk</span>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {/* HATA BİLDİRİMİ */}
-      {errorMessage && (
-        <div
-          role="alert"
-          className="mt-2.5 flex items-center justify-between gap-2 rounded-2xl border border-danger/40 bg-surface px-3.5 py-2.5 text-xs text-danger"
-        >
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
-            <span>{errorMessage}</span>
-          </div>
-          <button
-            type="button"
-            onClick={openRoomEditor}
-            className="min-h-[34px] shrink-0 rounded-lg border border-danger/40 bg-danger/10 px-2.5 text-xs font-semibold text-danger"
-          >
-            Yeni kod
-          </button>
-        </div>
-      )}
-
-      {/* BÖLÜM & KRİSTAL ÇUBUĞU (Eşleştiğinde aktif) */}
-      {isControllerPaired && !isRoomEditorOpen && (
-        <div className="mt-2.5 flex items-center justify-between rounded-2xl border border-line bg-surface px-2.5 py-2">
-          <button
-            type="button"
-            disabled={level <= 1}
-            onClick={() => emitChangeLevel('prev')}
-            className="flex min-h-[40px] cursor-pointer items-center gap-1 rounded-xl border border-line bg-surface-2 px-3 text-xs font-medium text-fg active:scale-95 disabled:pointer-events-none disabled:opacity-40"
-          >
-            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-            <span>Önceki</span>
-          </button>
-
-          <div className="flex items-center gap-2.5 text-sm">
-            <span className="gm-num font-semibold text-brass">{levelLabel}</span>
-            <span className="text-line" aria-hidden="true">
-              ·
-            </span>
-            <span className="gm-num flex items-center gap-1 font-semibold text-signal">
-              <Gem className="h-3.5 w-3.5" aria-hidden="true" />
-              {remoteCrystalsCollected}/{remoteCrystalsTotal}
-            </span>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => emitChangeLevel('next')}
-            className="flex min-h-[40px] cursor-pointer items-center gap-1 rounded-xl border border-line bg-surface-2 px-3 text-xs font-medium text-fg active:scale-95"
-          >
-            <span>Sonraki</span>
-            <ChevronRight className="h-4 w-4" aria-hidden="true" />
-          </button>
-        </div>
-      )}
-
-      {/* ZAFER KARTI */}
-      {isControllerPaired && gameStatus === 'won' && !isRoomEditorOpen && (
-        <div className="mt-2.5 flex items-center justify-between gap-3 rounded-2xl border border-ok/40 bg-surface px-4 py-3">
-          <div className="flex items-center gap-2.5">
-            <Trophy className="h-5 w-5 shrink-0 text-brass" aria-hidden="true" />
-            <div>
-              <p className="text-sm font-semibold text-ok">Bölüm tamamlandı</p>
-              <p className="text-xs text-muted">
-                Telefondan sıradaki bölüme geçebilirsin
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => emitChangeLevel('next')}
-            className="flex min-h-[44px] shrink-0 cursor-pointer items-center gap-1.5 rounded-xl bg-brass px-3.5 text-xs font-semibold text-brass-fg active:scale-95"
-          >
-            <span>Sonraki bölüm</span>
-            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-          </button>
-        </div>
-      )}
-
-      {/* SÜRE DOLDU KARTI (Süreye Karşı Modu) */}
-      {isControllerPaired && gameStatus === 'lost' && !isRoomEditorOpen && (
-        <div className="mt-2.5 flex items-center justify-between gap-3 rounded-2xl border border-danger/40 bg-surface px-4 py-3">
-          <div className="flex items-center gap-2.5">
-            <AlertCircle
-              className="h-5 w-5 shrink-0 text-danger"
-              aria-hidden="true"
-            />
-            <div>
-              <p className="text-sm font-semibold text-danger">Süre doldu</p>
-              <p className="text-xs text-muted">
-                Yeniden denemek için bilyeyi başa alabilirsin
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={emitResetBall}
-            className="flex min-h-[44px] shrink-0 cursor-pointer items-center gap-1.5 rounded-xl bg-brass px-3.5 text-xs font-semibold text-brass-fg active:scale-95"
-          >
-            <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
-            <span>Tekrar dene</span>
-          </button>
-        </div>
-      )}
+      {/* DURUM, BÖLÜM VE BİLDİRİM ŞERİTLERİ */}
+      <ControllerStatusBanners
+        errorMessage={errorMessage}
+        onOpenRoomEditor={openRoomEditor}
+        isControllerPaired={isControllerPaired}
+        isRoomEditorOpen={isRoomEditorOpen}
+        level={level}
+        remoteCrystalsCollected={remoteCrystalsCollected}
+        remoteCrystalsTotal={remoteCrystalsTotal}
+        gameStatus={gameStatus}
+        onChangeLevel={emitChangeLevel}
+        onResetBall={emitResetBall}
+      />
 
       {/* ORTA ALAN: ODA KODU / İZİN / CANLI GİMBAL */}
       <section className="my-auto flex flex-col items-center justify-center py-3">
@@ -726,31 +519,14 @@ function MobileControllerContent() {
         )}
       </section>
 
-      {/* ALT EYLEMLER (Yalnızca gimbal aktifken göster) */}
-      {showGimbalSurface ? (
-        <footer className="grid grid-cols-2 gap-2.5">
-          <button
-            type="button"
-            onClick={handleRecalibrate}
-            className="flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-2xl border border-brass/40 bg-brass/15 text-xs font-semibold text-brass active:scale-95"
-          >
-            <Crosshair className="h-4 w-4" aria-hidden="true" />
-            <span>Merkezi kalibre et</span>
-          </button>
-
-          <button
-            type="button"
-            disabled={!isControllerPaired || !isSocketConnected}
-            onClick={emitResetBall}
-            className="flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-2xl border border-line bg-surface text-xs font-semibold text-fg active:scale-95 disabled:pointer-events-none disabled:opacity-45"
-          >
-            <RotateCcw className="h-4 w-4 text-muted" aria-hidden="true" />
-            <span>Topu sıfırla</span>
-          </button>
-        </footer>
-      ) : (
-        <div className="h-2" aria-hidden="true" />
-      )}
+      {/* ALT EYLEMLER */}
+      <ControllerFooter
+        showGimbalSurface={showGimbalSurface}
+        isControllerPaired={isControllerPaired}
+        isSocketConnected={isSocketConnected}
+        onRecalibrate={handleRecalibrate}
+        onResetBall={emitResetBall}
+      />
     </main>
   );
 }

@@ -7,6 +7,9 @@ import {
   calculateGimbalDotOffset,
   formatGimbalAngle,
   scaleGyroAngles,
+  formatControllerLevelLabel,
+  resolveControllerConnectionBadge,
+  formatCrystalRatio,
 } from '../src/utils/controllerUtils.ts';
 
 describe('controllerUtils — Mobil Kontrolcü ve Sanal Gimbal Motoru', () => {
@@ -94,6 +97,48 @@ describe('controllerUtils — Mobil Kontrolcü ve Sanal Gimbal Motoru', () => {
 
     const clamped = scaleGyroAngles(30, -30, 1.35, 35);
     assert.deepEqual(clamped, { beta: 35, gamma: -35 });
+  });
+
+  it('formatControllerLevelLabel bölüm numarasını ve özel haritayı doğru formatlar', () => {
+    assert.equal(formatControllerLevelLabel(1), 'Bölüm 01');
+    assert.equal(formatControllerLevelLabel(5), 'Bölüm 05');
+    assert.equal(formatControllerLevelLabel(12), 'Bölüm 12');
+    assert.equal(formatControllerLevelLabel(99), 'Özel');
+    assert.equal(formatControllerLevelLabel(0), 'Bölüm 01');
+  });
+
+  it('resolveControllerConnectionBadge eşleşme, sunucu ve gecikmeye göre rozet döner', () => {
+    // Eşleşmiş (<35ms yeşil)
+    const fast = resolveControllerConnectionBadge(true, true, 18);
+    assert.equal(fast.state, 'paired');
+    assert.equal(fast.label, 'Bağlı');
+    assert.equal(fast.latencyClass, 'text-ok');
+
+    // Eşleşmiş (<75ms pirinç)
+    const mid = resolveControllerConnectionBadge(true, true, 55);
+    assert.equal(mid.state, 'paired');
+    assert.equal(mid.latencyClass, 'text-brass');
+
+    // Eşleşmiş (>=75ms sarı)
+    const slow = resolveControllerConnectionBadge(true, true, 92);
+    assert.equal(slow.state, 'paired');
+    assert.equal(slow.latencyClass, 'text-warn');
+
+    // Sunucu hazır ama eşleşme yok
+    const ready = resolveControllerConnectionBadge(false, true, 0);
+    assert.equal(ready.state, 'ready');
+    assert.equal(ready.label, 'Hazır');
+
+    // Sunucu bağlantısı kopuk
+    const disconnected = resolveControllerConnectionBadge(false, false, 0);
+    assert.equal(disconnected.state, 'disconnected');
+    assert.equal(disconnected.label, 'Kopuk');
+  });
+
+  it('formatCrystalRatio toplanan kristal oranını güvenle formatlar', () => {
+    assert.equal(formatCrystalRatio(3, 5), '3/5');
+    assert.equal(formatCrystalRatio(0, 4), '0/4');
+    assert.equal(formatCrystalRatio(-1, -2), '0/0');
   });
 });
 
