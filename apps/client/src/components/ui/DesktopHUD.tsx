@@ -28,14 +28,17 @@ import {
   Send,
   Timer,
   AlertTriangle,
+  HelpCircle,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/store/useGameStore';
 import { getMazeLevel } from '@/components/scene/mazeLevels';
 import { soundEngine } from '@/utils/soundEngine';
+import { resolveKeyboardShortcut } from '@/utils/keyboardShortcuts';
 import { LevelEditorModal } from './LevelEditorModal';
 import { SettingsModal } from './SettingsModal';
+import { HelpShortcutsModal } from './HelpShortcutsModal';
 import { AttitudeGauge } from './AttitudeGauge';
 import {
   Modal,
@@ -70,6 +73,8 @@ export function DesktopHUD() {
   const setEditorOpen = useGameStore((s) => s.setEditorOpen);
   const isSettingsOpen = useGameStore((s) => s.isSettingsOpen);
   const setSettingsOpen = useGameStore((s) => s.setSettingsOpen);
+  const isHelpOpen = useGameStore((s) => s.isHelpOpen);
+  const setHelpOpen = useGameStore((s) => s.setHelpOpen);
   const resetCount = useGameStore((s) => s.resetCount);
 
   const gameStatus = useGameStore((s) => s.gameStatus);
@@ -135,7 +140,11 @@ export function DesktopHUD() {
   const timeRemaining = Math.max(0, timeAttackLimit - elapsedSeconds);
   const isTimeAttack = gameMode === 'time_attack';
   const isAnyOverlayOpen =
-    isPairingModalOpen || isSettingsOpen || isEditorOpen || isLeaderboardOpen;
+    isPairingModalOpen ||
+    isSettingsOpen ||
+    isEditorOpen ||
+    isLeaderboardOpen ||
+    isHelpOpen;
 
   const earnedStars =
     elapsedSeconds <= threeStarLimit
@@ -277,48 +286,78 @@ export function DesktopHUD() {
     triggerHaptic,
   ]);
 
-  // Global klavye kısayolları (R: Sıfırla, C: Kamera, M: Ses, L: Gece/Gündüz)
+  // Global klavye kısayolları (R: Sıfırla, C: Kamera, M: Ses, L: Tema, H/?: Yardım, E: Editör, K: Skor, P: Eşleştir, 1..5: Bölüm, Space: Kalibre)
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (
-        isAnyOverlayOpen ||
-        gameStatus === 'won' ||
-        gameStatus === 'lost' ||
-        e.repeat
-      ) {
-        return;
-      }
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
       const target = e.target as HTMLElement | null;
       const tag = target?.tagName;
-      if (
+      const isInputFocused =
         tag === 'INPUT' ||
         tag === 'TEXTAREA' ||
         tag === 'SELECT' ||
-        target?.isContentEditable
-      ) {
-        return;
-      }
-      const key = e.key.toLowerCase();
-      if (key === 'r') {
+        Boolean(target?.isContentEditable);
+
+      const action = resolveKeyboardShortcut({
+        key: e.key,
+        code: e.code,
+        ctrlKey: e.ctrlKey,
+        metaKey: e.metaKey,
+        altKey: e.altKey,
+        repeat: e.repeat,
+        isInputFocused,
+        isGameOver: gameStatus === 'won' || gameStatus === 'lost',
+        isAnyOverlayOpen,
+        isHelpOpen,
+      });
+
+      if (!action) return;
+
+      if (action === 'help') {
+        e.preventDefault();
+        setHelpOpen(!isHelpOpen);
+      } else if (action === 'reset') {
         triggerBallReset();
-      } else if (key === 'c') {
+      } else if (action === 'camera') {
         cycleCameraMode();
-      } else if (key === 'm') {
+      } else if (action === 'mute') {
         toggleSoundMuted();
-      } else if (key === 'l') {
+      } else if (action === 'theme') {
         toggleColorScheme();
+      } else if (action === 'editor') {
+        e.preventDefault();
+        setEditorOpen(true);
+      } else if (action === 'leaderboard') {
+        e.preventDefault();
+        setLeaderboardOpen(true);
+      } else if (action === 'pairing') {
+        e.preventDefault();
+        setPairingModalOpen(true);
+      } else if (action === 'calibrate') {
+        e.preventDefault();
+        if (!isSoundMuted) soundEngine.playCalibrate();
+        showHudNotification('Merkez kalibre edildi.');
+      } else if (typeof action === 'object' && action.type === 'level') {
+        e.preventDefault();
+        setLevel(action.level);
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [
     isAnyOverlayOpen,
+    isHelpOpen,
     gameStatus,
+    isSoundMuted,
     triggerBallReset,
     cycleCameraMode,
     toggleSoundMuted,
     toggleColorScheme,
+    setHelpOpen,
+    setEditorOpen,
+    setLeaderboardOpen,
+    setPairingModalOpen,
+    setLevel,
+    showHudNotification,
   ]);
 
   const isLocalLoopback =
@@ -698,6 +737,15 @@ export function DesktopHUD() {
           >
             Ayarlar
           </Button>
+
+          {/* Kısayollar ve Yardım Rehberi */}
+          <IconButton
+            label="Klavye kısayolları ve yardım rehberi"
+            shortcut="H"
+            onClick={() => setHelpOpen(true)}
+          >
+            <HelpCircle className="h-4 w-4 text-brass" aria-hidden="true" />
+          </IconButton>
         </div>
       </header>
 
@@ -887,6 +935,7 @@ export function DesktopHUD() {
       {/* YARDIMCI PANELLER */}
       <LevelEditorModal />
       <SettingsModal />
+      <HelpShortcutsModal />
 
       {/* TELEFON EŞLEŞTİRME MODALI */}
       <Modal

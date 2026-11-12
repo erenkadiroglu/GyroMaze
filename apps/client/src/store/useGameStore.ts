@@ -171,6 +171,8 @@ interface GameStoreState {
   isEditorOpen: boolean;
   /** Oyun ve fizik ayarları modalının açık olup olmadığı */
   isSettingsOpen: boolean;
+  /** Klavye kısayolları ve oyun kontrol rehberi modalının açık olup olmadığı */
+  isHelpOpen: boolean;
   /** Çok oyunculu (2 Oyuncu - 1v1 / Co-op) modun aktif olup olmadığı */
   isMultiplayer: boolean;
   /** 2. mobil kontrolcünün odaya bağlı olup olmadığı */
@@ -249,6 +251,7 @@ interface GameStoreState {
   setLeaderboardOpen: (open: boolean) => void;
   setEditorOpen: (open: boolean) => void;
   setSettingsOpen: (open: boolean) => void;
+  setHelpOpen: (open: boolean) => void;
   setSecondControllerPaired: (paired: boolean) => void;
   toggleMultiplayer: () => void;
   updateSettings: (
@@ -354,6 +357,7 @@ export const useGameStore = create<GameStoreState>()(
       isLeaderboardOpen: false,
       isEditorOpen: false,
       isSettingsOpen: false,
+      isHelpOpen: false,
       isMultiplayer: false,
       isSecondControllerPaired: false,
       winnerPlayer: null,
@@ -404,6 +408,7 @@ export const useGameStore = create<GameStoreState>()(
       setLeaderboardOpen: (isLeaderboardOpen) => set({ isLeaderboardOpen }),
       setEditorOpen: (isEditorOpen) => set({ isEditorOpen }),
       setSettingsOpen: (isSettingsOpen) => set({ isSettingsOpen }),
+      setHelpOpen: (isHelpOpen) => set({ isHelpOpen }),
       setSecondControllerPaired: (isSecondControllerPaired) =>
         set((state) => ({
           isSecondControllerPaired,
