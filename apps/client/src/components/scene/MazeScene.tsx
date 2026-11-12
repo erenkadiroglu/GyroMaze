@@ -30,14 +30,10 @@ import { soundEngine } from '@/utils/soundEngine';
 import { calculateEarnedStars } from '@/utils/gameOutcomeUtils';
 import {
   isLaserGateActive,
-  calculateGhostPlaybackCoord,
   calculateTrailScale,
 } from '@/utils/sceneUtils';
 import { calculateOuterWallConfigs } from '@/utils/sceneGeometry';
-import {
-  isBallInsideGoal,
-  stepBallVelocity,
-} from '@/utils/sceneCollisions';
+import { isBallInsideGoal } from '@/utils/sceneCollisions';
 import {
   calculateGoalRingRotation,
   calculateCrystalFloatTransform,
@@ -50,7 +46,6 @@ import {
   _currentQuat,
   _currentEuler,
   _boardMaterial,
-  MAX_TILT_RADIANS,
   BALL_RADIUS,
   TRAIL_COUNT,
   applySceneThemeMaterials,
@@ -67,9 +62,13 @@ import { calculateSlerpAlpha } from '@/utils/sceneColliderUtils';
 import {
   calculateBallRollingRotation,
   stepTrailHistory,
-  shouldUpdateGhostSample,
 } from '@/utils/sceneCameraUtils';
+import {
+  calculateClampedTiltAngles,
+  calculateBallLinvelStep,
+} from '@/utils/sceneTiltUtils';
 import { useBallInteractions } from '@/hooks/useBallInteractions';
+import { useGhostReplay } from '@/hooks/useGhostReplay';
 
 interface MazeStageProps {
   levelData: MazeLevelDefinition;
@@ -118,11 +117,7 @@ function MazeStage({
       z: levelData.startPosition[2],
     })),
   );
-  const runPathRef = useRef<Array<[number, number]>>([]);
-  const runPathP2Ref = useRef<Array<[number, number]>>([]);
-  const runElapsedRef = useRef<number>(0);
   const hazardElapsedRef = useRef<number>(0);
-  const lastSampleTimeRef = useRef<number>(0);
   const lastWallSoundTimeRef = useRef<{ 1: number; 2: number }>({ 1: 0, 2: 0 });
   const lastHoleHitMsRef = useRef<{ 1: number; 2: number }>({ 1: 0, 2: 0 });
 
@@ -160,6 +155,17 @@ function MazeStage({
     () => findSafeP2SpawnOffset(levelData, BALL_RADIUS),
     [levelData],
   );
+
+  const {
+    runPathRef,
+    runPathP2Ref,
+    resetRunPaths,
+    stepGhostReplay,
+  } = useGhostReplay({
+    startPosition: levelData.startPosition,
+    p2SpawnOffsetX,
+    p2SpawnOffsetZ,
+  });
 
   const resetSingleBallRef = useRef<
     ((body: RapierRigidBody | null, slot: 1 | 2) => void) | null
@@ -223,23 +229,12 @@ function MazeStage({
     if (visualTiltGroupRef.current) {
       visualTiltGroupRef.current.quaternion.identity();
     }
-    const [sx, , sz] = levelData.startPosition;
-    runPathRef.current = [[Number(sx.toFixed(2)), Number(sz.toFixed(2))]];
-    runPathP2Ref.current = [
-      [
-        Number((sx + p2SpawnOffsetX).toFixed(2)),
-        Number((sz + p2SpawnOffsetZ).toFixed(2)),
-      ],
-    ];
-    runElapsedRef.current = 0;
+    resetRunPaths();
     hazardElapsedRef.current = 0;
-    lastSampleTimeRef.current = 0;
     resetSingleBall(ballBodyRef.current, 1);
     resetSingleBall(ball2BodyRef.current, 2);
   }, [
-    levelData.startPosition,
-    p2SpawnOffsetX,
-    p2SpawnOffsetZ,
+    resetRunPaths,
     resetSingleBall,
   ]);
   resetBallAndBoardRef.current = resetBallAndBoard;
@@ -334,25 +329,13 @@ function MazeStage({
       }
     }
 
-    const rawPitchRad = isInteractive
-      ? THREE.MathUtils.degToRad(transientGyro.beta)
-      : 0;
-    const rawRollRad = isInteractive
-      ? -THREE.MathUtils.degToRad(transientGyro.gamma)
-      : 0;
-
-    const clampedPitch = THREE.MathUtils.clamp(
-      rawPitchRad,
-      -MAX_TILT_RADIANS,
-      MAX_TILT_RADIANS,
-    );
-    const clampedRoll = THREE.MathUtils.clamp(
-      rawRollRad,
-      -MAX_TILT_RADIANS,
-      MAX_TILT_RADIANS,
+    const { pitchRad, rollRad } = calculateClampedTiltAngles(
+      transientGyro.beta,
+      transientGyro.gamma,
+      isInteractive,
     );
 
-    _targetEuler.set(clampedPitch, 0, clampedRoll, 'XYZ');
+    _targetEuler.set(pitchRad, 0, rollRad, 'XYZ');
     _targetQuat.setFromEuler(_targetEuler);
 
     // 1. Seçilen tepkisellik katsayısı (tiltResponsiveness) ile anında eğim tepkisi
@@ -366,18 +349,14 @@ function MazeStage({
 
     // 2. Fizik küresine eğim ivmesi, kristal toplama, lazer kontrolü ve neon iz güncellemesi
     if (ballBodyRef.current) {
-      if (isInteractive) {
-        const currentVel = ballBodyRef.current.linvel();
-        const nextVel = stepBallVelocity(
-          currentVel,
-          { x: _currentEuler.x, z: _currentEuler.z },
-          gravityScale,
-          safeDelta,
-        );
-        ballBodyRef.current.setLinvel({ x: nextVel.x, y: 0, z: nextVel.z }, true);
-      } else {
-        ballBodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
-      }
+      const nextVel = calculateBallLinvelStep(
+        ballBodyRef.current.linvel(),
+        { x: _currentEuler.x, z: _currentEuler.z },
+        gravityScale,
+        safeDelta,
+        isInteractive,
+      );
+      ballBodyRef.current.setLinvel(nextVel, true);
 
       const pos = ballBodyRef.current.translation();
       const vel = ballBodyRef.current.linvel();
@@ -397,47 +376,21 @@ function MazeStage({
         visualBallMeshRef.current.rotation.z = rot.z;
       }
 
-      // 10Hz Hayalet Yarışçı (Ghost Replay) Kaydı ve Canlı Oynatımı
-      let shouldSampleGhost = false;
-      if (gameStatus === 'playing' && isInteractive) {
-        runElapsedRef.current += safeDelta;
-        const ghostSample = shouldUpdateGhostSample(
-          runElapsedRef.current,
-          lastSampleTimeRef.current,
-          0.1,
-        );
-        shouldSampleGhost = ghostSample.shouldSample;
-        if (shouldSampleGhost) {
-          lastSampleTimeRef.current = ghostSample.nextSampleTime;
-          if (runPathRef.current.length < 600) {
-            runPathRef.current.push([
-              Math.round(pos.x * 100) / 100,
-              Math.round(pos.z * 100) / 100,
-            ]);
-          }
-        }
+      // 10Hz Hayalet Yarışçı (Ghost Replay) Canlı Oynatımı ve Yol Kaydı
+      const pos2 =
+        isMultiplayer && ball2BodyRef.current
+          ? ball2BodyRef.current.translation()
+          : null;
 
-        if (ghostBallMeshRef.current) {
-          if (showGhost) {
-            const ghost = calculateGhostPlaybackCoord(
-              ghostPath,
-              runElapsedRef.current,
-            );
-            ghostBallMeshRef.current.visible = ghost.isVisible;
-            if (ghost.isVisible) {
-              ghostBallMeshRef.current.position.set(
-                ghost.coord[0],
-                BALL_RADIUS,
-                ghost.coord[1],
-              );
-            }
-          } else {
-            ghostBallMeshRef.current.visible = false;
-          }
-        }
-      } else if (ghostBallMeshRef.current) {
-        ghostBallMeshRef.current.visible = false;
-      }
+      stepGhostReplay(
+        safeDelta,
+        isInteractive && gameStatus === 'playing',
+        pos,
+        pos2,
+        ghostPath,
+        showGhost,
+        ghostBallMeshRef.current,
+      );
 
       // Neon Hareket İzi (Motion Trail) halkalarını güncelle (Sıfır GC)
       stepTrailHistory(trailHistoryRef.current, pos);
@@ -473,53 +426,34 @@ function MazeStage({
 
       // Çok Oyunculu (2. Oyuncu - Altın Bilye) Fizik ve Tam Etkileşim Paritesi
       if (isMultiplayer && ball2BodyRef.current) {
-        const p2PitchRad = THREE.MathUtils.clamp(
-          isInteractive ? THREE.MathUtils.degToRad(transientGyroP2.beta) : 0,
-          -MAX_TILT_RADIANS,
-          MAX_TILT_RADIANS,
-        );
-        const p2RollRad = THREE.MathUtils.clamp(
-          isInteractive ? -THREE.MathUtils.degToRad(transientGyroP2.gamma) : 0,
-          -MAX_TILT_RADIANS,
-          MAX_TILT_RADIANS,
+        const p2Angles = calculateClampedTiltAngles(
+          transientGyroP2.beta,
+          transientGyroP2.gamma,
+          isInteractive,
         );
 
-        if (isInteractive) {
-          const v2 = ball2BodyRef.current.linvel();
-          const nextV2 = stepBallVelocity(
-            v2,
-            { x: p2PitchRad, z: p2RollRad },
-            gravityScale,
-            safeDelta,
-          );
-          ball2BodyRef.current.setLinvel(
-            {
-              x: nextV2.x,
-              y: 0,
-              z: nextV2.z,
-            },
-            true,
-          );
-        } else {
-          ball2BodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
-        }
+        const nextV2 = calculateBallLinvelStep(
+          ball2BodyRef.current.linvel(),
+          { x: p2Angles.pitchRad, z: p2Angles.rollRad },
+          gravityScale,
+          safeDelta,
+          isInteractive,
+        );
+        ball2BodyRef.current.setLinvel(nextV2, true);
 
-        const pos2 = ball2BodyRef.current.translation();
+        const pos2Val = ball2BodyRef.current.translation();
         const vel2 = ball2BodyRef.current.linvel();
-        transientGyroP2.ballX = pos2.x;
-        transientGyroP2.ballZ = pos2.z;
+        transientGyroP2.ballX = pos2Val.x;
+        transientGyroP2.ballZ = pos2Val.z;
         transientGyroP2.ballSpeed = Math.hypot(vel2.x, vel2.z);
-
-        if (shouldSampleGhost && runPathP2Ref.current.length < 600) {
-          runPathP2Ref.current.push([
-            Math.round(pos2.x * 100) / 100,
-            Math.round(pos2.z * 100) / 100,
-          ]);
-        }
 
         if (visualBall2MeshRef.current) {
           visualBall2MeshRef.current.visible = true;
-          visualBall2MeshRef.current.position.set(pos2.x, BALL_RADIUS, pos2.z);
+          visualBall2MeshRef.current.position.set(
+            pos2Val.x,
+            BALL_RADIUS,
+            pos2Val.z,
+          );
           const rot2 = calculateBallRollingRotation(
             visualBall2MeshRef.current.rotation,
             vel2,
@@ -533,7 +467,7 @@ function MazeStage({
         // 2. Oyuncu için tüm kristal, rampa, portal, lazer ve hareketli engel kontrolleri
         processBallInteractions(
           ball2BodyRef.current,
-          pos2,
+          pos2Val,
           2,
           hazardElapsed,
           isInteractive,
@@ -541,7 +475,7 @@ function MazeStage({
 
         // 2. Oyuncu ile 1. Oyuncu için birebir simetrik hedef portalı yarıçapı (0.46 birim)
         if (isInteractive && isGoalUnlocked) {
-          if (isBallInsideGoal(pos2, levelData.goalPosition, 0.2116)) {
+          if (isBallInsideGoal(pos2Val, levelData.goalPosition, 0.2116)) {
             onReachGoal(runPathP2Ref.current, 2);
           }
         }
