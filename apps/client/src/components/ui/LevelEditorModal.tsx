@@ -33,6 +33,12 @@ import {
   levelDefinitionToEditorGrid,
   buildLevelFromEditorGrid,
 } from '@/components/scene/mazeLevels';
+import {
+  EDITOR_TEMPLATES,
+  EditorTemplate,
+  createEmptyGrid,
+} from '@/utils/editorTemplates';
+import { soundEngine } from '@/utils/soundEngine';
 import { Modal, Button, cx, handleRadioGroupKeyDown } from './primitives';
 
 type CellTool = EditorCellTool;
@@ -145,6 +151,7 @@ export function LevelEditorModal() {
   const customLevel = useGameStore((s) => s.customLevel);
   const setEditorOpen = useGameStore((s) => s.setEditorOpen);
   const setCustomLevel = useGameStore((s) => s.setCustomLevel);
+  const isSoundMuted = useGameStore((s) => s.isSoundMuted);
 
   const cellRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const copyTimerRef = useRef<number | null>(null);
@@ -218,14 +225,16 @@ export function LevelEditorModal() {
 
   const handleClearGrid = () => {
     setImportError(null);
-    setGrid(() => {
-      const cleared: CellTool[][] = Array.from({ length: GRID_SIZE }, () =>
-        Array.from({ length: GRID_SIZE }, () => 'erase'),
-      );
-      cleared[0][0] = 'start';
-      cleared[GRID_SIZE - 1][GRID_SIZE - 1] = 'goal';
-      return cleared;
-    });
+    setGrid(createEmptyGrid(GRID_SIZE));
+    if (!isSoundMuted) soundEngine.playUIClick();
+  };
+
+  const handleApplyTemplate = (tmpl: EditorTemplate) => {
+    setImportError(null);
+    setGrid(tmpl.grid.map((row) => [...row]));
+    setCustomTitle(`Özel — ${tmpl.name}`);
+    setBoardSize(tmpl.boardSize);
+    if (!isSoundMuted) soundEngine.playUIClick();
   };
 
   const handleRandomizeGrid = () => {
@@ -509,6 +518,28 @@ export function LevelEditorModal() {
                   </button>
                 );
               })}
+            </div>
+          </div>
+
+          <div>
+            <span className="mb-1.5 block text-xs font-medium text-muted">
+              Hazır şablonlar
+            </span>
+            <div className="grid grid-cols-2 gap-1.5">
+              {EDITOR_TEMPLATES.map((tmpl) => (
+                <button
+                  key={tmpl.id}
+                  type="button"
+                  onClick={() => handleApplyTemplate(tmpl)}
+                  title={tmpl.description}
+                  className="flex min-h-[34px] cursor-pointer items-center justify-between rounded-xl border border-line bg-surface-2/60 px-2.5 py-1 text-xs font-medium text-fg transition-colors hover:border-brass/60 hover:bg-surface-2 active:scale-95"
+                >
+                  <span className="truncate">{tmpl.name}</span>
+                  <span className="gm-num font-mono text-[10px] text-muted">
+                    {tmpl.boardSize}×
+                  </span>
+                </button>
+              ))}
             </div>
           </div>
 
