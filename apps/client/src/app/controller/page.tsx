@@ -20,6 +20,7 @@ import {
   Sun,
   Moon,
   X,
+  Activity,
 } from 'lucide-react';
 import { GyroData } from '@gyromaze/shared';
 import { useGameStore } from '@/store/useGameStore';
@@ -71,6 +72,10 @@ function MobileControllerContent() {
   const setErrorMessage = useGameStore((s) => s.setErrorMessage);
   const colorScheme = useGameStore((s) => s.colorScheme);
   const toggleColorScheme = useGameStore((s) => s.toggleColorScheme);
+  const latencyMs = useGameStore((s) => s.latencyMs);
+  const isHapticEnabled = useGameStore((s) => s.isHapticEnabled);
+  const toggleHapticEnabled = useGameStore((s) => s.toggleHapticEnabled);
+  const recentRooms = useGameStore((s) => s.recentRooms);
 
   const activeRoomCodeRef = useRef<string>(activeRoomCode);
   activeRoomCodeRef.current = activeRoomCode;
@@ -465,6 +470,19 @@ function MobileControllerContent() {
         <div className="flex items-center gap-1.5">
           <button
             type="button"
+            onClick={toggleHapticEnabled}
+            aria-label={isHapticEnabled ? 'Titreşimi kapat' : 'Titreşimi aç'}
+            title={isHapticEnabled ? 'Titreşim açık' : 'Titreşim kapalı'}
+            className={cx(
+              'flex min-h-[40px] min-w-[40px] cursor-pointer items-center justify-center rounded-xl border border-line bg-surface-2 active:scale-95',
+              isHapticEnabled ? 'text-brass' : 'text-muted/50 opacity-60',
+            )}
+          >
+            <Activity className="h-4 w-4" aria-hidden="true" />
+          </button>
+
+          <button
+            type="button"
             onClick={toggleColorScheme}
             aria-label={colorScheme === 'light' ? 'Gece moduna geç' : 'Gündüz moduna geç'}
             className="flex min-h-[40px] min-w-[40px] cursor-pointer items-center justify-center rounded-xl border border-line bg-surface-2 active:scale-95"
@@ -494,7 +512,7 @@ function MobileControllerContent() {
           <div
             aria-label={
               isControllerPaired
-                ? 'Bağlantı durumu: Bağlı'
+                ? `Bağlantı durumu: Bağlı (${latencyMs}ms)`
                 : isSocketConnected
                   ? 'Bağlantı durumu: Hazır'
                   : 'Bağlantı durumu: Kopuk'
@@ -505,6 +523,20 @@ function MobileControllerContent() {
               <>
                 <Wifi className="h-3.5 w-3.5 text-ok" aria-hidden="true" />
                 <span className="text-ok">Bağlı</span>
+                {latencyMs > 0 && (
+                  <span
+                    className={cx(
+                      'gm-num font-mono text-[11px]',
+                      latencyMs < 35
+                        ? 'text-ok'
+                        : latencyMs < 75
+                          ? 'text-brass'
+                          : 'text-warn',
+                    )}
+                  >
+                    {latencyMs}ms
+                  </span>
+                )}
               </>
             ) : isSocketConnected ? (
               <>
@@ -682,6 +714,29 @@ function MobileControllerContent() {
               <p role="alert" className="text-xs font-medium text-danger">
                 {roomFormError}
               </p>
+            )}
+
+            {recentRooms.length > 0 && (
+              <div className="space-y-1.5 pt-1 text-left">
+                <span className="text-[11px] font-medium text-muted">
+                  Son bağlandığın odalar:
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {recentRooms.map((roomCode) => (
+                    <button
+                      key={roomCode}
+                      type="button"
+                      onClick={() => {
+                        setManualRoomInput(roomCode);
+                        setRoomFormError(null);
+                      }}
+                      className="gm-num cursor-pointer rounded-lg border border-line bg-surface-2 px-2.5 py-1 text-xs font-mono font-semibold tracking-wider text-brass hover:border-brass/60 active:scale-95"
+                    >
+                      {roomCode}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
 
             <button

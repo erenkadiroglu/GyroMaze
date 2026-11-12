@@ -238,6 +238,10 @@ interface GameStoreState {
   resetCount: number;
   /** Mobil cihaza titreşim göndermek için tetiklenen sinyal */
   hapticSignal: { type: HapticType; seq: number; playerSlot?: 1 | 2 } | null;
+  /** Mobil cihaz titreşiminin (Haptic Feedback) açık olup olmadığı */
+  isHapticEnabled: boolean;
+  /** Mobil kontrolcüde son bağlanılan en fazla 3 benzersiz oda kodu */
+  recentRooms: string[];
   /** Oda veya bağlantı hatası mesajı */
   errorMessage: string | null;
 
@@ -262,8 +266,12 @@ interface GameStoreState {
       showTrail: boolean;
       showGhost: boolean;
       showMiniMap: boolean;
+      isHapticEnabled: boolean;
     }>,
   ) => void;
+  toggleHapticEnabled: () => void;
+  addRecentRoom: (roomCode: string) => void;
+  clearRecentRooms: () => void;
   setGameStatus: (status: GameStatus) => void;
   setLevel: (level: number) => void;
   setCustomLevel: (customLevel: MazeLevelDefinition) => void;
@@ -388,6 +396,8 @@ export const useGameStore = create<GameStoreState>()(
       remoteCrystalsTotal: 3,
       resetCount: 0,
       hapticSignal: null,
+      isHapticEnabled: true,
+      recentRooms: [],
       errorMessage: null,
 
       setRoomId: (roomId) => set({ roomId }),
@@ -633,6 +643,16 @@ export const useGameStore = create<GameStoreState>()(
         }),
       toggleSoundMuted: () =>
         set((state) => ({ isSoundMuted: !state.isSoundMuted })),
+      toggleHapticEnabled: () =>
+        set((state) => ({ isHapticEnabled: !state.isHapticEnabled })),
+      addRecentRoom: (roomCode) =>
+        set((state) => {
+          const code = roomCode.trim().toUpperCase().slice(0, 6);
+          if (!code) return state;
+          const filtered = state.recentRooms.filter((r) => r !== code);
+          return { recentRooms: [code, ...filtered].slice(0, 3) };
+        }),
+      clearRecentRooms: () => set({ recentRooms: [] }),
       triggerBallReset: () => set((state) => resetRunFields(state)),
       triggerHaptic: (type, playerSlot) =>
         set((state) => ({
@@ -685,6 +705,8 @@ export const useGameStore = create<GameStoreState>()(
         showTrail: state.showTrail,
         showGhost: state.showGhost,
         showMiniMap: state.showMiniMap,
+        isHapticEnabled: state.isHapticEnabled,
+        recentRooms: state.recentRooms,
       }),
     },
   ),

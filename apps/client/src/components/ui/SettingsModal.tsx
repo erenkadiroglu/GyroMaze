@@ -59,6 +59,7 @@ export function SettingsModal() {
   const showTrail = useGameStore((s) => s.showTrail);
   const showGhost = useGameStore((s) => s.showGhost);
   const showMiniMap = useGameStore((s) => s.showMiniMap);
+  const isHapticEnabled = useGameStore((s) => s.isHapticEnabled);
   const updateSettings = useGameStore((s) => s.updateSettings);
   const setEditorOpen = useGameStore((s) => s.setEditorOpen);
   const setLeaderboardOpen = useGameStore((s) => s.setLeaderboardOpen);
@@ -308,6 +309,12 @@ export function SettingsModal() {
             description="Sol alt göstergede üstten harita konumu"
             checked={showMiniMap}
             onChange={(checked) => updateSettings({ showMiniMap: checked })}
+          />
+          <SwitchRow
+            label="Mobil titreşim (Haptik)"
+            description="Çarpma, lazer ve portallarda telefon titreşimi"
+            checked={isHapticEnabled}
+            onChange={(checked) => updateSettings({ isHapticEnabled: checked })}
           />
         </div>
       </SettingsSection>

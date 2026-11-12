@@ -38,7 +38,11 @@ const HAPTIC_PATTERNS: Record<HapticPayload['type'], VibratePattern> = {
 };
 
 function triggerDeviceVibrate(pattern: VibratePattern): void {
-  if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') {
+  if (
+    typeof navigator === 'undefined' ||
+    typeof navigator.vibrate !== 'function' ||
+    !useGameStore.getState().isHapticEnabled
+  ) {
     return;
   }
   try {
@@ -214,6 +218,7 @@ export function useSocket({
       setErrorMessage(null);
 
       if (role === 'controller') {
+        useGameStore.getState().addRecentRoom(room.roomId);
         triggerDeviceVibrate([35, 50, 65]);
       }
     });
@@ -382,7 +387,8 @@ export function useSocket({
 
   // Cihaz saati farkından bağımsız gerçek gidiş-dönüş (RTT) gecikme ölçümü
   useEffect(() => {
-    if (role !== 'host' || !isSocketConnected) return;
+    if (!isSocketConnected) return;
+    if (role === 'controller' && !isControllerPaired) return;
 
     const measurePing = () => {
       const sock = socketRef.current;
@@ -397,7 +403,7 @@ export function useSocket({
     measurePing();
     const timer = window.setInterval(measurePing, 2000);
     return () => window.clearInterval(timer);
-  }, [role, isSocketConnected, setLatencyMs]);
+  }, [role, isSocketConnected, isControllerPaired, setLatencyMs]);
 
   // Mobil kontrolcüde hedef oda kodu veya oyuncu yuvası değiştiğinde mevcut soketi koparmadan anında katıl
   useEffect(() => {
