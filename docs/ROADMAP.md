@@ -244,3 +244,7 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 ### Faz 37: Motor Seviyesinde Sessiz Mod Senkronizasyonu ve Kontrolcü Sıfırlama Koruması (Tamamlandı)
 - [x] **Sessiz Mod Motor Senkronizasyonu (`useAppPreferences.ts`):** `soundEngine.setVolume` çağrısı `isSoundMuted` durumuna bağlanarak (`isSoundMuted ? 0 : soundVolume`) sessiz mod aktifken Web Audio bağlamı başlatılması ve istenmeyen ses üretimi motor seviyesinde engellendi.
 - [x] **Kontrolcü Top Sıfırlama Durum Koruması (`controller/page.tsx`):** Alt eylem çubuğundaki *Topu sıfırla* düğmesi, oda eşleşmesi yokken veya soket kopukken (`!isControllerPaired || !isSocketConnected`) devre dışı bırakılarak boşa basım yanılsaması önlendi.
+
+### Faz 38: Özel Harita Sınır/Rampa Doğrulaması ve Ortak Lazer Faz Hesabı (Tamamlandı)
+- [x] **Özel Harita Şema Sertleştirmesi (`mazeLevels.ts`, `mazeLevels.test.mjs`):** `parseCustomMazeLevel` içinde tahta dışı `startPosition`/`goalPosition` koordinatları güvenli iç sınıra çekildi ve sıfır uzunluklu hızlandırma vektörleri elenerek diğer yön vektörleri birim vektöre normalize edildi (`mazeLevels.test.mjs` ile doğrulandı).
+- [x] **Ortak Lazer Faz Yardımcısı & Bölüm İleti Koruması (`MazeScene.tsx`, `useSocket.ts`):** Fizik çarpışma kontrolü ile görsel ışın görünürlüğündeki yinelenen lazer periyot hesabı `isLaserGateActive` yardımcısında birleştirildi (negatif `phaseOffset` modülo hatası giderildi); `GAME_CHANGE_LEVEL` istemci dinleyicisinde tam sayı ve pozitif bölüm sınırı kontrolü eklendi.

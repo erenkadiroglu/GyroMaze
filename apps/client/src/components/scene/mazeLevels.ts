@@ -827,6 +827,19 @@ export function parseCustomMazeLevel(raw: unknown): MazeLevelDefinition | null {
     typeof raw.boardSize === 'number' && Number.isFinite(raw.boardSize)
       ? Math.max(8, Math.min(18, raw.boardSize))
       : 12;
+  const maxCoord = Math.max(2, boardSize / 2 - 0.65);
+  const clampCoord = (n: number): number =>
+    Number(Math.max(-maxCoord, Math.min(maxCoord, n)).toFixed(2));
+  const safeStart: [number, number, number] = [
+    clampCoord(raw.startPosition[0]),
+    raw.startPosition[1],
+    clampCoord(raw.startPosition[2]),
+  ];
+  const safeGoal: [number, number, number] = [
+    clampCoord(raw.goalPosition[0]),
+    raw.goalPosition[1],
+    clampCoord(raw.goalPosition[2]),
+  ];
 
   const voidHoles: VoidHoleDefinition[] = [];
   if (Array.isArray(raw.voidHoles)) {
@@ -880,7 +893,16 @@ export function parseCustomMazeLevel(raw: unknown): MazeLevelDefinition | null {
   if (Array.isArray(raw.boostPads)) {
     for (const b of raw.boostPads) {
       if (isPlainRecord(b) && isVec2(b.position) && isVec2(b.direction)) {
-        boostPads.push({ position: b.position, direction: b.direction });
+        const mag = Math.hypot(b.direction[0], b.direction[1]);
+        if (mag > 0.001) {
+          boostPads.push({
+            position: b.position,
+            direction: [
+              Number((b.direction[0] / mag).toFixed(3)),
+              Number((b.direction[1] / mag).toFixed(3)),
+            ],
+          });
+        }
       }
     }
   }
@@ -933,8 +955,8 @@ export function parseCustomMazeLevel(raw: unknown): MazeLevelDefinition | null {
     title,
     subtitle,
     boardSize,
-    startPosition: raw.startPosition,
-    goalPosition: raw.goalPosition,
+    startPosition: safeStart,
+    goalPosition: safeGoal,
     innerWalls,
     voidHoles,
     crystals,

@@ -254,7 +254,10 @@ describe('MAZE_LEVELS — 3B Harita Geometrisi, Engel Konumları ve Fizik Doğru
       goalPosition: [4, 0.35, 4],
       innerWalls: [{ position: [0, 0.4, 0], size: [1, 0.8, 1] }],
       crystals: [[1, 1], ['bad', 2]],
-      boostPads: [{ position: [2, 2], direction: [0, 1] }],
+      boostPads: [
+        { position: [2, 2], direction: [3, 4] },
+        { position: [1, 1], direction: [0, 0] },
+      ],
       starThresholds: [12, 20],
     });
 
@@ -264,7 +267,18 @@ describe('MAZE_LEVELS — 3B Harita Geometrisi, Engel Konumları ve Fizik Doğru
     assert.equal(valid.boardSize, 18);
     assert.deepEqual(valid.crystals, [[1, 1]]);
     assert.equal(valid.boostPads?.length, 1);
+    assert.deepEqual(valid.boostPads?.[0].direction, [0.6, 0.8]);
     assert.deepEqual(valid.starThresholds, [12, 20]);
+
+    const clamped = parseCustomMazeLevel({
+      boardSize: 12,
+      startPosition: [-25, 0.34, 25],
+      goalPosition: [40, 0.35, -40],
+      innerWalls: [],
+    });
+    assert.ok(clamped);
+    assert.deepEqual(clamped.startPosition, [-5.35, 0.34, 5.35]);
+    assert.deepEqual(clamped.goalPosition, [5.35, 0.35, -5.35]);
 
     assert.equal(parseCustomMazeLevel(null), null);
     assert.equal(parseCustomMazeLevel({ startPosition: [0, 0, 0] }), null);

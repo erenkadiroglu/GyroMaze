@@ -163,6 +163,20 @@ const MAX_TILT_RADIANS = THREE.MathUtils.degToRad(24);
 const BALL_RADIUS = 0.34;
 const TRAIL_COUNT = 7;
 
+/**
+ * Periyodik lazer kapısının verilen sahne süresinde aktif (tehlikeli) olup olmadığını hesaplar.
+ * Fizik çarpışma kontrolü ile görsel ışın görünürlüğünü tek formülde eşitler.
+ */
+function isLaserGateActive(
+  elapsed: number,
+  periodSeconds: number,
+  phaseOffset: number,
+): boolean {
+  const period = Math.max(0.2, periodSeconds);
+  const cycleTime = (((elapsed + phaseOffset) % period) + period) % period;
+  return cycleTime < period * 0.52;
+}
+
 interface MazeStageProps {
   levelData: MazeLevelDefinition;
   isGoalUnlocked: boolean;
@@ -511,10 +525,15 @@ function MazeStage({
       if (elapsed - lastHazardResetTimeRef.current[slot] > 0.35) {
         for (let i = 0; i < levelData.laserGates.length; i++) {
           const gate = levelData.laserGates[i];
-          const cycleTime = (elapsed + gate.phaseOffset) % gate.periodSeconds;
-          // Döngünün %52'sinde aktif, %48'inde güvenli geçiş için kapalı
-          const isLaserActive = cycleTime < gate.periodSeconds * 0.52;
-          if (!isLaserActive) continue;
+          if (
+            !isLaserGateActive(
+              elapsed,
+              gate.periodSeconds,
+              gate.phaseOffset,
+            )
+          ) {
+            continue;
+          }
 
           const [gx, gz] = gate.position;
           const halfLen = gate.length / 2;
@@ -617,8 +636,11 @@ function MazeStage({
       const gate = levelData.laserGates[i];
       const beamMesh = laserBeamMeshesRef.current[i];
       if (beamMesh) {
-        const cycleTime = (hazardElapsed + gate.phaseOffset) % gate.periodSeconds;
-        beamMesh.visible = cycleTime < gate.periodSeconds * 0.52;
+        beamMesh.visible = isLaserGateActive(
+          hazardElapsed,
+          gate.periodSeconds,
+          gate.phaseOffset,
+        );
       }
     }
 

@@ -272,7 +272,11 @@ export function useSocket({
             nextLevel();
           } else if (payload.direction === 'prev') {
             prevLevel();
-          } else if (typeof payload.level === 'number') {
+          } else if (
+            typeof payload.level === 'number' &&
+            Number.isInteger(payload.level) &&
+            payload.level >= 1
+          ) {
             setLevel(payload.level);
           }
         },
