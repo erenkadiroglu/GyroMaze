@@ -47,6 +47,7 @@ function MobileControllerContent() {
   const playerSlotRef = useRef<1 | 2>(initialSlotParam);
   playerSlotRef.current = playerSlot;
   const [isRoomEditorOpen, setIsRoomEditorOpen] = useState(!initialRoomParam);
+  const [roomFormError, setRoomFormError] = useState<string | null>(null);
   const [isTouchOverride, setIsTouchOverride] = useState(false);
   const [isInsecureContext, setIsInsecureContext] = useState(false);
   const [sensorSignalTimedOut, setSensorSignalTimedOut] = useState(false);
@@ -357,26 +358,34 @@ function MobileControllerContent() {
 
   const openRoomEditor = () => {
     setManualRoomInput(activeRoomCode);
+    setRoomFormError(null);
     setIsRoomEditorOpen(true);
+  };
+
+  const closeRoomEditor = () => {
+    setRoomFormError(null);
+    setIsRoomEditorOpen(false);
   };
 
   const handleManualConnect = (e: React.FormEvent) => {
     e.preventDefault();
     const cleaned = manualRoomInput.trim().toUpperCase();
     if (cleaned.length !== 6) {
-      setErrorMessage('Geçerli bir 6 haneli oda kodu girin.');
+      setRoomFormError('Geçerli bir 6 haneli oda kodu girin.');
       return;
     }
     if (cleaned === activeRoomCode) {
       if (!isSocketConnected) {
-        setErrorMessage(
+        setRoomFormError(
           'Sunucu bağlantısı bekleniyor; bağlantı kurulunca tekrar deneyin.',
         );
         return;
       }
+      setRoomFormError(null);
       setErrorMessage(null);
       joinRoomByCode(cleaned);
     } else {
+      setRoomFormError(null);
       setErrorMessage(null);
       setActiveRoomCode(cleaned);
     }
@@ -434,8 +443,11 @@ function MobileControllerContent() {
           <button
             type="button"
             onClick={() => {
-              setManualRoomInput(activeRoomCode);
-              setIsRoomEditorOpen((prev) => !prev);
+              if (isRoomEditorOpen) {
+                closeRoomEditor();
+              } else {
+                openRoomEditor();
+              }
             }}
             className="flex min-h-[40px] cursor-pointer items-center gap-1.5 rounded-xl border border-line bg-surface-2 px-3 text-xs font-medium text-fg active:scale-95"
           >
@@ -599,7 +611,7 @@ function MobileControllerContent() {
               {activeRoomCode && (
                 <button
                   type="button"
-                  onClick={() => setIsRoomEditorOpen(false)}
+                  onClick={closeRoomEditor}
                   aria-label="Oda kodu düzenlemeyi kapat"
                   className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-line bg-surface-2 text-muted"
                 >
@@ -618,14 +630,21 @@ function MobileControllerContent() {
               maxLength={6}
               aria-label="6 haneli oda kodu"
               value={manualRoomInput}
-              onChange={(e) =>
+              onChange={(e) => {
+                setRoomFormError(null);
                 setManualRoomInput(
                   e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase(),
-                )
-              }
+                );
+              }}
               placeholder="ÖRN: 84K9X2"
               className="gm-num w-full rounded-2xl border border-line bg-surface-2 px-4 py-3.5 text-center text-2xl font-semibold tracking-[0.25em] text-brass uppercase outline-none focus:border-brass"
             />
+
+            {roomFormError && (
+              <p role="alert" className="text-xs font-medium text-danger">
+                {roomFormError}
+              </p>
+            )}
 
             <button
               type="submit"

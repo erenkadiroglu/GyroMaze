@@ -263,10 +263,19 @@ export function LevelEditorModal() {
   const setCustomLevel = useGameStore((s) => s.setCustomLevel);
 
   const cellRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const copiedJsonTimerRef = useRef<number | null>(null);
   const [activeTool, setActiveTool] = useState<CellTool>('wall');
   const [customTitle, setCustomTitle] = useState('Özel Labirent — Tasarım 1');
   const [copiedJson, setCopiedJson] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copiedJsonTimerRef.current !== null) {
+        window.clearTimeout(copiedJsonTimerRef.current);
+      }
+    };
+  }, []);
 
   const [grid, setGrid] = useState<CellTool[][]>(() => {
     const initial: CellTool[][] = Array.from({ length: GRID_SIZE }, () =>
@@ -485,7 +494,13 @@ export function LevelEditorModal() {
       await navigator.clipboard.writeText(JSON.stringify(levelDef, null, 2));
       setCopiedJson(true);
       setImportError(null);
-      window.setTimeout(() => setCopiedJson(false), 2000);
+      if (copiedJsonTimerRef.current !== null) {
+        window.clearTimeout(copiedJsonTimerRef.current);
+      }
+      copiedJsonTimerRef.current = window.setTimeout(() => {
+        setCopiedJson(false);
+        copiedJsonTimerRef.current = null;
+      }, 2000);
     } catch {
       setImportError('Pano erişimi reddedildi; harita kopyalanamadı.');
     }

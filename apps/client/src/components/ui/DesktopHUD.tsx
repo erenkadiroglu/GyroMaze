@@ -113,8 +113,11 @@ export function DesktopHUD() {
   const [playerName, setPlayerName] = useState('Oyuncu');
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
   const [selectedLeaderboardLevel, setSelectedLeaderboardLevel] = useState(1);
+  const [isPageHidden, setIsPageHidden] = useState(false);
 
   const levelPopoverRef = useRef<HTMLDivElement | null>(null);
+  const copiedLinkTimerRef = useRef<number | null>(null);
+  const copiedRoomCodeTimerRef = useRef<number | null>(null);
 
   const currentLevelInfo = getMazeLevel(level, customLevel);
   const activeNumericLevel = level === 99 ? 1 : Math.max(1, level);
@@ -217,9 +220,32 @@ export function DesktopHUD() {
     };
   }, [isLevelMenuOpen]);
 
+  // Sekme gizlendiğinde oyun saatini dondurarak arka planda süre atlamasını önle
+  useEffect(() => {
+    const syncVisibility = () => {
+      setIsPageHidden(document.hidden);
+    };
+    syncVisibility();
+    document.addEventListener('visibilitychange', syncVisibility);
+    return () => {
+      document.removeEventListener('visibilitychange', syncVisibility);
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (copiedLinkTimerRef.current !== null) {
+        window.clearTimeout(copiedLinkTimerRef.current);
+      }
+      if (copiedRoomCodeTimerRef.current !== null) {
+        window.clearTimeout(copiedRoomCodeTimerRef.current);
+      }
+    };
+  }, []);
+
   // Oyun içi süre ve Süreye Karşı (Time Attack) geri sayımı
   useEffect(() => {
-    if (gameStatus !== 'playing' || isAnyOverlayOpen) return;
+    if (gameStatus !== 'playing' || isAnyOverlayOpen || isPageHidden) return;
     const baseElapsed = useGameStore.getState().elapsedSeconds;
     const start = performance.now() - baseElapsed * 1000;
     const interval = window.setInterval(() => {
@@ -242,6 +268,7 @@ export function DesktopHUD() {
     level,
     resetCount,
     isAnyOverlayOpen,
+    isPageHidden,
     isTimeAttack,
     timeAttackLimit,
     isSoundMuted,
@@ -317,7 +344,13 @@ export function DesktopHUD() {
     try {
       await navigator.clipboard.writeText(controllerUrl);
       setCopiedLink(true);
-      window.setTimeout(() => setCopiedLink(false), 2000);
+      if (copiedLinkTimerRef.current !== null) {
+        window.clearTimeout(copiedLinkTimerRef.current);
+      }
+      copiedLinkTimerRef.current = window.setTimeout(() => {
+        setCopiedLink(false);
+        copiedLinkTimerRef.current = null;
+      }, 2000);
     } catch {
       // Pano izni yoksa sessizce geç
     }
@@ -328,7 +361,13 @@ export function DesktopHUD() {
     try {
       await navigator.clipboard.writeText(roomId);
       setCopiedRoomCode(true);
-      window.setTimeout(() => setCopiedRoomCode(false), 2000);
+      if (copiedRoomCodeTimerRef.current !== null) {
+        window.clearTimeout(copiedRoomCodeTimerRef.current);
+      }
+      copiedRoomCodeTimerRef.current = window.setTimeout(() => {
+        setCopiedRoomCode(false);
+        copiedRoomCodeTimerRef.current = null;
+      }, 2000);
     } catch {
       // Pano izni yoksa sessizce geç
     }

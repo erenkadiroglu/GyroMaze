@@ -220,6 +220,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Merkezi Titreşim Yardımcısı (`useSocket.ts`):** `ROOM_PAIRED` ve `GAME_HAPTIC` olaylarındaki yinelenen `navigator.vibrate` kontrolleri, `HAPTIC_PATTERNS` haritası ve `try/catch` korumalı `triggerDeviceVibrate` yardımcısında birleştirildi (`typeof navigator.vibrate === 'function'` kontrolü eklendi).
 - [x] **Ağ Geçidi İleti Doğrulaması (`gyro.gateway.ts`):** `handleGameHaptic`, `handleGameStateChange` ve `handleChangeLevel` işleyicilerinde metin dışı `roomId` değerleri (`matchesOptionalRoomId`), geçersiz `HapticType` türleri ve geçersiz `GameStatus` değerleri ek yayın yapılmadan güvenli şekilde elendi (`room.service.test.mjs` birim testiyle doğrulandı).
 
+### Faz 34: Arka Plan Sekme Zamanlayıcısı, Pano Zaman Aşımı ve Oda Formu Doğrulama İzolasyonu (Tamamlandı)
+- [x] **Sekme Görünürlüğüne Duyarlı Oyun Saati (`DesktopHUD.tsx`):** `visibilitychange` olayına bağlı `isPageHidden` durumu eklenerek tarayıcı sekmesi gizlendiğinde 3B fizikle eşzamanlı olarak `elapsedSeconds` ve *Süreye Karşı* sayacı donduruldu; sekmeye dönüldüğünde duvar saati sıçraması önlendi.
+- [x] **Pano Kopyalama Zamanlayıcı Temizliği (`DesktopHUD.tsx`, `LevelEditorModal.tsx`):** Ardışık kopyalama tıklamalarında `"Kopyalandı"` durumunun erken sıfırlanmasını ve bileşen kapanışında sarkan zamanlayıcıları önlemek için `copiedLinkTimerRef`, `copiedRoomCodeTimerRef` ve `copiedJsonTimerRef` korumaları eklendi.
+- [x] **Oda Kodu Form Hatası İzolasyonu (`controller/page.tsx`):** Oda kodu biçim doğrulama uyarıları (`roomFormError`) küresel soket `errorMessage` durumundan ayrılarak düzenleyici açılıp kapatıldığında veya yeni kod yazıldığında takılı hata bildirimi kalması engellendi.
+
 
 
 
