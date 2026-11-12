@@ -403,6 +403,7 @@ export function useSocket({
   useEffect(() => {
     if (role !== 'controller' || !targetRoomId) return;
     sessionReplacedRef.current = false;
+    setControllerPaired(false);
     if (socketRef.current?.connected) {
       lastEmitTimeRef.current = 0;
       lastSentBetaRef.current = 999;
@@ -413,7 +414,7 @@ export function useSocket({
         playerSlot,
       });
     }
-  }, [role, targetRoomId, playerSlot, setErrorMessage]);
+  }, [role, targetRoomId, playerSlot, setControllerPaired, setErrorMessage]);
 
   useEffect(() => {
     if (role !== 'host' || !hapticSignal || !roomId) return;
@@ -486,13 +487,17 @@ export function useSocket({
       const normalized = code.trim().toUpperCase();
       if (!normalized || !socketRef.current?.connected) return;
       sessionReplacedRef.current = false;
+      setControllerPaired(false);
+      lastEmitTimeRef.current = 0;
+      lastSentBetaRef.current = 999;
+      lastSentGammaRef.current = 999;
       setErrorMessage(null);
       socketRef.current.emit(RoomEvents.ROOM_JOIN, {
         roomId: normalized,
         playerSlot: slot,
       });
     },
-    [setErrorMessage],
+    [setControllerPaired, setErrorMessage],
   );
 
   const emitCalibrate = useCallback(() => {

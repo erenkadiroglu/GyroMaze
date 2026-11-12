@@ -1144,7 +1144,7 @@ export function DesktopHUD() {
           <p className="mt-3 text-sm text-muted">
             Labirenti{' '}
             <strong className="gm-num text-base text-ok">
-              {elapsedSeconds.toFixed(1)} saniyede
+              {Math.max(0.1, elapsedSeconds).toFixed(1)} saniyede
             </strong>{' '}
             bitirdin (3 yıldız hedefi &le; {threeStarLimit.toFixed(1)} sn).
           </p>

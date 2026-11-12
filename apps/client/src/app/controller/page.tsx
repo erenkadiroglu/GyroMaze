@@ -193,19 +193,39 @@ function MobileControllerContent() {
     Boolean(activeRoomCode) &&
     !isRoomEditorOpen;
 
-  // Gimbal yüzeyi kapandığında (ör. oda kodu düzenlenirken) son eğim açısının takılı kalmasını önle
+  // Gimbal yüzeyi kapandığında, sekme gizlendiğinde veya pencere odağı kaybedildiğinde takılı sürüklemeyi ve eğimi sıfırla
   const wasGimbalVisibleRef = useRef(false);
   useEffect(() => {
-    if (showGimbalSurface) {
-      wasGimbalVisibleRef.current = true;
+    const resetActiveDrag = () => {
+      if (isPointerDraggingRef.current || activePointerIdRef.current !== null) {
+        isPointerDraggingRef.current = false;
+        activePointerIdRef.current = null;
+        pushGyroSample(0, 0);
+      }
+    };
+
+    if (!showGimbalSurface) {
+      if (wasGimbalVisibleRef.current) {
+        wasGimbalVisibleRef.current = false;
+        isPointerDraggingRef.current = false;
+        activePointerIdRef.current = null;
+        pushGyroSample(0, 0);
+      }
       return;
     }
-    if (wasGimbalVisibleRef.current) {
-      wasGimbalVisibleRef.current = false;
-      isPointerDraggingRef.current = false;
-      activePointerIdRef.current = null;
-      pushGyroSample(0, 0);
-    }
+
+    wasGimbalVisibleRef.current = true;
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        resetActiveDrag();
+      }
+    };
+    window.addEventListener('blur', resetActiveDrag);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.removeEventListener('blur', resetActiveDrag);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
   }, [showGimbalSurface, pushGyroSample]);
 
   // Kontrolcü aktifken telefon ekranının kapanmasını Wake Lock API ile engelle
@@ -725,6 +745,7 @@ function MobileControllerContent() {
               onPointerMove={handlePointerMoveOnGimbal}
               onPointerUp={handlePointerEndOnGimbal}
               onPointerCancel={handlePointerEndOnGimbal}
+              onLostPointerCapture={handlePointerEndOnGimbal}
               className="relative flex h-60 w-60 touch-none items-center justify-center rounded-full border-2 border-line bg-surface shadow-inner"
             >
               <div

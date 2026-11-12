@@ -948,7 +948,10 @@ function MazeStage({
             sensor
             onIntersectionEnter={(payload) => {
               const state = useGameStore.getState();
-              if (state.gameStatus !== 'playing') {
+              if (
+                state.gameStatus !== 'playing' ||
+                (typeof document !== 'undefined' && document.hidden)
+              ) {
                 return;
               }
               if (
@@ -1447,7 +1450,10 @@ export function MazeScene() {
   const handleReachGoal = useCallback(
     (runPath: Array<[number, number]>, winnerSlot: 1 | 2 = 1) => {
       const state = useGameStore.getState();
-      if (state.gameStatus !== 'playing') {
+      if (
+        state.gameStatus !== 'playing' ||
+        (typeof document !== 'undefined' && document.hidden)
+      ) {
         return;
       }
       if (
