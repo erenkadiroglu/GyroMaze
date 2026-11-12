@@ -19,6 +19,22 @@ interface AttitudeGaugeProps {
 }
 
 /**
+ * Dünya koordinatını `h-11 w-11` (42px iç alan) radar kutusu içinde kenardan taşmayacak şekilde dönüştürür.
+ */
+function updateRadarDot(
+  el: HTMLDivElement | null,
+  worldX: number,
+  worldZ: number,
+  boardSize: number,
+): void {
+  if (!el) return;
+  const halfBoard = boardSize / 2;
+  const rx = Math.max(4, Math.min(38, ((worldX + halfBoard) / boardSize) * 42));
+  const rz = Math.max(4, Math.min(38, ((worldZ + halfBoard) / boardSize) * 42));
+  el.style.transform = `translate3d(${(rx - 4).toFixed(1)}px, ${(rz - 4).toFixed(1)}px, 0)`;
+}
+
+/**
  * Havacılık yapay ufuk göstergesinden (attitude indicator) esinlenen,
  * 60 FPS doğrudan DOM transformlarıyla güncellenen kokpit telemetri kümesi.
  * React yeniden render'ı tetiklemeden bilye hızı, eğim açıları ve 2B radarı gösterir.
@@ -63,46 +79,18 @@ export function AttitudeGauge({
       }
 
       const currentBoardSize = boardSizeRef.current;
-      const currentHalfBoard = currentBoardSize / 2;
-
-      if (miniMapBallRef.current) {
-        // Aktif tahta boyutuna göre 44x44px radar içi koordinata dönüştür
-        const rx = Math.max(
-          3,
-          Math.min(
-            41,
-            ((transientGyro.ballX + currentHalfBoard) / currentBoardSize) * 44,
-          ),
-        );
-        const rz = Math.max(
-          3,
-          Math.min(
-            41,
-            ((transientGyro.ballZ + currentHalfBoard) / currentBoardSize) * 44,
-          ),
-        );
-        miniMapBallRef.current.style.transform = `translate3d(${(rx - 4).toFixed(1)}px, ${(rz - 4).toFixed(1)}px, 0)`;
-      }
-
-      if (miniMapBall2Ref.current) {
-        const rx2 = Math.max(
-          3,
-          Math.min(
-            41,
-            ((transientGyroP2.ballX + currentHalfBoard) / currentBoardSize) *
-              44,
-          ),
-        );
-        const rz2 = Math.max(
-          3,
-          Math.min(
-            41,
-            ((transientGyroP2.ballZ + currentHalfBoard) / currentBoardSize) *
-              44,
-          ),
-        );
-        miniMapBall2Ref.current.style.transform = `translate3d(${(rx2 - 4).toFixed(1)}px, ${(rz2 - 4).toFixed(1)}px, 0)`;
-      }
+      updateRadarDot(
+        miniMapBallRef.current,
+        transientGyro.ballX,
+        transientGyro.ballZ,
+        currentBoardSize,
+      );
+      updateRadarDot(
+        miniMapBall2Ref.current,
+        transientGyroP2.ballX,
+        transientGyroP2.ballZ,
+        currentBoardSize,
+      );
 
       if (now - lastTextTime >= 100) {
         lastTextTime = now;

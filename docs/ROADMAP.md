@@ -190,6 +190,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Çok Oyunculu Yeniden Doğma ve Hayalet Örnekleme Paritesi (`MazeScene.tsx`):** `resetSingleBall` içine yuva bazlı rampa/portal/lazer/hareketli engel bekleme sürelerinin sıfırlanması taşınarak tek oyunculu ve 2 oyunculu yeniden doğma davranışları eşitlendi; 10 Hz hayalet kaydında kare hızına bağlı kümülatif zaman kayması giderildi.
 - [x] **Klavye Tekrar Koruması, 6 Haneli Kod Doğrulama ve IPv6 Soket Yönlendirme (`DesktopHUD.tsx`, `controller/page.tsx`, `useSocket.ts`):** `R`/`C`/`M`/`L` kısayollarında tuş basılı tutma (`e.repeat`) ve `contentEditable` alan çakışmaları engellendi; mobil kontrolcü formunda tam 6 karakterlik oda kodu zorunluluğu sağlandı ve `resolveSocketServerUrl` IPv6 loopback adresleriyle uyumlu hale getirildi.
 
+## ✅ Faz 28: Duvar/Boşluk Korumalı Prosedürel Boost Yönü ve Radar Çerçeve Hassasiyeti (Tamamlandı)
+
+- [x] **Duvar ve Boşluktan Kaçınan Prosedürel Boost Rampaları (`mazeLevels.ts`, `mazeLevels.test.mjs`):** `generateProceduralLevel` içindeki kör yön seçimi yerine `hWalls`/`vWalls` kenar duvarlarını ve komşu tuzak deliklerini denetleyerek açık koridora/hedefe yönelen `pickBestOpenDirection` ortak yardımcısı devreye alındı (`computeEditorBoostDirection` ile paylaşıldı) ve `06..50` arası tüm prosedürel bölümlerde doğrulandı.
+- [x] **2B Radar Nokta Konumlandırma Hassasiyeti (`AttitudeGauge.tsx`):** 1. ve 2. oyuncu bilyelerinin tekrarlanan piksel hesabı `updateRadarDot` yardımcısında birleştirildi ve 42 px iç alan sınırlarında kenar taşması önlendi.
+
 
 
 

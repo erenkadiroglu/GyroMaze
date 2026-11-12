@@ -178,6 +178,24 @@ describe('MAZE_LEVELS — 3B Harita Geometrisi, Engel Konumları ve Fizik Doğru
           `Prosedürel Bölüm ${id}: Delik hedefe çok yakın`,
         );
       }
+
+      for (const pad of lvlA.boostPads ?? []) {
+        const [bx, bz] = pad.position;
+        const [dx, dz] = pad.direction;
+        const exitX = bx + dx * 1.5;
+        const exitZ = bz + dz * 1.5;
+        assert.ok(
+          Math.abs(exitX) <= BOARD_HALF_LIMIT &&
+            Math.abs(exitZ) <= BOARD_HALF_LIMIT,
+          `Prosedürel Bölüm ${id}: Boost rampası dış sınıra yöneliyor`,
+        );
+        for (const wall of lvlA.innerWalls) {
+          assert.ok(
+            distancePointToWall(exitX, exitZ, wall) >= BALL_RADIUS,
+            `Prosedürel Bölüm ${id}: Boost rampası duvara fırlatıyor`,
+          );
+        }
+      }
     }
 
     assert.equal(getMazeLevel(0).id, 1);

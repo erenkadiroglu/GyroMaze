@@ -551,26 +551,43 @@ export function generateProceduralLevel(levelId: number): MazeLevelDefinition {
 
   const holeCount = Math.min(4, 2 + Math.floor((levelId - 5) / 4));
   const voidHoles: VoidHoleDefinition[] = [];
+  const holeCells = new Set<string>();
   for (let i = 0; i < holeCount && cursor < freeCells.length; i++) {
     const [r, c] = freeCells[cursor++];
+    holeCells.add(`${r},${c}`);
     voidHoles.push({
       position: [cellCoord(c), cellCoord(r)],
       radius: 0.4,
     });
   }
 
+  const isEdgeWallBlocked = (r: number, c: number, dr: number, dc: number) => {
+    const nr = r + dr;
+    const nc = c + dc;
+    if (nr < 0 || nr >= G || nc < 0 || nc >= G) return true;
+    if (dr === -1) return hWalls[r - 1][c];
+    if (dr === 1) return hWalls[r][c];
+    if (dc === -1) return vWalls[r][c - 1];
+    return vWalls[r][c];
+  };
+
   const boostPads: BoostPadDefinition[] = [];
-  const dirs: Array<[number, number]> = [
-    [0, 1],
-    [0, -1],
-    [1, 0],
-    [-1, 0],
-  ];
   for (let i = 0; i < 2 && cursor < freeCells.length; i++) {
     const [r, c] = freeCells[cursor++];
+    const direction =
+      pickBestOpenDirection(
+        r,
+        c,
+        [goalR, goalC],
+        (cr, cc, dr, dc) =>
+          isEdgeWallBlocked(cr, cc, dr, dc) ||
+          holeCells.has(`${cr + dr},${cc + dc}`),
+      ) ??
+      pickBestOpenDirection(r, c, [goalR, goalC], isEdgeWallBlocked) ??
+      [0, 1];
     boostPads.push({
       position: [cellCoord(c), cellCoord(r)],
-      direction: dirs[(levelId + i) % dirs.length],
+      direction,
     });
   }
 
@@ -935,15 +952,15 @@ export function parseCustomMazeLevel(raw: unknown): MazeLevelDefinition | null {
 }
 
 /**
- * Düzenleyicideki bir hızlandırma (boost) karesi için açık koridora ve hedefe
- * yönelen `[dx, dz]` birim yön vektörünü hesaplar; tüm komşular kapalıysa `[0, 1]` döner.
+ * Komşu karelerden geçit kısıtı olmayan yönler arasında hedef hücreye
+ * en yakın `[dx, dz]` birim yön vektörünü seçer; açık geçit yoksa `null` döner.
  */
-export function computeEditorBoostDirection(
+function pickBestOpenDirection(
   row: number,
   col: number,
   goalCell: [number, number],
-  isBlockedCell: (r: number, c: number) => boolean,
-): [number, number] {
+  isStepBlocked: (r: number, c: number, dr: number, dc: number) => boolean,
+): [number, number] | null {
   const [goalRow, goalCol] = goalCell;
   const candidates: readonly [number, number][] = [
     [0, 1],
@@ -956,14 +973,12 @@ export function computeEditorBoostDirection(
   let bestDistanceSq = Number.POSITIVE_INFINITY;
 
   for (const [dr, dc] of candidates) {
-    const nextRow = row + dr;
-    const nextCol = col + dc;
-    if (isBlockedCell(nextRow, nextCol)) {
+    if (isStepBlocked(row, col, dr, dc)) {
       continue;
     }
 
-    const dRow = goalRow - nextRow;
-    const dCol = goalCol - nextCol;
+    const dRow = goalRow - (row + dr);
+    const dCol = goalCol - (col + dc);
     const distanceSq = dRow * dRow + dCol * dCol;
 
     if (distanceSq < bestDistanceSq) {
@@ -973,7 +988,24 @@ export function computeEditorBoostDirection(
     }
   }
 
-  return bestDirection ?? [0, 1];
+  return bestDirection;
+}
+
+/**
+ * Düzenleyicideki bir hızlandırma (boost) karesi için açık koridora ve hedefe
+ * yönelen `[dx, dz]` birim yön vektörünü hesaplar; tüm komşular kapalıysa `[0, 1]` döner.
+ */
+export function computeEditorBoostDirection(
+  row: number,
+  col: number,
+  goalCell: [number, number],
+  isBlockedCell: (r: number, c: number) => boolean,
+): [number, number] {
+  return (
+    pickBestOpenDirection(row, col, goalCell, (r, c, dr, dc) =>
+      isBlockedCell(r + dr, c + dc),
+    ) ?? [0, 1]
+  );
 }
 
 /**
