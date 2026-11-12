@@ -934,10 +934,17 @@ export function parseCustomMazeLevel(raw: unknown): MazeLevelDefinition | null {
   if (Array.isArray(raw.teleporters)) {
     for (const t of raw.teleporters) {
       if (isPlainRecord(t) && isVec2(t.entry) && isVec2(t.exit)) {
-        teleporters.push({
-          entry: [clampCoord(t.entry[0]), clampCoord(t.entry[1])],
-          exit: [clampCoord(t.exit[0]), clampCoord(t.exit[1])],
-        });
+        const entry: [number, number] = [
+          clampCoord(t.entry[0]),
+          clampCoord(t.entry[1]),
+        ];
+        const exit: [number, number] = [
+          clampCoord(t.exit[0]),
+          clampCoord(t.exit[1]),
+        ];
+        if (Math.hypot(entry[0] - exit[0], entry[1] - exit[1]) >= 0.75) {
+          teleporters.push({ entry, exit });
+        }
       }
     }
   }

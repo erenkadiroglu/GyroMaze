@@ -283,7 +283,10 @@ describe('MAZE_LEVELS — 3B Harita Geometrisi, Engel Konumları ve Fizik Doğru
       innerWalls: [{ position: [50, 9, -50], size: [40, 20, 40] }],
       voidHoles: [{ position: [99, -99], radius: 50 }],
       crystals: [[50, -50]],
-      teleporters: [{ entry: [-30, 0], exit: [30, 0] }],
+      teleporters: [
+        { entry: [-30, 0], exit: [30, 0] },
+        { entry: [12, 0], exit: [20, 0] },
+      ],
       laserGates: [
         { position: [20, 0], length: 90, axis: 'x', periodSeconds: 0.01, phaseOffset: 0 },
       ],
@@ -300,10 +303,9 @@ describe('MAZE_LEVELS — 3B Harita Geometrisi, Engel Konumları ve Fizik Doğru
     });
     assert.deepEqual(clamped.voidHoles[0], { position: [5.35, -5.35], radius: 0.75 });
     assert.deepEqual(clamped.crystals[0], [5.35, -5.35]);
-    assert.deepEqual(clamped.teleporters?.[0], {
-      entry: [-5.35, 0],
-      exit: [5.35, 0],
-    });
+    assert.deepEqual(clamped.teleporters, [
+      { entry: [-5.35, 0], exit: [5.35, 0] },
+    ]);
     assert.equal(clamped.laserGates[0].length, 11.2);
     assert.equal(clamped.laserGates[0].periodSeconds, 0.4);
     assert.equal(clamped.movingObstacles?.[0].amplitude, 5.2);
