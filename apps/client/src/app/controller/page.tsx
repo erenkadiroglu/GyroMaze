@@ -191,6 +191,20 @@ function MobileControllerContent() {
     Boolean(activeRoomCode) &&
     !isRoomEditorOpen;
 
+  // Gimbal yüzeyi kapandığında (ör. oda kodu düzenlenirken) son eğim açısının takılı kalmasını önle
+  const wasGimbalVisibleRef = useRef(false);
+  useEffect(() => {
+    if (showGimbalSurface) {
+      wasGimbalVisibleRef.current = true;
+      return;
+    }
+    if (wasGimbalVisibleRef.current) {
+      wasGimbalVisibleRef.current = false;
+      isPointerDraggingRef.current = false;
+      pushGyroSample(0, 0);
+    }
+  }, [showGimbalSurface, pushGyroSample]);
+
   // Kontrolcü aktifken telefon ekranının kapanmasını Wake Lock API ile engelle
   useEffect(() => {
     if (!showGimbalSurface || typeof navigator === 'undefined') return;
@@ -341,6 +355,11 @@ function MobileControllerContent() {
     pushGyroSample(0, 0);
   };
 
+  const openRoomEditor = () => {
+    setManualRoomInput(activeRoomCode);
+    setIsRoomEditorOpen(true);
+  };
+
   const handleManualConnect = (e: React.FormEvent) => {
     e.preventDefault();
     const cleaned = manualRoomInput.trim().toUpperCase();
@@ -348,10 +367,17 @@ function MobileControllerContent() {
       setErrorMessage('Geçerli bir 6 haneli oda kodu girin.');
       return;
     }
-    setErrorMessage(null);
     if (cleaned === activeRoomCode) {
+      if (!isSocketConnected) {
+        setErrorMessage(
+          'Sunucu bağlantısı bekleniyor; bağlantı kurulunca tekrar deneyin.',
+        );
+        return;
+      }
+      setErrorMessage(null);
       joinRoomByCode(cleaned);
     } else {
+      setErrorMessage(null);
       setActiveRoomCode(cleaned);
     }
     setIsRoomEditorOpen(false);
@@ -459,7 +485,7 @@ function MobileControllerContent() {
           </div>
           <button
             type="button"
-            onClick={() => setIsRoomEditorOpen(true)}
+            onClick={openRoomEditor}
             className="min-h-[34px] shrink-0 rounded-lg border border-danger/40 bg-danger/10 px-2.5 text-xs font-semibold text-danger"
           >
             Yeni kod

@@ -253,7 +253,14 @@ export function DesktopHUD() {
   // Global klavye kısayolları (R: Sıfırla, C: Kamera, M: Ses, L: Gece/Gündüz)
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (isAnyOverlayOpen || e.repeat) return;
+      if (
+        isAnyOverlayOpen ||
+        gameStatus === 'won' ||
+        gameStatus === 'lost' ||
+        e.repeat
+      ) {
+        return;
+      }
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       const target = e.target as HTMLElement | null;
       const tag = target?.tagName;
@@ -280,6 +287,7 @@ export function DesktopHUD() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [
     isAnyOverlayOpen,
+    gameStatus,
     triggerBallReset,
     cycleCameraMode,
     toggleSoundMuted,

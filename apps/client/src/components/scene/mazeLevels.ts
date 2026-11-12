@@ -1008,6 +1008,45 @@ export function computeEditorBoostDirection(
   );
 }
 
+function detectCorridorOrientation(
+  row: number,
+  col: number,
+  isWallCell: (r: number, c: number) => boolean,
+): {
+  hasHorizontalClearance: boolean;
+  hasVerticalClearance: boolean;
+  preferredAxis: 'x' | 'z';
+} {
+  return {
+    hasHorizontalClearance:
+      !isWallCell(row, col - 1) && !isWallCell(row, col + 1),
+    hasVerticalClearance:
+      !isWallCell(row - 1, col) && !isWallCell(row + 1, col),
+    preferredAxis: (row + col) % 2 === 0 ? 'x' : 'z',
+  };
+}
+
+/**
+ * Düzenleyicideki lazer kapısının komşu duvarlara dik uzanarak koridoru
+ * kesmesini sağlayan ekseni (`'x'` veya `'z'`) belirler.
+ */
+export function computeEditorLaserAxis(
+  row: number,
+  col: number,
+  isWallCell: (r: number, c: number) => boolean,
+): 'x' | 'z' {
+  const { hasHorizontalClearance, hasVerticalClearance, preferredAxis } =
+    detectCorridorOrientation(row, col, isWallCell);
+
+  if (hasHorizontalClearance && !hasVerticalClearance) {
+    return 'z';
+  }
+  if (hasVerticalClearance && !hasHorizontalClearance) {
+    return 'x';
+  }
+  return preferredAxis;
+}
+
 /**
  * Düzenleyicideki hareketli engelin komşu duvarlara çarpmaması için
  * açık olan hareket eksenini ve güvenli salınım genliğini seçer.
@@ -1017,11 +1056,8 @@ export function computeEditorMovingConfig(
   col: number,
   isWallCell: (r: number, c: number) => boolean,
 ): { axis: 'x' | 'z'; amplitude: number } {
-  const preferredAxis: 'x' | 'z' = (row + col) % 2 === 0 ? 'x' : 'z';
-  const hasHorizontalClearance =
-    !isWallCell(row, col - 1) && !isWallCell(row, col + 1);
-  const hasVerticalClearance =
-    !isWallCell(row - 1, col) && !isWallCell(row + 1, col);
+  const { hasHorizontalClearance, hasVerticalClearance, preferredAxis } =
+    detectCorridorOrientation(row, col, isWallCell);
 
   if (hasHorizontalClearance && hasVerticalClearance) {
     return { axis: preferredAxis, amplitude: 0.72 };

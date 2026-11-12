@@ -28,6 +28,7 @@ import {
   MovingObstacleDefinition,
   parseCustomMazeLevel,
   computeEditorBoostDirection,
+  computeEditorLaserAxis,
   computeEditorMovingConfig,
 } from '@/components/scene/mazeLevels';
 import { Modal, Button, cx } from './primitives';
@@ -424,7 +425,7 @@ export function LevelEditorModal() {
           laserGates.push({
             position: [wx, wz],
             length: 1.3,
-            axis: 'x',
+            axis: computeEditorLaserAxis(r, c, isWallCell),
             periodSeconds: 3.2,
             phaseOffset: (r + c) * 0.4,
           });

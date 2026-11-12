@@ -7,6 +7,7 @@ import {
   getLevelRevisionKey,
   parseCustomMazeLevel,
   computeEditorBoostDirection,
+  computeEditorLaserAxis,
   computeEditorMovingConfig,
 } from '../src/components/scene/mazeLevels.ts';
 
@@ -339,6 +340,17 @@ describe('MAZE_LEVELS — 3B Harita Geometrisi, Engel Konumları ve Fizik Doğru
       (r, c) => (r === 2 && c === 3) || (r === 3 && c === 4),
     );
     assert.equal(confined.amplitude, 0.34);
+
+    // Yatay koridorda (üst-alt duvar) lazer koridoru dik kesmek için Z eksenini seçmeli
+    assert.equal(
+      computeEditorLaserAxis(3, 3, (r, _c) => r === 2 || r === 4),
+      'z',
+    );
+    // Dikey koridorda (sol-sağ duvar) lazer koridoru dik kesmek için X eksenini seçmeli
+    assert.equal(
+      computeEditorLaserAxis(3, 3, (_r, c) => c === 2 || c === 4),
+      'x',
+    );
   });
 });
 

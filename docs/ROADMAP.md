@@ -204,6 +204,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 
 - [x] **Kilitlenen `'paused'` Durumundan Çıkış & Kurtarma Çubuğu (`DesktopHUD.tsx`):** Telefon bağlantısı koptuğunda oyunun `'paused'` durumuna geçip `Sahneye geç` düğmesiyle bile tekrar `'playing'` durumuna dönememesi sorunu giderildi (`handleClosePairingModal` içinde `'waiting'` ile birlikte `'paused'` durumu da sahneye dönünce devam edecek şekilde güncellendi); ayrıca üst sahnede tek tıkla klavyeyle sürdürme (`Devam et`) veya QR ile yeniden bağlama (`Bağla`) seçenekleri sunan duraklatma kurtarma çubuğu eklendi.
 
+## ✅ Faz 31: Kontrolcü Eğim Sıfırlama, Editör Lazer Ekseni ve Modal Kısayol Koruması (Tamamlandı)
+
+- [x] **Kontrolcü Oda Düzenleyici & Bağlantı Sağlamlığı (`controller/page.tsx`):** Oda kodu düzenleyici açılırken aktif sensör/dokunmatik eğim açısının `(0, 0)` noktasına sıfırlanması sağlandı (masaüstünde takılı eğimle yuvarlanma önlendi); `Yeni kod` düğmesinin mevcut oda kodunu girdi alanıyla eşitlemesi ve WebSocket bağlantısı yokken aynı odaya yeniden bağlanma denemesinin sessizce kapanmak yerine uyarı göstermesi sağlandı.
+- [x] **Editör Lazer Kapısı Koridor Yönelimi (`mazeLevels.ts`, `LevelEditorModal.tsx`, `mazeLevels.test.mjs`):** `detectCorridorOrientation` ortak yardımcısı üzerinden `computeEditorLaserAxis` eklendi; harita editöründe yerleştirilen lazer kapılarının her zaman `'x'` ekseninde kalması yerine komşu duvarlara göre koridoru dik kesecek (`'x'` veya `'z'`) yönde üretilmesi sağlandı.
+- [x] **Oyun Sonu Modalında Kısayol Koruması (`DesktopHUD.tsx`):** Zafer (`'won'`) ve süre doldu (`'lost'`) modalları açıkken arka planda `R`/`C`/`M`/`L` kısayollarının istemeden sahneyi sıfırlaması veya kamera/tema değiştirmesi engellendi.
+
 
 
 
