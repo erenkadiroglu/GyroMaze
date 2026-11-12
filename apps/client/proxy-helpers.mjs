@@ -14,15 +14,16 @@ export function isSocketIoUrl(url) {
 }
 
 /**
- * HTTP isteğinin NestJS arka ucuna (/socket.io* veya /api/health) yönlendirilip
+ * HTTP isteğinin NestJS arka ucuna (/socket.io* veya /api/*) yönlendirilip
  * yönlendirilmeyeceğini belirler.
  */
 export function isBackendHttpProxyUrl(url) {
   if (typeof url !== 'string') return false;
   return (
     isSocketIoUrl(url) ||
-    url === '/api/health' ||
-    url.startsWith('/api/health?')
+    url === '/api' ||
+    url.startsWith('/api/') ||
+    url.startsWith('/api?')
   );
 }
 

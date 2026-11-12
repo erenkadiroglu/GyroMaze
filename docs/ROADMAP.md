@@ -323,3 +323,7 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 ### Faz 57: Mobil Kontrolcü Gecikme Göstergesi, Titreşim Geçişi ve Hızlı Oda Geçmişi (Tamamlandı)
 - [x] **Çift Yönlü RTT Gecikme Ölçümü ve Bağlantı Rozeti (`useSocket.ts`, `controller/page.tsx`):** `ROOM_PING` mekanizması mobil kontrolcü eşleştiğinde de devreye alınarak telefonda canlı gecikme (`<35ms` yeşil, `<75ms` pirinç, `>=75ms` sarı) rozeti gösterildi.
 - [x] **Mobil Titreşim Tercihi ve Hızlı Son Odalar (`useGameStore.ts`, `SettingsModal.tsx`, `controller/page.tsx`, `controllerPreferences.test.mjs`):** `isHapticEnabled` tercihi yerel depolama ile kalıcılaştırılıp hem masaüstü ayarlar çekmecesinde hem de mobil kontrolcü başlığında tek tıkla açılıp kapanabilir yapıldı; telefonda son 3 benzersiz oda kodu geçmişi kaydedilerek tek tıkla bağlanma sağlandı.
+
+### Faz 58: REST Liderlik Tablosu Uç Noktası (`/api/leaderboard`) ve Genel API Proxy Yönlendirmesi (Tamamlandı)
+- [x] **Liderlik Tablosu REST Denetleyicisi (`leaderboard.controller.ts`, `app.module.ts`, `socket.e2e.test.mjs`):** `GET /api/leaderboard` üzerinden tüm rekorları veya `?level=1` parametresiyle belirli bölüm derecelerini JSON formatında sunan NestJS denetleyicisi eklendi; canlı E2E testlerle doğrulandı.
+- [x] **Kapsamlı `/api/*` Proxy Desteği (`proxy-helpers.mjs`, `proxy.test.mjs`):** Next.js özel sunucusundaki ters proxy kuralları tüm `/api/*` isteklerini (sağlık ve skor telemetrisi) NestJS arka ucuna kesintisiz iletecek şekilde genişletildi ve otomatik testlerle güvence altına alındı.

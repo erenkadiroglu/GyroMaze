@@ -234,5 +234,30 @@ describe('GyroMaze Socket.IO E2E — Canlı NestJS WebSocket Entegrasyon Testler
     assert.ok(apiHealthBody.connectedControllers >= 1);
     assert.equal('roomId' in apiHealthBody, false);
   });
+
+  it('/api/leaderboard uç noktası küresel ve bölüm bazlı skor kayıtlarını JSON formatında döndürür', async () => {
+    const allRes = await fetch(`${baseUrl}/api/leaderboard`);
+    assert.equal(allRes.status, 200);
+    const allBody = await allRes.json();
+    assert.equal(typeof allBody.total, 'number');
+    assert.equal(allBody.levelId, null);
+    assert.ok(Array.isArray(allBody.entries));
+    assert.ok(allBody.entries.length >= 1);
+
+    const level1Res = await fetch(`${baseUrl}/api/leaderboard?level=1`);
+    assert.equal(level1Res.status, 200);
+    const level1Body = await level1Res.json();
+    assert.equal(level1Body.levelId, 1);
+    assert.ok(Array.isArray(level1Body.entries));
+    for (const entry of level1Body.entries) {
+      assert.equal(entry.levelId, 1);
+    }
+
+    const invalidRes = await fetch(`${baseUrl}/api/leaderboard?level=bad`);
+    assert.equal(invalidRes.status, 200);
+    const invalidBody = await invalidRes.json();
+    assert.equal(invalidBody.levelId, null);
+    assert.equal(invalidBody.total, allBody.total);
+  });
 });
 

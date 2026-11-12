@@ -42,6 +42,8 @@ describe('GyroMaze Client Proxy Helpers', () => {
 
     assert.equal(isBackendHttpProxyUrl('/api/health'), true);
     assert.equal(isBackendHttpProxyUrl('/api/health?verbose=1'), true);
+    assert.equal(isBackendHttpProxyUrl('/api/leaderboard'), true);
+    assert.equal(isBackendHttpProxyUrl('/api/leaderboard?level=1'), true);
     assert.equal(isBackendHttpProxyUrl('/socket.io/?EIO=4'), true);
     assert.equal(isBackendHttpProxyUrl('/_next/static/chunk.js'), false);
 
@@ -88,7 +90,11 @@ describe('GyroMaze Client Proxy Helpers', () => {
       const sioRes = await fetch(`http://127.0.0.1:${proxyPort}/socket.io?EIO=4`);
       assert.equal(sioRes.status, 200);
       assert.deepEqual(await sioRes.json(), { ok: true, path: '/socket.io/?EIO=4' });
-      assert.deepEqual(receivedPaths, ['/api/health', '/socket.io/?EIO=4']);
+
+      const lbRes = await fetch(`http://127.0.0.1:${proxyPort}/api/leaderboard?level=1`);
+      assert.equal(lbRes.status, 200);
+      assert.deepEqual(await lbRes.json(), { ok: true, path: '/api/leaderboard?level=1' });
+      assert.deepEqual(receivedPaths, ['/api/health', '/socket.io/?EIO=4', '/api/leaderboard?level=1']);
 
       await closeHttpServer(mockBackend, mockSockets);
       const downRes = await fetch(`http://127.0.0.1:${proxyPort}/api/health`);
