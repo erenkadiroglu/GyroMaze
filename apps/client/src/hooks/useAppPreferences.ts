@@ -14,6 +14,7 @@ export function useAppPreferences() {
   const colorScheme = useGameStore((s) => s.colorScheme);
   const boardTheme = useGameStore((s) => s.boardTheme);
   const soundVolume = useGameStore((s) => s.soundVolume);
+  const isSoundMuted = useGameStore((s) => s.isSoundMuted);
 
   useEffect(() => {
     void useGameStore.persist.rehydrate();
@@ -27,7 +28,7 @@ export function useAppPreferences() {
   }, [colorScheme, boardTheme]);
 
   useEffect(() => {
-    soundEngine.setVolume(soundVolume);
-  }, [soundVolume]);
+    soundEngine.setVolume(isSoundMuted ? 0 : soundVolume);
+  }, [isSoundMuted, soundVolume]);
 }
 

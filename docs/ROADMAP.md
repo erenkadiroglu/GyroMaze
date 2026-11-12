@@ -240,3 +240,7 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 ### Faz 36: Web Audio Askıda Osilatör Koruması ve Diyalog Odak Güvencesi (Tamamlandı)
 - [x] **Web Audio Askıda Bağlam Koruması (`soundEngine.ts`):** Tarayıcı kullanıcı etkileşimi olmadan açılan `suspended` durumundaki `AudioContext` üzerinde osilatör/kazanç düğümü birikimini önlemek için `getContext` yalnız `running` durumunda düğüm oluşturacak şekilde güncellendi, `setVolume` için `Number.isFinite` kontrolü ve ilk `pointerdown`/`keydown` etkileşiminde otomatik ses kilidi açma (`attachGestureUnlock`) eklendi.
 - [x] **Diyalog Odak Geri Yükleme Koruması (`primitives.tsx`):** `useDialogBehavior` kapanış temizliğinde yalnızca DOM'a hâlâ bağlı (`isConnected`) önceki odak öğelerine dönüş yapılması sağlandı.
+
+### Faz 37: Motor Seviyesinde Sessiz Mod Senkronizasyonu ve Kontrolcü Sıfırlama Koruması (Tamamlandı)
+- [x] **Sessiz Mod Motor Senkronizasyonu (`useAppPreferences.ts`):** `soundEngine.setVolume` çağrısı `isSoundMuted` durumuna bağlanarak (`isSoundMuted ? 0 : soundVolume`) sessiz mod aktifken Web Audio bağlamı başlatılması ve istenmeyen ses üretimi motor seviyesinde engellendi.
+- [x] **Kontrolcü Top Sıfırlama Durum Koruması (`controller/page.tsx`):** Alt eylem çubuğundaki *Topu sıfırla* düğmesi, oda eşleşmesi yokken veya soket kopukken (`!isControllerPaired || !isSocketConnected`) devre dışı bırakılarak boşa basım yanılsaması önlendi.
