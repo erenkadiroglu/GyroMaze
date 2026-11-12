@@ -733,3 +733,179 @@ export function getLevelRevisionKey(levelData: MazeLevelDefinition): string {
     .join(';');
   return `99-${levelData.startPosition.join(',')}-${levelData.goalPosition.join(',')}-${wallsSig}-${holesSig}-${levelData.crystals.length}-${levelData.laserGates.length}`;
 }
+
+function isVec2(value: unknown): value is [number, number] {
+  return (
+    Array.isArray(value) &&
+    value.length === 2 &&
+    value.every((n) => typeof n === 'number' && Number.isFinite(n))
+  );
+}
+
+function isVec3(value: unknown): value is [number, number, number] {
+  return (
+    Array.isArray(value) &&
+    value.length === 3 &&
+    value.every((n) => typeof n === 'number' && Number.isFinite(n))
+  );
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+}
+
+/**
+ * Editörden dışa aktarılan JSON veya yerel depolamadan (localStorage) okunan ham
+ * veriyi sıkı şema doğrulamasından geçirerek güvenli bir `MazeLevelDefinition` (id: 99) döndürür.
+ * Bozuk veya eksik veride `null` döner.
+ */
+export function parseCustomMazeLevel(raw: unknown): MazeLevelDefinition | null {
+  if (!isPlainRecord(raw)) return null;
+  if (
+    !isVec3(raw.startPosition) ||
+    !isVec3(raw.goalPosition) ||
+    !Array.isArray(raw.innerWalls)
+  ) {
+    return null;
+  }
+
+  const innerWalls: WallDefinition[] = [];
+  for (const w of raw.innerWalls) {
+    if (
+      !isPlainRecord(w) ||
+      !isVec3(w.position) ||
+      !isVec3(w.size) ||
+      !w.size.every((dim) => dim > 0)
+    ) {
+      return null;
+    }
+    innerWalls.push({ position: w.position, size: w.size });
+  }
+
+  const boardSize =
+    typeof raw.boardSize === 'number' && Number.isFinite(raw.boardSize)
+      ? Math.max(8, Math.min(18, raw.boardSize))
+      : 12;
+
+  const voidHoles: VoidHoleDefinition[] = [];
+  if (Array.isArray(raw.voidHoles)) {
+    for (const h of raw.voidHoles) {
+      if (isPlainRecord(h) && isVec2(h.position)) {
+        const radius =
+          typeof h.radius === 'number' && Number.isFinite(h.radius) && h.radius > 0
+            ? h.radius
+            : undefined;
+        voidHoles.push(
+          radius !== undefined
+            ? { position: h.position, radius }
+            : { position: h.position },
+        );
+      }
+    }
+  }
+
+  const crystals: [number, number][] = Array.isArray(raw.crystals)
+    ? raw.crystals.filter(isVec2)
+    : [];
+
+  const laserGates: LaserGateDefinition[] = [];
+  if (Array.isArray(raw.laserGates)) {
+    for (const g of raw.laserGates) {
+      if (
+        isPlainRecord(g) &&
+        isVec2(g.position) &&
+        typeof g.length === 'number' &&
+        Number.isFinite(g.length) &&
+        g.length > 0 &&
+        (g.axis === 'x' || g.axis === 'z') &&
+        typeof g.periodSeconds === 'number' &&
+        Number.isFinite(g.periodSeconds) &&
+        g.periodSeconds > 0 &&
+        typeof g.phaseOffset === 'number' &&
+        Number.isFinite(g.phaseOffset)
+      ) {
+        laserGates.push({
+          position: g.position,
+          length: g.length,
+          axis: g.axis,
+          periodSeconds: g.periodSeconds,
+          phaseOffset: g.phaseOffset,
+        });
+      }
+    }
+  }
+
+  const boostPads: BoostPadDefinition[] = [];
+  if (Array.isArray(raw.boostPads)) {
+    for (const b of raw.boostPads) {
+      if (isPlainRecord(b) && isVec2(b.position) && isVec2(b.direction)) {
+        boostPads.push({ position: b.position, direction: b.direction });
+      }
+    }
+  }
+
+  const teleporters: TeleporterPairDefinition[] = [];
+  if (Array.isArray(raw.teleporters)) {
+    for (const t of raw.teleporters) {
+      if (isPlainRecord(t) && isVec2(t.entry) && isVec2(t.exit)) {
+        teleporters.push({ entry: t.entry, exit: t.exit });
+      }
+    }
+  }
+
+  const movingObstacles: MovingObstacleDefinition[] = [];
+  if (Array.isArray(raw.movingObstacles)) {
+    for (const m of raw.movingObstacles) {
+      if (
+        isPlainRecord(m) &&
+        isVec2(m.center) &&
+        (m.axis === 'x' || m.axis === 'z') &&
+        typeof m.amplitude === 'number' &&
+        Number.isFinite(m.amplitude) &&
+        typeof m.speed === 'number' &&
+        Number.isFinite(m.speed) &&
+        typeof m.phaseOffset === 'number' &&
+        Number.isFinite(m.phaseOffset)
+      ) {
+        movingObstacles.push({
+          center: m.center,
+          axis: m.axis,
+          amplitude: m.amplitude,
+          speed: m.speed,
+          phaseOffset: m.phaseOffset,
+        });
+      }
+    }
+  }
+
+  const title =
+    typeof raw.title === 'string' && raw.title.trim()
+      ? raw.title.trim().slice(0, 48)
+      : 'Özel İçe Aktarılan Harita';
+  const subtitle =
+    typeof raw.subtitle === 'string' && raw.subtitle.trim()
+      ? raw.subtitle.trim().slice(0, 80)
+      : 'Özel Editör Haritası';
+
+  return {
+    id: 99,
+    title,
+    subtitle,
+    boardSize,
+    startPosition: raw.startPosition,
+    goalPosition: raw.goalPosition,
+    innerWalls,
+    voidHoles,
+    crystals,
+    laserGates,
+    boostPads,
+    teleporters,
+    movingObstacles,
+    starThresholds:
+      isVec2(raw.starThresholds) &&
+      raw.starThresholds[0] > 0 &&
+      raw.starThresholds[1] > raw.starThresholds[0]
+        ? raw.starThresholds
+        : undefined,
+  };
+}

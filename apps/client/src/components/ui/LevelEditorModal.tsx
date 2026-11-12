@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import {
   Play,
   Trash2,
@@ -26,6 +26,7 @@ import {
   LaserGateDefinition,
   BoostPadDefinition,
   MovingObstacleDefinition,
+  parseCustomMazeLevel,
 } from '@/components/scene/mazeLevels';
 import { Modal, Button, cx } from './primitives';
 
@@ -48,6 +49,57 @@ function gridToWorld(row: number, col: number): [number, number] {
   const x = Number(((col - offset) * CELL_WORLD_SIZE).toFixed(2));
   const z = Number(((row - offset) * CELL_WORLD_SIZE).toFixed(2));
   return [x, z];
+}
+
+function worldToGrid(x: number, z: number): [number, number] {
+  const offset = (GRID_SIZE - 1) / 2;
+  const col = Math.max(
+    0,
+    Math.min(GRID_SIZE - 1, Math.round(x / CELL_WORLD_SIZE + offset)),
+  );
+  const row = Math.max(
+    0,
+    Math.min(GRID_SIZE - 1, Math.round(z / CELL_WORLD_SIZE + offset)),
+  );
+  return [row, col];
+}
+
+function levelDefinitionToGrid(levelDef: MazeLevelDefinition): CellTool[][] {
+  const next: CellTool[][] = Array.from({ length: GRID_SIZE }, () =>
+    Array.from({ length: GRID_SIZE }, () => 'erase'),
+  );
+  for (const w of levelDef.innerWalls) {
+    const [r, c] = worldToGrid(w.position[0], w.position[2]);
+    next[r][c] = 'wall';
+  }
+  for (const h of levelDef.voidHoles) {
+    const [r, c] = worldToGrid(h.position[0], h.position[1]);
+    next[r][c] = 'hole';
+  }
+  for (const [cx, cz] of levelDef.crystals) {
+    const [r, c] = worldToGrid(cx, cz);
+    next[r][c] = 'crystal';
+  }
+  for (const l of levelDef.laserGates) {
+    const [r, c] = worldToGrid(l.position[0], l.position[1]);
+    next[r][c] = 'laser';
+  }
+  for (const b of levelDef.boostPads ?? []) {
+    const [r, c] = worldToGrid(b.position[0], b.position[1]);
+    next[r][c] = 'boost';
+  }
+  for (const m of levelDef.movingObstacles ?? []) {
+    const [r, c] = worldToGrid(m.center[0], m.center[1]);
+    next[r][c] = 'moving';
+  }
+  const [gr, gc] = worldToGrid(levelDef.goalPosition[0], levelDef.goalPosition[2]);
+  next[gr][gc] = 'goal';
+  const [sr, sc] = worldToGrid(
+    levelDef.startPosition[0],
+    levelDef.startPosition[2],
+  );
+  next[sr][sc] = 'start';
+  return next;
 }
 
 /**
@@ -203,9 +255,11 @@ const TOOL_BY_ID = Object.fromEntries(TOOLS.map((t) => [t.id, t])) as Record<
  */
 export function LevelEditorModal() {
   const isEditorOpen = useGameStore((s) => s.isEditorOpen);
+  const customLevel = useGameStore((s) => s.customLevel);
   const setEditorOpen = useGameStore((s) => s.setEditorOpen);
   const setCustomLevel = useGameStore((s) => s.setCustomLevel);
 
+  const cellRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const [activeTool, setActiveTool] = useState<CellTool>('wall');
   const [customTitle, setCustomTitle] = useState('Özel Labirent — Tasarım 1');
   const [copiedJson, setCopiedJson] = useState(false);
@@ -224,6 +278,15 @@ export function LevelEditorModal() {
     initial[4][4] = 'laser';
     return initial;
   });
+
+  useEffect(() => {
+    if (!isEditorOpen) return;
+    setImportError(null);
+    if (customLevel) {
+      setGrid(levelDefinitionToGrid(customLevel));
+      setCustomTitle(customLevel.title);
+    }
+  }, [isEditorOpen, customLevel]);
 
   const handleCellClick = (r: number, c: number) => {
     setImportError(null);
@@ -406,132 +469,37 @@ export function LevelEditorModal() {
   const handleImportFromClipboard = async () => {
     try {
       const raw = await navigator.clipboard.readText();
-      const parsed = JSON.parse(raw) as Partial<MazeLevelDefinition>;
-      const isVec2 = (v: unknown): v is [number, number] =>
-        Array.isArray(v) &&
-        v.length === 2 &&
-        v.every((n) => typeof n === 'number' && Number.isFinite(n));
-      const isVec3 = (v: unknown): v is [number, number, number] =>
-        Array.isArray(v) &&
-        v.length === 3 &&
-        v.every((n) => typeof n === 'number' && Number.isFinite(n));
-      const isWallDef = (w: unknown): w is WallDefinition =>
-        Boolean(
-          w &&
-            typeof w === 'object' &&
-            isVec3((w as WallDefinition).position) &&
-            isVec3((w as WallDefinition).size) &&
-            (w as WallDefinition).size.every((dim) => dim > 0),
-        );
-
-      if (
-        !parsed ||
-        !isVec3(parsed.startPosition) ||
-        !isVec3(parsed.goalPosition) ||
-        !Array.isArray(parsed.innerWalls) ||
-        !parsed.innerWalls.every(isWallDef)
-      ) {
+      const parsed: unknown = JSON.parse(raw);
+      const validated = parseCustomMazeLevel(parsed);
+      if (!validated) {
         setImportError('Panodaki metin geçerli bir GyroMaze JSON haritası değil.');
         return;
       }
 
-      const boardSize =
-        typeof parsed.boardSize === 'number' &&
-        Number.isFinite(parsed.boardSize)
-          ? Math.max(8, Math.min(18, parsed.boardSize))
-          : 12;
-
-      const voidHoles: VoidHoleDefinition[] = Array.isArray(parsed.voidHoles)
-        ? parsed.voidHoles.filter(
-            (h): h is VoidHoleDefinition =>
-              Boolean(h && typeof h === 'object' && isVec2(h.position)),
-          )
-        : [];
-      const crystals: [number, number][] = Array.isArray(parsed.crystals)
-        ? parsed.crystals.filter(isVec2)
-        : [];
-      const laserGates: LaserGateDefinition[] = Array.isArray(parsed.laserGates)
-        ? parsed.laserGates.filter(
-            (g): g is LaserGateDefinition =>
-              Boolean(
-                g &&
-                  typeof g === 'object' &&
-                  isVec2(g.position) &&
-                  typeof g.length === 'number' &&
-                  g.length > 0 &&
-                  (g.axis === 'x' || g.axis === 'z') &&
-                  typeof g.periodSeconds === 'number' &&
-                  g.periodSeconds > 0 &&
-                  typeof g.phaseOffset === 'number',
-              ),
-          )
-        : [];
-      const boostPads: BoostPadDefinition[] = Array.isArray(parsed.boostPads)
-        ? parsed.boostPads.filter(
-            (b): b is BoostPadDefinition =>
-              Boolean(
-                b &&
-                  typeof b === 'object' &&
-                  isVec2(b.position) &&
-                  isVec2(b.direction),
-              ),
-          )
-        : [];
-      const teleporters = Array.isArray(parsed.teleporters)
-        ? parsed.teleporters.filter((t) =>
-            Boolean(
-              t &&
-                typeof t === 'object' &&
-                isVec2(t.entry) &&
-                isVec2(t.exit),
-            ),
-          )
-        : [];
-      const movingObstacles: MovingObstacleDefinition[] = Array.isArray(
-        parsed.movingObstacles,
-      )
-        ? parsed.movingObstacles.filter(
-            (m): m is MovingObstacleDefinition =>
-              Boolean(
-                m &&
-                  typeof m === 'object' &&
-                  isVec2(m.center) &&
-                  (m.axis === 'x' || m.axis === 'z') &&
-                  typeof m.amplitude === 'number' &&
-                  typeof m.speed === 'number' &&
-                  typeof m.phaseOffset === 'number',
-              ),
-          )
-        : [];
-
       setImportError(null);
-      setCustomLevel({
-        id: 99,
-        title:
-          typeof parsed.title === 'string' && parsed.title.trim()
-            ? parsed.title.trim().slice(0, 48)
-            : 'Özel İçe Aktarılan Harita',
-        subtitle:
-          typeof parsed.subtitle === 'string' && parsed.subtitle.trim()
-            ? parsed.subtitle.trim().slice(0, 80)
-            : 'JSON ile içe aktarıldı',
-        boardSize,
-        startPosition: parsed.startPosition,
-        goalPosition: parsed.goalPosition,
-        innerWalls: parsed.innerWalls,
-        voidHoles,
-        crystals,
-        laserGates,
-        boostPads,
-        teleporters,
-        movingObstacles,
-        starThresholds: isVec2(parsed.starThresholds)
-          ? parsed.starThresholds
-          : undefined,
-      });
+      setCustomLevel(validated);
     } catch {
       setImportError('Panodan geçerli bir JSON haritası okunamadı.');
     }
+  };
+
+  const handleGridKeyDown = (
+    e: KeyboardEvent<HTMLButtonElement>,
+    rIdx: number,
+    cIdx: number,
+  ) => {
+    let nextR = rIdx;
+    let nextC = cIdx;
+    if (e.key === 'ArrowRight') nextC = Math.min(GRID_SIZE - 1, cIdx + 1);
+    else if (e.key === 'ArrowLeft') nextC = Math.max(0, cIdx - 1);
+    else if (e.key === 'ArrowDown') nextR = Math.min(GRID_SIZE - 1, rIdx + 1);
+    else if (e.key === 'ArrowUp') nextR = Math.max(0, rIdx - 1);
+    else if (e.key === 'Home') nextC = 0;
+    else if (e.key === 'End') nextC = GRID_SIZE - 1;
+    else return;
+
+    e.preventDefault();
+    cellRefs.current[nextR * GRID_SIZE + nextC]?.focus();
   };
 
   return (
@@ -658,9 +626,13 @@ export function LevelEditorModal() {
                 return (
                   <button
                     key={`${rIdx}-${cIdx}`}
+                    ref={(el) => {
+                      cellRefs.current[rIdx * GRID_SIZE + cIdx] = el;
+                    }}
                     type="button"
                     aria-label={`Satır ${rIdx + 1} Sütun ${cIdx + 1}: ${cell === 'erase' ? 'Boş' : meta.label}`}
                     onClick={() => handleCellClick(rIdx, cIdx)}
+                    onKeyDown={(e) => handleGridKeyDown(e, rIdx, cIdx)}
                     className={cx(
                       'flex aspect-square cursor-pointer items-center justify-center rounded-lg border text-xs transition active:scale-90',
                       cell === 'erase'

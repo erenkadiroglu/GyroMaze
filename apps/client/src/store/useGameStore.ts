@@ -12,7 +12,10 @@ import {
   LeaderboardEntry,
   SubmitScorePayload,
 } from '@gyromaze/shared';
-import { MazeLevelDefinition } from '@/components/scene/mazeLevels';
+import {
+  MazeLevelDefinition,
+  parseCustomMazeLevel,
+} from '@/components/scene/mazeLevels';
 
 /**
  * React re-render tetiklemeden 60 FPS Three.js döngüsü (useFrame) ve HUD telemetrisi
@@ -52,6 +55,7 @@ export const transientGyroP2: GyroData & {
 
 const BEST_TIMES_STORAGE_KEY = 'gyromaze_best_times_v1';
 const GHOST_PATHS_STORAGE_KEY = 'gyromaze_ghost_paths_v1';
+const CUSTOM_LEVEL_STORAGE_KEY = 'gyromaze_custom_level_v1';
 const SETTINGS_STORAGE_KEY = 'gyromaze_settings_v1';
 
 function loadBestTimes(): Record<number, number> {
@@ -79,6 +83,18 @@ function loadBestTimes(): Record<number, number> {
     return result;
   } catch {
     return {};
+  }
+}
+
+function loadCustomLevel(): MazeLevelDefinition | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(CUSTOM_LEVEL_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    return parseCustomMazeLevel(parsed);
+  } catch {
+    return null;
   }
 }
 
@@ -296,318 +312,330 @@ interface GameStoreState {
 export const useGameStore = create<GameStoreState>()(
   persist(
     (set) => ({
-  roomId: null,
-  lanIp: null,
-  tunnelUrl: null,
-  isSocketConnected: false,
-  isControllerPaired: false,
-  isPairingModalOpen: true,
-  isLeaderboardOpen: false,
-  isEditorOpen: false,
-  isSettingsOpen: false,
-  isMultiplayer: false,
-  isSecondControllerPaired: false,
-  winnerPlayer: null,
-  gravityScale: 36,
-  tiltResponsiveness: 32,
-  soundVolume: 1,
-  showTrail: true,
-  showGhost: true,
-  showMiniMap: true,
-  gameStatus: 'waiting',
-  level: 1,
-  cameraMode: 'isometric',
-  boardTheme: 'emerald',
-  colorScheme: 'dark',
-  ballSkin: 'chrome',
-  gameMode: 'standard',
-  hudNotification: null,
-  customLevel: null,
-  latencyMs: 0,
-  elapsedSeconds: 0,
-  bestTimes: {},
-  ghostPaths: {},
-  leaderboard: [],
-  pendingScoreSubmission: null,
-  isSoundMuted: false,
-  collectedCrystals: [],
-  remoteCrystalsCollected: 0,
-  remoteCrystalsTotal: 3,
-  resetCount: 0,
-  hapticSignal: null,
-  errorMessage: null,
-
-  setRoomId: (roomId) => set({ roomId }),
-  setLanIp: (lanIp) => set({ lanIp }),
-  setTunnelUrl: (tunnelUrl) => set({ tunnelUrl }),
-  setSocketConnected: (isSocketConnected) => set({ isSocketConnected }),
-  setControllerPaired: (isControllerPaired) =>
-    set((state) => ({
-      isControllerPaired,
-      isPairingModalOpen: isControllerPaired ? false : state.isPairingModalOpen,
-      gameStatus: resolvePairingGameStatus(
-        state.isControllerPaired || state.isSecondControllerPaired,
-        isControllerPaired || state.isSecondControllerPaired,
-        state.gameStatus,
-      ),
-    })),
-  setPairingModalOpen: (isPairingModalOpen) => set({ isPairingModalOpen }),
-  setLeaderboardOpen: (isLeaderboardOpen) => set({ isLeaderboardOpen }),
-  setEditorOpen: (isEditorOpen) => set({ isEditorOpen }),
-  setSettingsOpen: (isSettingsOpen) => set({ isSettingsOpen }),
-  setSecondControllerPaired: (isSecondControllerPaired) =>
-    set((state) => ({
-      isSecondControllerPaired,
-      isPairingModalOpen: isSecondControllerPaired
-        ? false
-        : state.isPairingModalOpen,
-      isMultiplayer: isSecondControllerPaired ? true : state.isMultiplayer,
-      gameStatus: resolvePairingGameStatus(
-        state.isControllerPaired || state.isSecondControllerPaired,
-        state.isControllerPaired || isSecondControllerPaired,
-        state.gameStatus,
-      ),
-    })),
-  toggleMultiplayer: () =>
-    set((state) => ({
-      isMultiplayer: !state.isMultiplayer,
-      winnerPlayer: null,
-      resetCount: state.resetCount + 1,
-      elapsedSeconds: 0,
-      collectedCrystals: [],
-      gameStatus: 'playing',
-    })),
-  updateSettings: (partial) => set((state) => ({ ...state, ...partial })),
-  setGameStatus: (gameStatus) => set({ gameStatus }),
-  setLevel: (level) =>
-    set((state) => ({
-      level,
-      winnerPlayer: null,
-      gameStatus: 'playing',
-      elapsedSeconds: 0,
-      collectedCrystals: [],
-      resetCount: state.resetCount + 1,
-    })),
-  setCustomLevel: (customLevel) =>
-    set((state) => ({
-      customLevel,
-      level: 99,
-      winnerPlayer: null,
+      roomId: null,
+      lanIp: null,
+      tunnelUrl: null,
+      isSocketConnected: false,
+      isControllerPaired: false,
+      isPairingModalOpen: true,
+      isLeaderboardOpen: false,
       isEditorOpen: false,
-      gameStatus: 'playing',
-      elapsedSeconds: 0,
-      collectedCrystals: [],
-      resetCount: state.resetCount + 1,
-    })),
-  nextLevel: () =>
-    set((state) => ({
-      level: state.level === 99 ? 1 : state.level + 1,
+      isSettingsOpen: false,
+      isMultiplayer: false,
+      isSecondControllerPaired: false,
       winnerPlayer: null,
-      gameStatus: 'playing',
+      gravityScale: 36,
+      tiltResponsiveness: 32,
+      soundVolume: 1,
+      showTrail: true,
+      showGhost: true,
+      showMiniMap: true,
+      gameStatus: 'waiting',
+      level: 1,
+      cameraMode: 'isometric',
+      boardTheme: 'emerald',
+      colorScheme: 'dark',
+      ballSkin: 'chrome',
+      gameMode: 'standard',
+      hudNotification: null,
+      customLevel: null,
+      latencyMs: 0,
       elapsedSeconds: 0,
+      bestTimes: {},
+      ghostPaths: {},
+      leaderboard: [],
+      pendingScoreSubmission: null,
+      isSoundMuted: false,
       collectedCrystals: [],
-      resetCount: state.resetCount + 1,
-    })),
-  prevLevel: () =>
-    set((state) => ({
-      level: state.level === 99 || state.level <= 1 ? 1 : state.level - 1,
-      winnerPlayer: null,
-      gameStatus: 'playing',
-      elapsedSeconds: 0,
-      collectedCrystals: [],
-      resetCount: state.resetCount + 1,
-    })),
-  cycleCameraMode: () =>
-    set((state) => {
-      const order: CameraMode[] = ['isometric', 'topdown', 'follow'];
-      const nextIdx = (order.indexOf(state.cameraMode) + 1) % order.length;
-      return { cameraMode: order[nextIdx] };
-    }),
-  setCameraMode: (cameraMode) => set({ cameraMode }),
-  cycleBoardTheme: () =>
-    set((state) => {
-      const order: BoardTheme[] = [
-        'emerald',
-        'cyberpunk',
-        'crimson',
-        'daylight',
-      ];
-      const nextIdx = (order.indexOf(state.boardTheme) + 1) % order.length;
-      const nextTheme = order[nextIdx];
-      return {
-        boardTheme: nextTheme,
-        colorScheme: nextTheme === 'daylight' ? 'light' : 'dark',
-      };
-    }),
-  setBoardTheme: (boardTheme) =>
-    set({
-      boardTheme,
-      colorScheme: boardTheme === 'daylight' ? 'light' : 'dark',
-    }),
-  toggleColorScheme: () =>
-    set((state) => {
-      const nextScheme: ColorScheme =
-        state.colorScheme === 'dark' ? 'light' : 'dark';
-      return {
-        colorScheme: nextScheme,
-        boardTheme:
-          nextScheme === 'light'
-            ? 'daylight'
-            : state.boardTheme === 'daylight'
-              ? 'emerald'
-              : state.boardTheme,
-      };
-    }),
-  setColorScheme: (colorScheme) =>
-    set((state) => ({
-      colorScheme,
-      boardTheme:
-        colorScheme === 'light'
-          ? 'daylight'
-          : state.boardTheme === 'daylight'
-            ? 'emerald'
-            : state.boardTheme,
-    })),
-  setBallSkin: (ballSkin) => set({ ballSkin }),
-  setGameMode: (gameMode) =>
-    set((state) => ({
-      gameMode,
-      resetCount: state.resetCount + 1,
-      winnerPlayer: null,
-      elapsedSeconds: 0,
-      collectedCrystals: [],
-      gameStatus: 'playing',
-    })),
-  showHudNotification: (message, tone = 'info') => {
-    const nextSeq = Date.now();
-    set((state) => ({
-      hudNotification: {
-        id: nextSeq,
-        message,
-        tone,
-        seq: (state.hudNotification?.seq ?? 0) + 1,
-      },
-    }));
-    if (typeof window !== 'undefined') {
-      window.setTimeout(() => {
-        set((state) =>
-          state.hudNotification?.id === nextSeq
-            ? { hudNotification: null }
-            : state,
-        );
-      }, 2800);
-    }
-  },
-  setRemoteProgress: (payload) =>
-    set((state) => ({
-      gameStatus: payload.status,
-      level: payload.level ?? state.level,
-      remoteCrystalsCollected:
-        payload.crystalsCollected ?? state.remoteCrystalsCollected,
-      remoteCrystalsTotal: payload.crystalsTotal ?? state.remoteCrystalsTotal,
-    })),
-  setLatencyMs: (latencyMs) => set({ latencyMs }),
-  setElapsedSeconds: (elapsedSeconds) => set({ elapsedSeconds }),
-  recordLevelCompletion: (level, seconds, runPath, winnerPlayer = 1) =>
-    set((state) => {
-      const currentBest = state.bestTimes[level];
-      const nextBestTimes = { ...state.bestTimes };
-      const nextGhostPaths = { ...state.ghostPaths };
-      if (currentBest === undefined || seconds < currentBest) {
-        nextBestTimes[level] = Number(seconds.toFixed(1));
-        if (runPath && runPath.length > 1) {
-          nextGhostPaths[level] = runPath;
-        }
+      remoteCrystalsCollected: 0,
+      remoteCrystalsTotal: 3,
+      resetCount: 0,
+      hapticSignal: null,
+      errorMessage: null,
+
+      setRoomId: (roomId) => set({ roomId }),
+      setLanIp: (lanIp) => set({ lanIp }),
+      setTunnelUrl: (tunnelUrl) => set({ tunnelUrl }),
+      setSocketConnected: (isSocketConnected) => set({ isSocketConnected }),
+      setControllerPaired: (isControllerPaired) =>
+        set((state) => ({
+          isControllerPaired,
+          isPairingModalOpen: isControllerPaired ? false : state.isPairingModalOpen,
+          gameStatus: resolvePairingGameStatus(
+            state.isControllerPaired || state.isSecondControllerPaired,
+            isControllerPaired || state.isSecondControllerPaired,
+            state.gameStatus,
+          ),
+        })),
+      setPairingModalOpen: (isPairingModalOpen) => set({ isPairingModalOpen }),
+      setLeaderboardOpen: (isLeaderboardOpen) => set({ isLeaderboardOpen }),
+      setEditorOpen: (isEditorOpen) => set({ isEditorOpen }),
+      setSettingsOpen: (isSettingsOpen) => set({ isSettingsOpen }),
+      setSecondControllerPaired: (isSecondControllerPaired) =>
+        set((state) => ({
+          isSecondControllerPaired,
+          isPairingModalOpen: isSecondControllerPaired
+            ? false
+            : state.isPairingModalOpen,
+          isMultiplayer: isSecondControllerPaired ? true : state.isMultiplayer,
+          gameStatus: resolvePairingGameStatus(
+            state.isControllerPaired || state.isSecondControllerPaired,
+            state.isControllerPaired || isSecondControllerPaired,
+            state.gameStatus,
+          ),
+        })),
+      toggleMultiplayer: () =>
+        set((state) => ({
+          isMultiplayer: !state.isMultiplayer,
+          winnerPlayer: null,
+          resetCount: state.resetCount + 1,
+          elapsedSeconds: 0,
+          collectedCrystals: [],
+          gameStatus: 'playing',
+        })),
+      updateSettings: (partial) => set((state) => ({ ...state, ...partial })),
+      setGameStatus: (gameStatus) => set({ gameStatus }),
+      setLevel: (level) =>
+        set((state) => ({
+          level,
+          winnerPlayer: null,
+          gameStatus: 'playing',
+          elapsedSeconds: 0,
+          collectedCrystals: [],
+          resetCount: state.resetCount + 1,
+        })),
+      setCustomLevel: (customLevel) => {
         if (typeof window !== 'undefined') {
           try {
             window.localStorage.setItem(
-              BEST_TIMES_STORAGE_KEY,
-              JSON.stringify(nextBestTimes),
+              CUSTOM_LEVEL_STORAGE_KEY,
+              JSON.stringify(customLevel),
             );
-            if (runPath && runPath.length > 1) {
-              window.localStorage.setItem(
-                GHOST_PATHS_STORAGE_KEY,
-                JSON.stringify(nextGhostPaths),
-              );
-            }
           } catch {
-            // LocalStorage erişim hatası varsa yoksay
+            // LocalStorage kota/erişim hatası varsa yoksay
           }
         }
-      }
-      return {
-        gameStatus: 'won',
-        winnerPlayer: state.isMultiplayer ? winnerPlayer : null,
-        bestTimes: nextBestTimes,
-        ghostPaths: nextGhostPaths,
-      };
-    }),
-  setLeaderboard: (leaderboard) => set({ leaderboard }),
-  submitLeaderboardScore: (pendingScoreSubmission) =>
-    set({ pendingScoreSubmission }),
-  collectCrystal: (crystalIndex) =>
-    set((state) => {
-      if (state.collectedCrystals.includes(crystalIndex)) {
-        return state;
-      }
-      return {
-        collectedCrystals: [...state.collectedCrystals, crystalIndex],
-      };
-    }),
-  toggleSoundMuted: () =>
-    set((state) => ({ isSoundMuted: !state.isSoundMuted })),
-  triggerBallReset: () =>
-    set((state) => ({
-      resetCount: state.resetCount + 1,
-      winnerPlayer: null,
-      gameStatus: 'playing',
-      elapsedSeconds: 0,
-      collectedCrystals: [],
-    })),
-  triggerHaptic: (type, playerSlot) =>
-    set((state) => ({
-      hapticSignal: {
-        type,
-        seq: (state.hapticSignal?.seq ?? 0) + 1,
-        playerSlot,
+        set((state) => ({
+          customLevel,
+          level: 99,
+          winnerPlayer: null,
+          isEditorOpen: false,
+          gameStatus: 'playing',
+          elapsedSeconds: 0,
+          collectedCrystals: [],
+          resetCount: state.resetCount + 1,
+        }));
       },
-    })),
-  setErrorMessage: (errorMessage) => set({ errorMessage }),
-  hydrateLocalRecords: () =>
-    set({
-      bestTimes: loadBestTimes(),
-      ghostPaths: loadGhostPaths(),
-    }),
+      nextLevel: () =>
+        set((state) => ({
+          level: state.level === 99 ? 1 : state.level + 1,
+          winnerPlayer: null,
+          gameStatus: 'playing',
+          elapsedSeconds: 0,
+          collectedCrystals: [],
+          resetCount: state.resetCount + 1,
+        })),
+      prevLevel: () =>
+        set((state) => ({
+          level: state.level === 99 || state.level <= 1 ? 1 : state.level - 1,
+          winnerPlayer: null,
+          gameStatus: 'playing',
+          elapsedSeconds: 0,
+          collectedCrystals: [],
+          resetCount: state.resetCount + 1,
+        })),
+      cycleCameraMode: () =>
+        set((state) => {
+          const order: CameraMode[] = ['isometric', 'topdown', 'follow'];
+          const nextIdx = (order.indexOf(state.cameraMode) + 1) % order.length;
+          return { cameraMode: order[nextIdx] };
+        }),
+      setCameraMode: (cameraMode) => set({ cameraMode }),
+      cycleBoardTheme: () =>
+        set((state) => {
+          const order: BoardTheme[] = [
+            'emerald',
+            'cyberpunk',
+            'crimson',
+            'daylight',
+          ];
+          const nextIdx = (order.indexOf(state.boardTheme) + 1) % order.length;
+          const nextTheme = order[nextIdx];
+          return {
+            boardTheme: nextTheme,
+            colorScheme: nextTheme === 'daylight' ? 'light' : 'dark',
+          };
+        }),
+      setBoardTheme: (boardTheme) =>
+        set({
+          boardTheme,
+          colorScheme: boardTheme === 'daylight' ? 'light' : 'dark',
+        }),
+      toggleColorScheme: () =>
+        set((state) => {
+          const nextScheme: ColorScheme =
+            state.colorScheme === 'dark' ? 'light' : 'dark';
+          return {
+            colorScheme: nextScheme,
+            boardTheme:
+              nextScheme === 'light'
+                ? 'daylight'
+                : state.boardTheme === 'daylight'
+                  ? 'emerald'
+                  : state.boardTheme,
+          };
+        }),
+      setColorScheme: (colorScheme) =>
+        set((state) => ({
+          colorScheme,
+          boardTheme:
+            colorScheme === 'light'
+              ? 'daylight'
+              : state.boardTheme === 'daylight'
+                ? 'emerald'
+                : state.boardTheme,
+        })),
+      setBallSkin: (ballSkin) => set({ ballSkin }),
+      setGameMode: (gameMode) =>
+        set((state) => ({
+          gameMode,
+          resetCount: state.resetCount + 1,
+          winnerPlayer: null,
+          elapsedSeconds: 0,
+          collectedCrystals: [],
+          gameStatus: 'playing',
+        })),
+      showHudNotification: (message, tone = 'info') => {
+        const nextSeq = Date.now();
+        set((state) => ({
+          hudNotification: {
+            id: nextSeq,
+            message,
+            tone,
+            seq: (state.hudNotification?.seq ?? 0) + 1,
+          },
+        }));
+        if (typeof window !== 'undefined') {
+          window.setTimeout(() => {
+            set((state) =>
+              state.hudNotification?.id === nextSeq
+                ? { hudNotification: null }
+                : state,
+            );
+          }, 2800);
+        }
+      },
+      setRemoteProgress: (payload) =>
+        set((state) => ({
+          gameStatus: payload.status,
+          level: payload.level ?? state.level,
+          remoteCrystalsCollected:
+            payload.crystalsCollected ?? state.remoteCrystalsCollected,
+          remoteCrystalsTotal: payload.crystalsTotal ?? state.remoteCrystalsTotal,
+        })),
+      setLatencyMs: (latencyMs) => set({ latencyMs }),
+      setElapsedSeconds: (elapsedSeconds) => set({ elapsedSeconds }),
+      recordLevelCompletion: (level, seconds, runPath, winnerPlayer = 1) =>
+        set((state) => {
+          const currentBest = state.bestTimes[level];
+          const nextBestTimes = { ...state.bestTimes };
+          const nextGhostPaths = { ...state.ghostPaths };
+          if (currentBest === undefined || seconds < currentBest) {
+            nextBestTimes[level] = Number(seconds.toFixed(1));
+            if (runPath && runPath.length > 1) {
+              nextGhostPaths[level] = runPath;
+            }
+            if (typeof window !== 'undefined') {
+              try {
+                window.localStorage.setItem(
+                  BEST_TIMES_STORAGE_KEY,
+                  JSON.stringify(nextBestTimes),
+                );
+                if (runPath && runPath.length > 1) {
+                  window.localStorage.setItem(
+                    GHOST_PATHS_STORAGE_KEY,
+                    JSON.stringify(nextGhostPaths),
+                  );
+                }
+              } catch {
+                // LocalStorage erişim hatası varsa yoksay
+              }
+            }
+          }
+          return {
+            gameStatus: 'won',
+            winnerPlayer: state.isMultiplayer ? winnerPlayer : null,
+            bestTimes: nextBestTimes,
+            ghostPaths: nextGhostPaths,
+          };
+        }),
+      setLeaderboard: (leaderboard) => set({ leaderboard }),
+      submitLeaderboardScore: (pendingScoreSubmission) =>
+        set({ pendingScoreSubmission }),
+      collectCrystal: (crystalIndex) =>
+        set((state) => {
+          if (state.collectedCrystals.includes(crystalIndex)) {
+            return state;
+          }
+          return {
+            collectedCrystals: [...state.collectedCrystals, crystalIndex],
+          };
+        }),
+      toggleSoundMuted: () =>
+        set((state) => ({ isSoundMuted: !state.isSoundMuted })),
+      triggerBallReset: () =>
+        set((state) => ({
+          resetCount: state.resetCount + 1,
+          winnerPlayer: null,
+          gameStatus: 'playing',
+          elapsedSeconds: 0,
+          collectedCrystals: [],
+        })),
+      triggerHaptic: (type, playerSlot) =>
+        set((state) => ({
+          hapticSignal: {
+            type,
+            seq: (state.hapticSignal?.seq ?? 0) + 1,
+            playerSlot,
+          },
+        })),
+      setErrorMessage: (errorMessage) => set({ errorMessage }),
+      hydrateLocalRecords: () =>
+        set({
+          bestTimes: loadBestTimes(),
+          ghostPaths: loadGhostPaths(),
+          customLevel: loadCustomLevel(),
+        }),
 
-  updateTransientGyro: (data) => {
-    if (data.playerSlot === 2) {
-      transientGyroP2.alpha = data.alpha;
-      transientGyroP2.beta = data.beta;
-      transientGyroP2.gamma = data.gamma;
-      transientGyroP2.timestamp = data.timestamp;
-    } else {
-      transientGyro.alpha = data.alpha;
-      transientGyro.beta = data.beta;
-      transientGyro.gamma = data.gamma;
-      transientGyro.timestamp = data.timestamp;
-    }
-  },
+      updateTransientGyro: (data) => {
+        if (data.playerSlot === 2) {
+          transientGyroP2.alpha = data.alpha;
+          transientGyroP2.beta = data.beta;
+          transientGyroP2.gamma = data.gamma;
+          transientGyroP2.timestamp = data.timestamp;
+        } else {
+          transientGyro.alpha = data.alpha;
+          transientGyro.beta = data.beta;
+          transientGyro.gamma = data.gamma;
+          transientGyro.timestamp = data.timestamp;
+        }
+      },
 
-  resetTransientGyro: (slot) => {
-    const now = Date.now();
-    if (slot !== 2) {
-      transientGyro.alpha = 0;
-      transientGyro.beta = 0;
-      transientGyro.gamma = 0;
-      transientGyro.timestamp = now;
-    }
-    if (slot !== 1) {
-      transientGyroP2.alpha = 0;
-      transientGyroP2.beta = 0;
-      transientGyroP2.gamma = 0;
-      transientGyroP2.timestamp = now;
-    }
-  },
+      resetTransientGyro: (slot) => {
+        const now = Date.now();
+        if (slot !== 2) {
+          transientGyro.alpha = 0;
+          transientGyro.beta = 0;
+          transientGyro.gamma = 0;
+          transientGyro.timestamp = now;
+        }
+        if (slot !== 1) {
+          transientGyroP2.alpha = 0;
+          transientGyroP2.beta = 0;
+          transientGyroP2.gamma = 0;
+          transientGyroP2.timestamp = now;
+        }
+      },
     }),
     {
       name: SETTINGS_STORAGE_KEY,

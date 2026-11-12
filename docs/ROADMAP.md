@@ -158,6 +158,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Özel Harita Fizik Yenilemesi & Aktif Portal Koruması (`mazeLevels.ts`, `MazeScene.tsx`):** Editörden art arda kaydedilen özel haritaların (`id === 99`) Rapier çarpıştırıcılarını temiz güncellemesi için `getLevelRevisionKey` uygulanıp portal sensörü `handleReachGoal` girişinde `gameStatus === 'playing'` şartıyla korundu.
 - [x] **WebGL Bağlam Kaybı & Hata Sınırı Kurtarması (`MazeScene.tsx`):** `<Canvas>` etrafına `SceneErrorBoundary` ve `webglcontextlost`/`webglcontextrestored` dinleyicileri eklenerek grafik bağlamı koptuğunda tek tıkla sahneyi yeniden başlatan Türkçe kurtarma yüzeyi sağlandı.
 
+## ✅ Faz 23: Kalıcı Özel Harita Hidrasyonu, Erişilebilir 8×8 Editör & Akıllı LAN Adaptör Seçimi (Tamamlandı)
+
+- [x] **Ortak Özel Harita Şeması & SSR Uyumlu Kalıcılık (`mazeLevels.ts`, `useGameStore.ts`, `mazeLevels.test.mjs`):** Dışa/içe aktarılan JSON haritaları ve `localStorage` (`gyromaze_custom_level_v1`) kayıtları ortak `parseCustomMazeLevel` doğrulayıcısına taşındı; `customLevel` artık `hydrateLocalRecords` ile sayfayı yeniledikten sonra bile kaybolmuyor.
+- [x] **Editör Izgara Senkronizasyonu & WAI-ARIA Klavye Gezintisi (`LevelEditorModal.tsx`):** Harita editörü açıldığında mevcut/içe aktarılmış özel haritayı (`worldToGrid` / `levelDefinitionToGrid`) başlık ve 8×8 ızgaraya geri yansıtır hale getirildi; 8×8 `role="grid"` içine ok tuşları ve `Home`/`End` odak gezintisi eklendi.
+- [x] **Akıllı LAN IP Seçimi & Saniye Altı Skor Hassasiyeti (`room.service.ts`, `room.service.test.mjs`):** `selectPreferredLanIp` ile WSL/Hyper-V/Docker/VPN sanal adaptörleri ve `169.254.*` link-local adresler yerine fiziksel LAN IPv4 adresi önceliklendirildi; `submitScore` 1 saniyenin altındaki gerçek süreleri (`0.8 sn`) `Math.max(0.1, ...)` ile korur hale getirildi.
+
 
 
 

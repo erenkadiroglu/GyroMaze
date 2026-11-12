@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { networkInterfaces } from 'os';
+import { networkInterfaces, type NetworkInterfaceInfo } from 'os';
 import {
   RoomState,
   RoomErrorPayload,
@@ -14,6 +14,55 @@ interface SocketMembership {
   roomId: string;
   role: 'host' | 'controller';
   playerSlot?: 1 | 2;
+}
+
+const VIRTUAL_IFACE_PATTERN =
+  /(vethernet|wsl|docker|virtualbox|vbox|vmware|hyper-v|tailscale|zerotier|hamachi|loopback|\btun\d*|\btap\d*)/i;
+const PHYSICAL_IFACE_PATTERN = /(wi-fi|wifi|wlan|ethernet|\ben\d|\beth\d)/i;
+
+function isPrivate172(address: string): boolean {
+  if (!address.startsWith('172.')) return false;
+  const secondOctet = Number(address.split('.')[1]);
+  return Number.isInteger(secondOctet) && secondOctet >= 16 && secondOctet <= 31;
+}
+
+function isCgnat100(address: string): boolean {
+  if (!address.startsWith('100.')) return false;
+  const secondOctet = Number(address.split('.')[1]);
+  return Number.isInteger(secondOctet) && secondOctet >= 64 && secondOctet <= 127;
+}
+
+/**
+ * Ağ arayüzleri arasından sanal adaptörleri (WSL, Hyper-V, Docker, VPN) ve
+ * geçersiz link-local (169.254.x.x) adresleri eleyerek gerçek LAN IPv4 adresini seçer.
+ */
+export function selectPreferredLanIp(
+  nets: NodeJS.Dict<NetworkInterfaceInfo[]>,
+): string | undefined {
+  let best: { address: string; score: number } | undefined;
+
+  for (const [ifaceName, interfaces] of Object.entries(nets)) {
+    if (!interfaces) continue;
+    for (const net of interfaces) {
+      if (net.family !== 'IPv4' || net.internal) continue;
+      if (net.address.startsWith('169.254.')) continue;
+
+      let score = 0;
+      if (VIRTUAL_IFACE_PATTERN.test(ifaceName)) score -= 50;
+      else if (PHYSICAL_IFACE_PATTERN.test(ifaceName)) score += 20;
+
+      if (net.address.startsWith('192.168.')) score += 30;
+      else if (net.address.startsWith('10.')) score += 20;
+      else if (isPrivate172(net.address)) score += 10;
+      else if (isCgnat100(net.address)) score -= 20;
+
+      if (!best || score > best.score) {
+        best = { address: net.address, score };
+      }
+    }
+  }
+
+  return best?.address;
 }
 
 interface NgrokTunnelResponse {
@@ -97,17 +146,7 @@ export class RoomService {
    * sunucunun çalıştığı makinenin yerel ağ (Wi-Fi / Ethernet) IPv4 adresini bulur.
    */
   private detectLanIp(): string | undefined {
-    const nets = networkInterfaces();
-    for (const name of Object.keys(nets)) {
-      const interfaces = nets[name];
-      if (!interfaces) continue;
-      for (const net of interfaces) {
-        if (net.family === 'IPv4' && !net.internal) {
-          return net.address;
-        }
-      }
-    }
-    return undefined;
+    return selectPreferredLanIp(networkInterfaces());
   }
 
   /**
@@ -340,7 +379,7 @@ export class RoomService {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       playerName: cleanName,
       levelId: payload.levelId,
-      timeSeconds: Number(Math.max(1, payload.timeSeconds).toFixed(1)),
+      timeSeconds: Number(Math.max(0.1, payload.timeSeconds).toFixed(1)),
       createdAt: Date.now(),
     };
 

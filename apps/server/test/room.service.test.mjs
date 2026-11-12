@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { RoomEvents } from '@gyromaze/shared';
-import { RoomService } from '../dist/gateway/room.service.js';
+import { RoomService, selectPreferredLanIp } from '../dist/gateway/room.service.js';
 import { GyroGateway } from '../dist/gateway/gyro.gateway.js';
 
 describe('RoomService — Oda Yönetimi, 6 Haneli Kod Eşleşmesi ve Skor Tablosu Testleri', () => {
@@ -310,6 +310,44 @@ describe('RoomService — Oda Yönetimi, 6 Haneli Kod Eşleşmesi ve Skor Tablos
     assert.equal(emitted.length, 2);
     assert.equal(emitted[1].target, 'host-auth');
     assert.equal(emitted[1].event, RoomEvents.GAME_CHANGE_LEVEL);
+  });
+
+  it('selectPreferredLanIp sanal WSL/Hyper-V adaptörleri ve link-local adresler yerine fiziksel LAN IP seçmelidir', () => {
+    const makeNet = (address, internal = false) => ({
+      address,
+      netmask: '255.255.255.0',
+      family: 'IPv4',
+      mac: '00:00:00:00:00:00',
+      internal,
+      cidr: `${address}/24`,
+    });
+
+    const chosen = selectPreferredLanIp({
+      Loopback: [makeNet('127.0.0.1', true)],
+      'vEthernet (WSL)': [makeNet('172.24.80.1')],
+      docker0: [makeNet('172.17.0.1')],
+      'Ethernet LinkLocal': [makeNet('169.254.44.10')],
+      'Wi-Fi': [makeNet('192.168.1.42')],
+    });
+    assert.equal(chosen, '192.168.1.42');
+
+    const onlyLinkLocal = selectPreferredLanIp({
+      Ethernet: [makeNet('169.254.10.20')],
+      Loopback: [makeNet('127.0.0.1', true)],
+    });
+    assert.equal(onlyLinkLocal, undefined);
+  });
+
+  it('submitScore 1 saniye altındaki geçerli rekor sürelerini (0.8 sn) yuvarlayarak korumalıdır', () => {
+    const service = new RoomService();
+    const updated = service.submitScore({
+      playerName: 'Hızlı Tur',
+      levelId: 2,
+      timeSeconds: 0.84,
+    });
+    const record = updated.find((r) => r.playerName === 'Hızlı Tur');
+    assert.ok(record);
+    assert.equal(record.timeSeconds, 0.8);
   });
 });
 

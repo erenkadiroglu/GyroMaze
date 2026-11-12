@@ -5,6 +5,7 @@ import {
   getMazeLevel,
   findSafeP2SpawnOffset,
   getLevelRevisionKey,
+  parseCustomMazeLevel,
 } from '../src/components/scene/mazeLevels.ts';
 
 const BALL_RADIUS = 0.34;
@@ -216,6 +217,39 @@ describe('MAZE_LEVELS — 3B Harita Geometrisi, Engel Konumları ve Fizik Doğru
     assert.notEqual(
       getLevelRevisionKey(blockedEastCustom),
       getLevelRevisionKey({ ...blockedEastCustom, innerWalls: [] }),
+    );
+  });
+
+  it('parseCustomMazeLevel geçerli JSON haritasını normalize etmeli ve bozuk şemaları reddetmelidir', () => {
+    const valid = parseCustomMazeLevel({
+      id: 42,
+      title: '   Test Özel Harita   ',
+      boardSize: 25,
+      startPosition: [-4, 0.34, -4],
+      goalPosition: [4, 0.35, 4],
+      innerWalls: [{ position: [0, 0.4, 0], size: [1, 0.8, 1] }],
+      crystals: [[1, 1], ['bad', 2]],
+      boostPads: [{ position: [2, 2], direction: [0, 1] }],
+      starThresholds: [12, 20],
+    });
+
+    assert.ok(valid);
+    assert.equal(valid.id, 99);
+    assert.equal(valid.title, 'Test Özel Harita');
+    assert.equal(valid.boardSize, 18);
+    assert.deepEqual(valid.crystals, [[1, 1]]);
+    assert.equal(valid.boostPads?.length, 1);
+    assert.deepEqual(valid.starThresholds, [12, 20]);
+
+    assert.equal(parseCustomMazeLevel(null), null);
+    assert.equal(parseCustomMazeLevel({ startPosition: [0, 0, 0] }), null);
+    assert.equal(
+      parseCustomMazeLevel({
+        startPosition: [-4, 0.34, -4],
+        goalPosition: [4, 0.35, 4],
+        innerWalls: [{ position: [0, 0.4, 0], size: [0, 0.8, 1] }],
+      }),
+      null,
     );
   });
 });
