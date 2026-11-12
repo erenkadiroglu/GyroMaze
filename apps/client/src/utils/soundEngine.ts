@@ -7,9 +7,44 @@
 class SoundEngine {
   private ctx: AudioContext | null = null;
   private volume = 1.0;
+  private gestureUnlockAttached = false;
 
   public setVolume(vol: number): void {
+    if (!Number.isFinite(vol)) return;
     this.volume = Math.max(0, Math.min(1.5, vol));
+  }
+
+  private attachGestureUnlock(): void {
+    if (this.gestureUnlockAttached || typeof window === 'undefined') return;
+    this.gestureUnlockAttached = true;
+
+    const detach = () => {
+      this.gestureUnlockAttached = false;
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+
+    const unlock = () => {
+      if (!this.ctx) {
+        detach();
+        return;
+      }
+      if (this.ctx.state === 'suspended') {
+        void this.ctx
+          .resume()
+          .then(() => {
+            if (this.ctx?.state === 'running') {
+              detach();
+            }
+          })
+          .catch(() => {});
+      } else if (this.ctx.state === 'running' || this.ctx.state === 'closed') {
+        detach();
+      }
+    };
+
+    window.addEventListener('pointerdown', unlock, { passive: true });
+    window.addEventListener('keydown', unlock, { passive: true });
   }
 
   private getContext(): AudioContext | null {
@@ -27,10 +62,15 @@ class SoundEngine {
         }
       }
     }
-    if (this.ctx && this.ctx.state === 'suspended') {
+    if (!this.ctx) return null;
+
+    if (this.ctx.state === 'suspended') {
+      this.attachGestureUnlock();
       void this.ctx.resume().catch(() => {});
+      return null;
     }
-    return this.ctx;
+
+    return this.ctx.state === 'running' ? this.ctx : null;
   }
 
   /**

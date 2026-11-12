@@ -77,7 +77,9 @@ function useDialogBehavior(
     return () => {
       window.cancelAnimationFrame(raf);
       window.removeEventListener('keydown', onKeyDown);
-      previouslyFocused?.focus?.({ preventScroll: true });
+      if (previouslyFocused && previouslyFocused.isConnected) {
+        previouslyFocused.focus({ preventScroll: true });
+      }
     };
   }, [open, containerRef]);
 }
