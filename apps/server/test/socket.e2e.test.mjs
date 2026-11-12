@@ -203,5 +203,36 @@ describe('GyroMaze Socket.IO E2E — Canlı NestJS WebSocket Entegrasyon Testler
     const hostDiscPayload = await hostDiscPromise;
     assert.equal(hostDiscPayload.roomId, createdRoom.roomId);
   });
+
+  it('/health ve /api/health uç noktaları canlı oda/kontrolcü sayılarını ve sistem durumunu döndürür', async () => {
+    const initialRes = await fetch(`${baseUrl}/health`);
+    assert.equal(initialRes.status, 200);
+    const initialBody = await initialRes.json();
+    assert.equal(initialBody.status, 'ok');
+    assert.equal(initialBody.service, 'gyromaze-server');
+    assert.equal(typeof initialBody.uptimeSeconds, 'number');
+    assert.ok(initialBody.leaderboardEntries >= 1);
+    const baselineRooms = initialBody.activeRooms;
+
+    const host = await connectSocket(baseUrl);
+    const controller = await connectSocket(baseUrl);
+    openClients.push(host, controller);
+
+    const createdPromise = waitForEvent(host, RoomEvents.ROOM_CREATED);
+    host.emit(RoomEvents.ROOM_CREATE);
+    const createdRoom = await createdPromise;
+
+    const pairedPromise = waitForEvent(controller, RoomEvents.ROOM_PAIRED);
+    controller.emit(RoomEvents.ROOM_JOIN, { roomId: createdRoom.roomId, playerSlot: 1 });
+    await pairedPromise;
+
+    const apiHealthRes = await fetch(`${baseUrl}/api/health`);
+    assert.equal(apiHealthRes.status, 200);
+    const apiHealthBody = await apiHealthRes.json();
+    assert.equal(apiHealthBody.status, 'ok');
+    assert.equal(apiHealthBody.activeRooms, baselineRooms + 1);
+    assert.ok(apiHealthBody.connectedControllers >= 1);
+    assert.equal('roomId' in apiHealthBody, false);
+  });
 });
 

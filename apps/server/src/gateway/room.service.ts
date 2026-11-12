@@ -541,6 +541,27 @@ export class RoomService {
   }
 
   /**
+   * Sunucu sağlık kontrolü için anlık oda ve bağlı kontrolcü sayaçlarını döndürür.
+   * Hassas oda kodlarını veya soket kimliklerini dışarı açmaz.
+   */
+  public getStats(): {
+    activeRooms: number;
+    connectedControllers: number;
+    leaderboardEntries: number;
+  } {
+    let connectedControllers = 0;
+    for (const room of this.rooms.values()) {
+      if (room.isControllerConnected) connectedControllers += 1;
+      if (room.isSecondControllerConnected) connectedControllers += 1;
+    }
+    return {
+      activeRooms: this.rooms.size,
+      connectedControllers,
+      leaderboardEntries: this.leaderboard.length,
+    };
+  }
+
+  /**
    * Yeni bir bölüm tamamlama skorunu kaydeder ve her bölüm için en hızlı 10 kaydı sıralar.
    */
   public submitScore(payload: SubmitScorePayload): LeaderboardEntry[] {
