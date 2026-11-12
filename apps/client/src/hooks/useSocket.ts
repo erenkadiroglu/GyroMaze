@@ -137,16 +137,16 @@ export function useSocket({
 
     socket.on(RoomEvents.ROOM_CREATED, (room: RoomState) => {
       setRoomId(room.roomId);
-      if (room.lanIp) setLanIp(room.lanIp);
-      if (room.tunnelUrl) setTunnelUrl(room.tunnelUrl);
+      setLanIp(room.lanIp ?? null);
+      setTunnelUrl(room.tunnelUrl ?? null);
       setControllerPaired(room.isControllerConnected);
       setSecondControllerPaired(Boolean(room.isSecondControllerConnected));
     });
 
     socket.on(RoomEvents.ROOM_PAIRED, (room: RoomState) => {
       setRoomId(room.roomId);
-      if (room.lanIp) setLanIp(room.lanIp);
-      if (room.tunnelUrl) setTunnelUrl(room.tunnelUrl);
+      setLanIp(room.lanIp ?? null);
+      setTunnelUrl(room.tunnelUrl ?? null);
       if (role === 'host') {
         setControllerPaired(Boolean(room.isControllerConnected));
         setSecondControllerPaired(Boolean(room.isSecondControllerConnected));

@@ -457,5 +457,27 @@ describe('RoomService — Oda Yönetimi, 6 Haneli Kod Eşleşmesi ve Skor Tablos
       playerSlot: 2,
     });
   });
+
+  it('RoomService ve GyroGateway metin dışı bozuk roomId yüklerini çökmeden INVALID_PAYLOAD ile reddetmelidir', async () => {
+    const service = new RoomService();
+    const joinRes = service.joinRoom(123456, 'ctrl-bad');
+    assert.equal(joinRes.ok, false);
+    if (!joinRes.ok) {
+      assert.equal(joinRes.error.code, 'INVALID_PAYLOAD');
+    }
+
+    const errors = [];
+    const gateway = new GyroGateway(service);
+    const badClient = {
+      id: 'ctrl-bad',
+      emit(event, payload) {
+        errors.push({ event, payload });
+      },
+    };
+    await gateway.handleJoinRoom(badClient, { roomId: 999999 });
+    assert.equal(errors.length, 1);
+    assert.equal(errors[0].event, RoomEvents.ROOM_ERROR);
+    assert.equal(errors[0].payload.code, 'INVALID_PAYLOAD');
+  });
 });
 

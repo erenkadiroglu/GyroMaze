@@ -97,7 +97,11 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: JoinRoomPayload,
   ): Promise<void> {
-    if (!payload?.roomId) {
+    if (
+      !payload ||
+      typeof payload.roomId !== 'string' ||
+      !payload.roomId.trim()
+    ) {
       client.emit(RoomEvents.ROOM_ERROR, {
         code: 'INVALID_PAYLOAD',
         message: 'Geçersiz oda kodu gönderildi.',

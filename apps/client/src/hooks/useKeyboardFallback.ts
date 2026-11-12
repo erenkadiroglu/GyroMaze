@@ -106,8 +106,17 @@ export function useKeyboardFallback(): void {
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement | null)?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (
+        tag === 'INPUT' ||
+        tag === 'TEXTAREA' ||
+        tag === 'SELECT' ||
+        target?.isContentEditable
+      ) {
+        return;
+      }
 
       if (
         [
@@ -124,6 +133,7 @@ export function useKeyboardFallback(): void {
         if (e.code.startsWith('Arrow')) {
           e.preventDefault();
         }
+        if (pressedKeys.has(e.code)) return;
         pressedKeys.add(e.code);
         updateFromKeys();
       }
@@ -136,19 +146,27 @@ export function useKeyboardFallback(): void {
       }
     };
 
-    const handleBlur = () => {
+    const handleReleaseAllKeys = () => {
       if (pressedKeys.size === 0) return;
       pressedKeys.clear();
       resetKeyboardAxes();
     };
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        handleReleaseAllKeys();
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
-    window.addEventListener('blur', handleBlur);
+    window.addEventListener('blur', handleReleaseAllKeys);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
-      window.removeEventListener('blur', handleBlur);
+      window.removeEventListener('blur', handleReleaseAllKeys);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [
     isControllerPaired,

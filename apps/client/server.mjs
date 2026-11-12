@@ -44,6 +44,11 @@ const server = createServer((req, res) => {
         headers: req.headers,
       },
       (proxyRes) => {
+        proxyRes.on('error', () => {
+          if (!res.writableEnded) {
+            res.destroy();
+          }
+        });
         res.writeHead(proxyRes.statusCode || 200, proxyRes.headers);
         proxyRes.pipe(res, { end: true });
       },

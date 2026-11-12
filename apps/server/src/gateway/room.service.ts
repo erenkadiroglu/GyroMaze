@@ -238,6 +238,16 @@ export class RoomService {
         replacedControllerSocketId?: string;
       }
     | { ok: false; error: RoomErrorPayload } {
+    if (typeof rawRoomId !== 'string') {
+      return {
+        ok: false,
+        error: {
+          code: 'INVALID_PAYLOAD',
+          message: 'Geçersiz oda kodu gönderildi.',
+        },
+      };
+    }
+
     const roomId = rawRoomId.trim().toUpperCase();
     const room = this.rooms.get(roomId);
 

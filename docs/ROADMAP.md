@@ -210,6 +210,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Editör Lazer Kapısı Koridor Yönelimi (`mazeLevels.ts`, `LevelEditorModal.tsx`, `mazeLevels.test.mjs`):** `detectCorridorOrientation` ortak yardımcısı üzerinden `computeEditorLaserAxis` eklendi; harita editöründe yerleştirilen lazer kapılarının her zaman `'x'` ekseninde kalması yerine komşu duvarlara göre koridoru dik kesecek (`'x'` veya `'z'`) yönde üretilmesi sağlandı.
 - [x] **Oyun Sonu Modalında Kısayol Koruması (`DesktopHUD.tsx`):** Zafer (`'won'`) ve süre doldu (`'lost'`) modalları açıkken arka planda `R`/`C`/`M`/`L` kısayollarının istemeden sahneyi sıfırlaması veya kamera/tema değiştirmesi engellendi.
 
+## ✅ Faz 32: WebSocket Yük Güvenliği, Tünel Yenileme ve Klavye/Proxy Sağlamlığı (Tamamlandı)
+
+- [x] **Metin Dışı Oda Kodu Yük Koruması (`room.service.ts`, `gyro.gateway.ts`, `room.service.test.mjs`):** `RoomService.joinRoom` ve `GyroGateway.handleJoinRoom` içinde metin olmayan `roomId` yükleri için tip denetimi ve `INVALID_PAYLOAD` yanıtı eklenerek `.trim()` kaynaklı çalışma zamanı istisnası engellendi.
+- [x] **Güncel Tünel ve LAN Adresi Eşitleme (`useSocket.ts`):** `ROOM_CREATED` ve `ROOM_PAIRED` olaylarında `lanIp` ve `tunnelUrl` değerleri eski değerde takılı kalmayacak biçimde güncellenerek kapanan tünel sonrası QR kodunun geçersiz HTTPS adresinde kalması önlendi.
+- [x] **Klavye Yedek Kontrolü & Proxy Akış Güvenliği (`useKeyboardFallback.ts`, `apps/client/server.mjs`):** `Ctrl`/`Meta`/`Alt` kısayol kombinasyonları ile `contentEditable` alanları filtrelendi, sekme gizlendiğinde (`visibilitychange`) takılı yön tuşlarının sıfırlanması sağlandı ve `/socket.io` HTTP proxy yanıt akışına `proxyRes.on('error')` koruması eklendi.
+
 
 
 
