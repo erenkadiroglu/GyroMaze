@@ -574,5 +574,41 @@ describe('RoomService — Oda Yönetimi, 6 Haneli Kod Eşleşmesi ve Skor Tablos
     assert.equal(emitted[0].targetId, firstRoomId);
     assert.equal(emitted[0].event, RoomEvents.ROOM_HOST_DISCONNECTED);
   });
+
+  it('GyroGateway kontrolcu soketi ROOM_CREATE gonderdiginde onceki odanin ev sahibini bilgilendirmelidir', async () => {
+    const service = new RoomService();
+    const room = await service.createRoom('host-existing');
+    service.joinRoom(room.roomId, 'ctrl-switching', 1);
+
+    const emitted = [];
+    const leftRooms = [];
+    const gateway = new GyroGateway(service);
+    gateway.server = {
+      to(targetId) {
+        return {
+          emit(event, payload) {
+            emitted.push({ targetId, event, payload });
+          },
+        };
+      },
+    };
+
+    const switchingClient = {
+      id: 'ctrl-switching',
+      async join() {},
+      async leave(roomId) {
+        leftRooms.push(roomId);
+      },
+      emit() {},
+    };
+
+    await gateway.handleCreateRoom(switchingClient);
+    assert.deepEqual(leftRooms, [room.roomId]);
+    assert.equal(service.getRoom(room.roomId)?.isControllerConnected, false);
+    assert.equal(service.getMembership('ctrl-switching')?.role, 'host');
+    assert.equal(emitted.length, 1);
+    assert.equal(emitted[0].targetId, 'host-existing');
+    assert.equal(emitted[0].event, RoomEvents.ROOM_CONTROLLER_DISCONNECTED);
+  });
 });
 

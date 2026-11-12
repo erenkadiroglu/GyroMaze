@@ -37,8 +37,10 @@ function MobileControllerContent() {
   useAppPreferences();
 
   const searchParams = useSearchParams();
-  const initialRoomParam =
-    searchParams.get('room')?.trim().toUpperCase() ?? '';
+  const initialRoomParam = (searchParams.get('room') ?? '')
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .toUpperCase()
+    .slice(0, 6);
   const initialSlotParam = searchParams.get('slot') === '2' ? 2 : 1;
 
   const [manualRoomInput, setManualRoomInput] = useState(initialRoomParam);
@@ -661,13 +663,15 @@ function MobileControllerContent() {
               autoComplete="off"
               autoCorrect="off"
               spellCheck={false}
-              maxLength={6}
               aria-label="6 haneli oda kodu"
               value={manualRoomInput}
               onChange={(e) => {
                 setRoomFormError(null);
                 setManualRoomInput(
-                  e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase(),
+                  e.target.value
+                    .replace(/[^a-zA-Z0-9]/g, '')
+                    .toUpperCase()
+                    .slice(0, 6),
                 );
               }}
               placeholder="ÖRN: 84K9X2"
