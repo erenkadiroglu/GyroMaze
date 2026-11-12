@@ -14,6 +14,7 @@ import {
 } from '@gyromaze/shared';
 import {
   MazeLevelDefinition,
+  getLevelRevisionKey,
   parseCustomMazeLevel,
 } from '@/components/scene/mazeLevels';
 
@@ -404,28 +405,60 @@ export const useGameStore = create<GameStoreState>()(
           collectedCrystals: [],
           resetCount: state.resetCount + 1,
         })),
-      setCustomLevel: (customLevel) => {
-        if (typeof window !== 'undefined') {
-          try {
-            window.localStorage.setItem(
-              CUSTOM_LEVEL_STORAGE_KEY,
-              JSON.stringify(customLevel),
-            );
-          } catch {
-            // LocalStorage kota/erişim hatası varsa yoksay
+      setCustomLevel: (customLevel) =>
+        set((state) => {
+          const prevRev = state.customLevel
+            ? getLevelRevisionKey(state.customLevel)
+            : null;
+          const nextRev = getLevelRevisionKey(customLevel);
+          const geometryChanged = prevRev !== nextRev;
+
+          let nextBestTimes = state.bestTimes;
+          let nextGhostPaths = state.ghostPaths;
+          if (
+            geometryChanged &&
+            (99 in state.bestTimes || 99 in state.ghostPaths)
+          ) {
+            nextBestTimes = { ...state.bestTimes };
+            nextGhostPaths = { ...state.ghostPaths };
+            delete nextBestTimes[99];
+            delete nextGhostPaths[99];
           }
-        }
-        set((state) => ({
-          customLevel,
-          level: 99,
-          winnerPlayer: null,
-          isEditorOpen: false,
-          gameStatus: 'playing',
-          elapsedSeconds: 0,
-          collectedCrystals: [],
-          resetCount: state.resetCount + 1,
-        }));
-      },
+
+          if (typeof window !== 'undefined') {
+            try {
+              window.localStorage.setItem(
+                CUSTOM_LEVEL_STORAGE_KEY,
+                JSON.stringify(customLevel),
+              );
+              if (geometryChanged) {
+                window.localStorage.setItem(
+                  BEST_TIMES_STORAGE_KEY,
+                  JSON.stringify(nextBestTimes),
+                );
+                window.localStorage.setItem(
+                  GHOST_PATHS_STORAGE_KEY,
+                  JSON.stringify(nextGhostPaths),
+                );
+              }
+            } catch {
+              // LocalStorage kota/erişim hatası varsa yoksay
+            }
+          }
+
+          return {
+            customLevel,
+            bestTimes: nextBestTimes,
+            ghostPaths: nextGhostPaths,
+            level: 99,
+            winnerPlayer: null,
+            isEditorOpen: false,
+            gameStatus: 'playing',
+            elapsedSeconds: 0,
+            collectedCrystals: [],
+            resetCount: state.resetCount + 1,
+          };
+        }),
       nextLevel: () =>
         set((state) => ({
           level: state.level === 99 ? 1 : state.level + 1,

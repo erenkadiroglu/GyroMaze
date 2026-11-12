@@ -729,9 +729,33 @@ export function getLevelRevisionKey(levelData: MazeLevelDefinition): string {
     .map((w) => `${w.position[0]},${w.position[2]},${w.size[0]}x${w.size[2]}`)
     .join(';');
   const holesSig = levelData.voidHoles
-    .map((h) => `${h.position[0]},${h.position[1]}`)
+    .map((h) => `${h.position[0]},${h.position[1]},${h.radius ?? 0.42}`)
     .join(';');
-  return `99-${levelData.startPosition.join(',')}-${levelData.goalPosition.join(',')}-${wallsSig}-${holesSig}-${levelData.crystals.length}-${levelData.laserGates.length}`;
+  const crystalsSig = levelData.crystals
+    .map(([cx, cz]) => `${cx},${cz}`)
+    .join(';');
+  const lasersSig = levelData.laserGates
+    .map(
+      (g) =>
+        `${g.position[0]},${g.position[1]},${g.axis},${g.length},${g.periodSeconds},${g.phaseOffset}`,
+    )
+    .join(';');
+  const boostsSig = (levelData.boostPads ?? [])
+    .map(
+      (b) =>
+        `${b.position[0]},${b.position[1]},${b.direction[0]},${b.direction[1]}`,
+    )
+    .join(';');
+  const teleportersSig = (levelData.teleporters ?? [])
+    .map((t) => `${t.entry[0]},${t.entry[1]}->${t.exit[0]},${t.exit[1]}`)
+    .join(';');
+  const movingSig = (levelData.movingObstacles ?? [])
+    .map(
+      (m) =>
+        `${m.center[0]},${m.center[1]},${m.axis},${m.amplitude},${m.speed},${m.phaseOffset}`,
+    )
+    .join(';');
+  return `99-${levelData.startPosition.join(',')}-${levelData.goalPosition.join(',')}-${wallsSig}|${holesSig}|${crystalsSig}|${lasersSig}|${boostsSig}|${teleportersSig}|${movingSig}`;
 }
 
 function isVec2(value: unknown): value is [number, number] {

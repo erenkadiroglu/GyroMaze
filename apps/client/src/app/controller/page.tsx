@@ -166,12 +166,13 @@ function MobileControllerContent() {
   }, [isTouchOverride, isRoomEditorOpen, permissionState, hasSensorSignal]);
 
   useEffect(() => {
+    setPlayerSlot(initialSlotParam);
     if (initialRoomParam) {
       setActiveRoomCode(initialRoomParam);
       setManualRoomInput(initialRoomParam);
       setIsRoomEditorOpen(false);
     }
-  }, [initialRoomParam]);
+  }, [initialRoomParam, initialSlotParam]);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && !window.isSecureContext) {
@@ -661,6 +662,8 @@ function MobileControllerContent() {
             {/* Canlı 2B Ufuk Pad */}
             <div
               ref={gimbalPadRef}
+              role="application"
+              aria-label="Dokunmatik sanal eğim tablası; parmağını sürükleyerek bilyeyi yönlendirebilirsin"
               onPointerDown={handlePointerDownOnGimbal}
               onPointerMove={handlePointerMoveOnGimbal}
               onPointerUp={handlePointerEndOnGimbal}

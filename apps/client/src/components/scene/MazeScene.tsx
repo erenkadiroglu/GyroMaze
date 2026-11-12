@@ -213,14 +213,15 @@ function MazeStage({
   const runPathRef = useRef<Array<[number, number]>>([]);
   const runPathP2Ref = useRef<Array<[number, number]>>([]);
   const runElapsedRef = useRef<number>(0);
+  const hazardElapsedRef = useRef<number>(0);
   const lastSampleTimeRef = useRef<number>(0);
   const lastWallSoundTimeRef = useRef<{ 1: number; 2: number }>({ 1: 0, 2: 0 });
-  const lastBoostTimeRef = useRef<{ 1: number; 2: number }>({ 1: 0, 2: 0 });
-  const lastTeleportTimeRef = useRef<{ 1: number; 2: number }>({ 1: 0, 2: 0 });
-  const lastMovingHitTimeRef = useRef<{ 1: number; 2: number }>({ 1: 0, 2: 0 });
+  const lastBoostTimeRef = useRef<{ 1: number; 2: number }>({ 1: -1, 2: -1 });
+  const lastTeleportTimeRef = useRef<{ 1: number; 2: number }>({ 1: -1, 2: -1 });
+  const lastMovingHitTimeRef = useRef<{ 1: number; 2: number }>({ 1: -1, 2: -1 });
   const lastHazardResetTimeRef = useRef<{ 1: number; 2: number }>({
-    1: 0,
-    2: 0,
+    1: -1,
+    2: -1,
   });
   const lastHoleHitMsRef = useRef<{ 1: number; 2: number }>({ 1: 0, 2: 0 });
 
@@ -390,7 +391,16 @@ function MazeStage({
       ],
     ];
     runElapsedRef.current = 0;
+    hazardElapsedRef.current = 0;
     lastSampleTimeRef.current = 0;
+    lastBoostTimeRef.current[1] = -1;
+    lastBoostTimeRef.current[2] = -1;
+    lastTeleportTimeRef.current[1] = -1;
+    lastTeleportTimeRef.current[2] = -1;
+    lastMovingHitTimeRef.current[1] = -1;
+    lastMovingHitTimeRef.current[2] = -1;
+    lastHazardResetTimeRef.current[1] = -1;
+    lastHazardResetTimeRef.current[2] = -1;
     resetSingleBall(ballBodyRef.current, 1);
     resetSingleBall(ball2BodyRef.current, 2);
   }, [
@@ -593,37 +603,44 @@ function MazeStage({
       }
     }
 
-    // Lazer ışınlarının görünürlüğünü kare başına bir kez güncelle
-    for (let i = 0; i < levelData.laserGates.length; i++) {
-      const gate = levelData.laserGates[i];
-      const beamMesh = laserBeamMeshesRef.current[i];
-      if (beamMesh) {
-        const cycleTime = (elapsed + gate.phaseOffset) % gate.periodSeconds;
-        beamMesh.visible = cycleTime < gate.periodSeconds * 0.52;
-      }
-    }
-
-    // Hareketli devriye engellerinin görsel konumunu kare başına bir kez güncelle
-    const movingObstacles = levelData.movingObstacles ?? [];
-    for (let i = 0; i < movingObstacles.length; i++) {
-      const obs = movingObstacles[i];
-      const mesh = movingObstacleMeshesRef.current[i];
-      if (mesh) {
-        const offset =
-          Math.sin(elapsed * obs.speed + obs.phaseOffset) * obs.amplitude;
-        const ox = obs.axis === 'x' ? obs.center[0] + offset : obs.center[0];
-        const oz = obs.axis === 'z' ? obs.center[1] + offset : obs.center[1];
-        mesh.position.set(ox, 0.36, oz);
-        mesh.rotation.y += safeDelta * 1.8;
-      }
-    }
-
     const isInteractive =
       gameStatus === 'playing' &&
       !isPairingModalOpen &&
       !isSettingsOpen &&
       !isEditorOpen &&
       !isLeaderboardOpen;
+
+    if (isInteractive) {
+      hazardElapsedRef.current += safeDelta;
+    }
+    const hazardElapsed = hazardElapsedRef.current;
+
+    // Lazer ışınlarının görünürlüğünü duraklatma duyarlı saatle kare başına güncelle
+    for (let i = 0; i < levelData.laserGates.length; i++) {
+      const gate = levelData.laserGates[i];
+      const beamMesh = laserBeamMeshesRef.current[i];
+      if (beamMesh) {
+        const cycleTime = (hazardElapsed + gate.phaseOffset) % gate.periodSeconds;
+        beamMesh.visible = cycleTime < gate.periodSeconds * 0.52;
+      }
+    }
+
+    // Hareketli devriye engellerinin görsel konumunu kare başına güncelle
+    const movingObstacles = levelData.movingObstacles ?? [];
+    for (let i = 0; i < movingObstacles.length; i++) {
+      const obs = movingObstacles[i];
+      const mesh = movingObstacleMeshesRef.current[i];
+      if (mesh) {
+        const offset =
+          Math.sin(hazardElapsed * obs.speed + obs.phaseOffset) * obs.amplitude;
+        const ox = obs.axis === 'x' ? obs.center[0] + offset : obs.center[0];
+        const oz = obs.axis === 'z' ? obs.center[1] + offset : obs.center[1];
+        mesh.position.set(ox, 0.36, oz);
+        if (isInteractive) {
+          mesh.rotation.y += safeDelta * 1.8;
+        }
+      }
+    }
 
     const rawPitchRad = isInteractive
       ? THREE.MathUtils.degToRad(transientGyro.beta)
@@ -748,7 +765,7 @@ function MazeStage({
         ballBodyRef.current,
         pos,
         1,
-        elapsed,
+        hazardElapsed,
         isInteractive,
       );
 
@@ -816,7 +833,7 @@ function MazeStage({
           ball2BodyRef.current,
           pos2,
           2,
-          elapsed,
+          hazardElapsed,
           isInteractive,
         );
 

@@ -368,7 +368,8 @@ export class RoomService {
       payload.levelId === 99 ||
       typeof payload.timeSeconds !== 'number' ||
       !Number.isFinite(payload.timeSeconds) ||
-      payload.timeSeconds <= 0
+      payload.timeSeconds <= 0 ||
+      payload.timeSeconds > 3600
     ) {
       return this.leaderboard;
     }

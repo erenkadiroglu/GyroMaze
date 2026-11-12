@@ -317,8 +317,14 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
    */
   @SubscribeMessage(RoomEvents.LEADERBOARD_SUBMIT)
   public handleSubmitScore(
+    @ConnectedSocket() client: Socket,
     @MessageBody() payload: SubmitScorePayload,
   ): void {
+    const membership = this.roomService.getMembership(client.id);
+    if (!membership || membership.role !== 'host') {
+      return;
+    }
+
     if (
       !payload ||
       !Number.isInteger(payload.levelId) ||
@@ -326,7 +332,8 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
       payload.levelId === 99 ||
       typeof payload.timeSeconds !== 'number' ||
       !Number.isFinite(payload.timeSeconds) ||
-      payload.timeSeconds <= 0
+      payload.timeSeconds <= 0 ||
+      payload.timeSeconds > 3600
     ) {
       return;
     }

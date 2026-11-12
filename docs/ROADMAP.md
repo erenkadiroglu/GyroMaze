@@ -164,6 +164,13 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Editör Izgara Senkronizasyonu & WAI-ARIA Klavye Gezintisi (`LevelEditorModal.tsx`):** Harita editörü açıldığında mevcut/içe aktarılmış özel haritayı (`worldToGrid` / `levelDefinitionToGrid`) başlık ve 8×8 ızgaraya geri yansıtır hale getirildi; 8×8 `role="grid"` içine ok tuşları ve `Home`/`End` odak gezintisi eklendi.
 - [x] **Akıllı LAN IP Seçimi & Saniye Altı Skor Hassasiyeti (`room.service.ts`, `room.service.test.mjs`):** `selectPreferredLanIp` ile WSL/Hyper-V/Docker/VPN sanal adaptörleri ve `169.254.*` link-local adresler yerine fiziksel LAN IPv4 adresi önceliklendirildi; `submitScore` 1 saniyenin altındaki gerçek süreleri (`0.8 sn`) `Math.max(0.1, ...)` ile korur hale getirildi.
 
+## ✅ Faz 24: Deterministik Engel Saati, Özel Harita Hayalet Temizliği ve Skor Güvenliği (Tamamlandı)
+
+- [x] **Duraklatma Duyarlı Engel Saati & Tam Geometri Anahtarı (`MazeScene.tsx`, `mazeLevels.ts`, `mazeLevels.test.mjs`):** Lazer kapıları ve hareketli devriye engelleri küresel WebGL saati yerine yalnızca aktif oyun (`isInteractive`) sırasında ilerleyen `hazardElapsedRef` saatine bağlanıp her sıfırlamada başlangıç fazına alındı; `getLevelRevisionKey` tüm kristal, rampa, portal, lazer ve devriye engel koordinatlarını kapsayacak şekilde genişletildi.
+- [x] **Özel Harita Rekor & Hayalet Geçersizleştirme (`useGameStore.ts`):** Editörden yeni veya değiştirilmiş bir özel harita (`id: 99`) yüklendiğinde eski haritaya ait bayat `bestTimes[99]` rekoru ve duvarlardan geçen eski `ghostPaths[99]` hayalet kaydı hem bellekten hem `localStorage` üzerinden temizlenir hale getirildi.
+- [x] **Mobil Yuva Eşitleme & Jiroskop Delta Sıfırlaması (`controller/page.tsx`, `useSocket.ts`):** URL `?slot=2` sorgu parametresi canlı olarak senkronize edildi, dokunmatik gimbal yüzeyine WAI-ARIA etiketi eklendi ve yuva/oda değişimlerinde ilk sensör paketinin delta filtresine takılmaması için `lastSentBetaRef`/`lastSentGammaRef` tamponları sıfırlandı.
+- [x] **Ev Sahibi Yetkili Skor Gönderimi (`gyro.gateway.ts`, `room.service.ts`, `useSocket.ts`, `room.service.test.mjs`):** `LEADERBOARD_SUBMIT` olayı yalnızca doğrulanmış oda sahibi (`host`) soketlerine izin verecek ve `> 3600 sn` uç değerleri reddedecek şekilde sıkılaştırıldı; istemci skor gönderimi aktif `roomId` hazır olana dek bekletildi.
+
 
 
 

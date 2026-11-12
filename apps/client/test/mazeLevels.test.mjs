@@ -218,6 +218,10 @@ describe('MAZE_LEVELS — 3B Harita Geometrisi, Engel Konumları ve Fizik Doğru
       getLevelRevisionKey(blockedEastCustom),
       getLevelRevisionKey({ ...blockedEastCustom, innerWalls: [] }),
     );
+    assert.notEqual(
+      getLevelRevisionKey(blockedEastCustom),
+      getLevelRevisionKey({ ...blockedEastCustom, crystals: [[-2, 2]] }),
+    );
   });
 
   it('parseCustomMazeLevel geçerli JSON haritasını normalize etmeli ve bozuk şemaları reddetmelidir', () => {

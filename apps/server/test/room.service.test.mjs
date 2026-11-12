@@ -348,6 +348,53 @@ describe('RoomService — Oda Yönetimi, 6 Haneli Kod Eşleşmesi ve Skor Tablos
     const record = updated.find((r) => r.playerName === 'Hızlı Tur');
     assert.ok(record);
     assert.equal(record.timeSeconds, 0.8);
+
+    const beforeInvalid = service.getLeaderboard().length;
+    service.submitScore({
+      playerName: 'Süre Aşımı',
+      levelId: 2,
+      timeSeconds: 9999,
+    });
+    assert.equal(service.getLeaderboard().length, beforeInvalid);
+  });
+
+  it('GyroGateway skor gönderimini yalnız doğrulanmış masaüstü (host) soketleri için kabul etmelidir', async () => {
+    const service = new RoomService();
+    const room = await service.createRoom('host-score');
+    service.joinRoom(room.roomId, 'ctrl-score', 1);
+
+    const broadcasts = [];
+    const gateway = new GyroGateway(service);
+    gateway.server = {
+      emit(event, payload) {
+        broadcasts.push({ event, payload });
+      },
+    };
+
+    gateway.handleSubmitScore(
+      { id: 'rogue-client' },
+      { playerName: 'Sahte Bot', levelId: 1, timeSeconds: 0.2 },
+    );
+    gateway.handleSubmitScore(
+      { id: 'ctrl-score' },
+      { playerName: 'Sahte Kontrolcü', levelId: 1, timeSeconds: 0.3 },
+    );
+    assert.equal(broadcasts.length, 0);
+
+    gateway.handleSubmitScore(
+      { id: 'host-score' },
+      { playerName: 'Doğrulanmış Ev Sahibi', levelId: 3, timeSeconds: 11.2 },
+    );
+    assert.equal(broadcasts.length, 1);
+    assert.equal(broadcasts[0].event, RoomEvents.LEADERBOARD_UPDATE);
+    assert.ok(
+      broadcasts[0].payload.some(
+        (entry) =>
+          entry.playerName === 'Doğrulanmış Ev Sahibi' &&
+          entry.levelId === 3 &&
+          entry.timeSeconds === 11.2,
+      ),
+    );
   });
 });
 

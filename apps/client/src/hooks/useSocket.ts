@@ -166,6 +166,9 @@ export function useSocket({
         });
       } else {
         setControllerPaired(true);
+        lastEmitTimeRef.current = 0;
+        lastSentBetaRef.current = 999;
+        lastSentGammaRef.current = 999;
       }
       setErrorMessage(null);
 
@@ -374,6 +377,9 @@ export function useSocket({
   useEffect(() => {
     if (role !== 'controller' || !targetRoomId) return;
     if (socketRef.current?.connected) {
+      lastEmitTimeRef.current = 0;
+      lastSentBetaRef.current = 999;
+      lastSentGammaRef.current = 999;
       setErrorMessage(null);
       socketRef.current.emit(RoomEvents.ROOM_JOIN, {
         roomId: targetRoomId,
@@ -394,6 +400,7 @@ export function useSocket({
   useEffect(() => {
     if (
       role !== 'host' ||
+      !roomId ||
       !pendingScoreSubmission ||
       !isSocketConnected ||
       !socketRef.current?.connected
@@ -405,7 +412,13 @@ export function useSocket({
       pendingScoreSubmission,
     );
     submitLeaderboardScore(null);
-  }, [role, pendingScoreSubmission, isSocketConnected, submitLeaderboardScore]);
+  }, [
+    role,
+    roomId,
+    pendingScoreSubmission,
+    isSocketConnected,
+    submitLeaderboardScore,
+  ]);
 
   /**
    * 60Hz frekansında ve delta filtreli volatile WebSocket çerçevesi gönderir.
