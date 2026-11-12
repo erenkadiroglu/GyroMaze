@@ -51,14 +51,8 @@ function MobileControllerContent() {
   playerSlotRef.current = playerSlot;
   const [isRoomEditorOpen, setIsRoomEditorOpen] = useState(!initialRoomParam);
   const [roomFormError, setRoomFormError] = useState<string | null>(null);
-  const [isTouchOverride, setIsTouchOverride] = useState(false);
   const [isInsecureContext, setIsInsecureContext] = useState(false);
   const [sensorSignalTimedOut, setSensorSignalTimedOut] = useState(false);
-  const [sensitivityMultiplier, setSensitivityMultiplier] = useState<
-    0.75 | 1 | 1.35
-  >(1);
-  const sensitivityRef = useRef<number>(1);
-  sensitivityRef.current = sensitivityMultiplier;
 
   const isSocketConnected = useGameStore((s) => s.isSocketConnected);
   const isControllerPaired = useGameStore((s) => s.isControllerPaired);
@@ -76,6 +70,19 @@ function MobileControllerContent() {
   const isHapticEnabled = useGameStore((s) => s.isHapticEnabled);
   const toggleHapticEnabled = useGameStore((s) => s.toggleHapticEnabled);
   const recentRooms = useGameStore((s) => s.recentRooms);
+  const controllerSensitivity = useGameStore((s) => s.controllerSensitivity);
+  const setControllerSensitivity = useGameStore(
+    (s) => s.setControllerSensitivity,
+  );
+  const controllerTouchOverride = useGameStore(
+    (s) => s.controllerTouchOverride,
+  );
+  const setControllerTouchOverride = useGameStore(
+    (s) => s.setControllerTouchOverride,
+  );
+
+  const sensitivityRef = useRef<number>(controllerSensitivity);
+  sensitivityRef.current = controllerSensitivity;
 
   const activeRoomCodeRef = useRef<string>(activeRoomCode);
   activeRoomCodeRef.current = activeRoomCode;
@@ -155,12 +162,12 @@ function MobileControllerContent() {
     calibrate,
   } = useDeviceOrientation({
     onOrientationData: handleOrientationData,
-    enabled: !isTouchOverride && !isRoomEditorOpen,
+    enabled: !controllerTouchOverride && !isRoomEditorOpen,
   });
 
   useEffect(() => {
     if (
-      isTouchOverride ||
+      controllerTouchOverride ||
       isRoomEditorOpen ||
       permissionState !== 'granted' ||
       hasSensorSignal
@@ -172,7 +179,12 @@ function MobileControllerContent() {
       setSensorSignalTimedOut(true);
     }, 1500);
     return () => window.clearTimeout(timer);
-  }, [isTouchOverride, isRoomEditorOpen, permissionState, hasSensorSignal]);
+  }, [
+    controllerTouchOverride,
+    isRoomEditorOpen,
+    permissionState,
+    hasSensorSignal,
+  ]);
 
   useEffect(() => {
     setPlayerSlot(initialSlotParam);
@@ -196,7 +208,7 @@ function MobileControllerContent() {
   }, [isControllerPaired]);
 
   const showGimbalSurface =
-    (permissionState === 'granted' || isTouchOverride) &&
+    (permissionState === 'granted' || controllerTouchOverride) &&
     Boolean(activeRoomCode) &&
     !isRoomEditorOpen;
 
@@ -331,11 +343,11 @@ function MobileControllerContent() {
   const handleActivateSensors = async () => {
     const granted = await requestSensorPermission();
     if (granted) {
-      setIsTouchOverride(false);
+      setControllerTouchOverride(false);
       calibrate();
       emitCalibrate();
     } else {
-      setIsTouchOverride(true);
+      setControllerTouchOverride(true);
     }
   };
 
@@ -786,7 +798,7 @@ function MobileControllerContent() {
 
             <button
               type="button"
-              onClick={() => setIsTouchOverride(true)}
+              onClick={() => setControllerTouchOverride(true)}
               className="flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-line bg-surface-2 text-xs font-medium text-fg active:scale-[0.98]"
             >
               <Hand className="h-4 w-4 text-signal" aria-hidden="true" />
@@ -843,7 +855,9 @@ function MobileControllerContent() {
             </div>
 
             <p className="mt-2.5 text-center text-xs text-muted">
-              Telefonu eğ veya dairedeki küreyi parmağınla sürükle
+              {controllerTouchOverride
+                ? 'Dairedeki küreyi parmağınla sürükleyerek yönlendir'
+                : 'Telefonu eğ veya dairedeki küreyi parmağınla sürükle'}
             </p>
             {!isControllerPaired && !errorMessage && (
               <p
@@ -853,14 +867,16 @@ function MobileControllerContent() {
                 Masaüstü eşleşmesi bekleniyor — oda kodunu kontrol et
               </p>
             )}
-            {sensorSignalTimedOut && !isTouchOverride && !hasSensorSignal && (
-              <p
-                role="status"
-                className="mt-1.5 rounded-xl border border-warn/30 bg-warn/10 px-3 py-1.5 text-center text-[11px] text-warn"
-              >
-                Donanım sensör sinyali alınamadı — daireyi parmağınla sürükleyebilirsin
-              </p>
-            )}
+            {sensorSignalTimedOut &&
+              !controllerTouchOverride &&
+              !hasSensorSignal && (
+                <p
+                  role="status"
+                  className="mt-1.5 rounded-xl border border-warn/30 bg-warn/10 px-3 py-1.5 text-center text-[11px] text-warn"
+                >
+                  Donanım sensör sinyali alınamadı — daireyi parmağınla sürükleyebilirsin
+                </p>
+              )}
 
             {/* Sayısal Açı Göstergeleri (8Hz) */}
             <div className="mt-3 grid w-64 grid-cols-2 gap-2.5">
@@ -884,11 +900,61 @@ function MobileControllerContent() {
               </div>
             </div>
 
+            {/* Kontrol Modu Seçici (Jiroskop / Dokunmatik) */}
+            <div
+              role="radiogroup"
+              aria-label="Kontrol modu"
+              className="mt-2.5 grid w-64 grid-cols-2 gap-1 rounded-2xl border border-line bg-surface p-1"
+            >
+              <button
+                type="button"
+                role="radio"
+                aria-checked={!controllerTouchOverride}
+                tabIndex={!controllerTouchOverride ? 0 : -1}
+                onClick={async () => {
+                  if (permissionState === 'granted') {
+                    setControllerTouchOverride(false);
+                    pushGyroSample(0, 0);
+                  } else {
+                    await handleActivateSensors();
+                  }
+                }}
+                className={cx(
+                  'flex min-h-[38px] cursor-pointer items-center justify-center gap-1.5 rounded-xl text-xs font-semibold transition-colors',
+                  !controllerTouchOverride
+                    ? 'bg-brass text-brass-fg'
+                    : 'text-muted hover:text-fg',
+                )}
+              >
+                <Smartphone className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Jiroskop</span>
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={controllerTouchOverride}
+                tabIndex={controllerTouchOverride ? 0 : -1}
+                onClick={() => {
+                  setControllerTouchOverride(true);
+                  pushGyroSample(0, 0);
+                }}
+                className={cx(
+                  'flex min-h-[38px] cursor-pointer items-center justify-center gap-1.5 rounded-xl text-xs font-semibold transition-colors',
+                  controllerTouchOverride
+                    ? 'bg-brass text-brass-fg'
+                    : 'text-muted hover:text-fg',
+                )}
+              >
+                <Hand className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Dokunmatik</span>
+              </button>
+            </div>
+
             {/* Hassasiyet Seçici */}
             <div
               role="radiogroup"
               aria-label="Jiroskop hassasiyeti"
-              className="mt-2.5 grid w-64 grid-cols-3 gap-1 rounded-2xl border border-line bg-surface p-1"
+              className="mt-2 grid w-64 grid-cols-3 gap-1 rounded-2xl border border-line bg-surface p-1"
             >
               {(
                 [
@@ -897,7 +963,7 @@ function MobileControllerContent() {
                   { mult: 1.35, label: 'Hızlı' },
                 ] as const
               ).map((item, idx, list) => {
-                const active = sensitivityMultiplier === item.mult;
+                const active = controllerSensitivity === item.mult;
                 return (
                   <button
                     key={item.mult}
@@ -905,10 +971,10 @@ function MobileControllerContent() {
                     role="radio"
                     aria-checked={active}
                     tabIndex={active ? 0 : -1}
-                    onClick={() => setSensitivityMultiplier(item.mult)}
+                    onClick={() => setControllerSensitivity(item.mult)}
                     onKeyDown={(e) =>
                       handleRadioGroupKeyDown(e, idx, list.length, (nextIdx) =>
-                        setSensitivityMultiplier(list[nextIdx].mult),
+                        setControllerSensitivity(list[nextIdx].mult),
                       )
                     }
                     className={cx(

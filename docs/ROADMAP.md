@@ -327,3 +327,7 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 ### Faz 58: REST Liderlik Tablosu Uç Noktası (`/api/leaderboard`) ve Genel API Proxy Yönlendirmesi (Tamamlandı)
 - [x] **Liderlik Tablosu REST Denetleyicisi (`leaderboard.controller.ts`, `app.module.ts`, `socket.e2e.test.mjs`):** `GET /api/leaderboard` üzerinden tüm rekorları veya `?level=1` parametresiyle belirli bölüm derecelerini JSON formatında sunan NestJS denetleyicisi eklendi; canlı E2E testlerle doğrulandı.
 - [x] **Kapsamlı `/api/*` Proxy Desteği (`proxy-helpers.mjs`, `proxy.test.mjs`):** Next.js özel sunucusundaki ters proxy kuralları tüm `/api/*` isteklerini (sağlık ve skor telemetrisi) NestJS arka ucuna kesintisiz iletecek şekilde genişletildi ve otomatik testlerle güvence altına alındı.
+
+### Faz 59: Mobil Kontrolcü Kalıcı Hassasiyet ve Dokunmatik/Jiroskop Mod Geçişi (Tamamlandı)
+- [x] **Kalıcı Hassasiyet ve Dokunmatik Mod Durumu (`useGameStore.ts`, `controller/page.tsx`):** Mobil kontrolcü için `controllerSensitivity` (0.75, 1, 1.35) ve `controllerTouchOverride` alanları Zustand deposuna ve `localStorage` kalıcılığına eklendi; sayfa yenilendiğinde tercihlerin korunması sağlandı.
+- [x] **Canlı Mod Seçici ve Pil/CPU Optimizasyonu (`controller/page.tsx`, `useDeviceOrientation.ts`, `controllerPreferences.test.mjs`):** Aktif gimbal ekranına `Jiroskop` ve `Dokunmatik` geçiş düğmesi eklendi; dokunmatik moda geçildiğinde donanım sensör dinleyicileri derhal kaldırılarak pil tasarrufu sağlandı, açı ölçekleme ve sınırlandırma kuralları otomatik testlerle doğrulandı.

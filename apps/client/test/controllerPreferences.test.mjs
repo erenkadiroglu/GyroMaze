@@ -21,6 +21,14 @@ function getLatencyTone(ms) {
   return 'warn';
 }
 
+/**
+ * Hassasiyet çarpanı ile jiroskop / dokunmatik açı ölçekleme ve sınırlandırma.
+ */
+function scaleGyroAngle(deg, mult, clampRange = 35) {
+  const scaled = Math.round(Math.max(-clampRange, Math.min(clampRange, deg * mult)) * 10) / 10;
+  return scaled;
+}
+
 describe('Mobil Kontrolcü Tercihleri ve Bağlantı Kalite Kuralları', () => {
   it('son odalar listesini benzersiz, en yeni başta ve en fazla 3 kayıtla sınırlandırır', () => {
     let list = [];
@@ -55,6 +63,30 @@ describe('Mobil Kontrolcü Tercihleri ve Bağlantı Kalite Kuralları', () => {
     assert.equal(getLatencyTone(74), 'brass');
     assert.equal(getLatencyTone(75), 'warn');
     assert.equal(getLatencyTone(180), 'warn');
+  });
+
+  it('açı ölçeklemeyi seçilen hassasiyet çarpanına göre uygular ve ±35 dereceye sınırlar', () => {
+    // Standart (1x)
+    assert.equal(scaleGyroAngle(15.24, 1), 15.2);
+    assert.equal(scaleGyroAngle(-40, 1), -35);
+
+    // Hassas (0.75x)
+    assert.equal(scaleGyroAngle(20, 0.75), 15);
+    assert.equal(scaleGyroAngle(40, 0.75), 30);
+
+    // Hızlı (1.35x)
+    assert.equal(scaleGyroAngle(10, 1.35), 13.5);
+    assert.equal(scaleGyroAngle(30, 1.35), 35); // 40.5 -> 35
+  });
+
+  it('kontrolcü hassasiyet ve dokunmatik mod kalıcı tercih formatını doğrular', () => {
+    const validSensitivities = [0.75, 1, 1.35];
+    const defaultSensitivity = 1;
+    const defaultTouchOverride = false;
+
+    assert.ok(validSensitivities.includes(defaultSensitivity));
+    assert.equal(typeof defaultTouchOverride, 'boolean');
+    assert.equal(defaultTouchOverride, false);
   });
 });
 

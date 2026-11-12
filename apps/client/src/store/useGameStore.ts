@@ -242,6 +242,10 @@ interface GameStoreState {
   isHapticEnabled: boolean;
   /** Mobil kontrolcüde son bağlanılan en fazla 3 benzersiz oda kodu */
   recentRooms: string[];
+  /** Mobil kontrolcü jiroskop/dokunmatik hassasiyet katsayısı (0.75, 1, 1.35) */
+  controllerSensitivity: 0.75 | 1 | 1.35;
+  /** Mobil kontrolcüde dokunmatik sanal gimbal modunun aktif olup olmadığı */
+  controllerTouchOverride: boolean;
   /** Oda veya bağlantı hatası mesajı */
   errorMessage: string | null;
 
@@ -272,6 +276,8 @@ interface GameStoreState {
   toggleHapticEnabled: () => void;
   addRecentRoom: (roomCode: string) => void;
   clearRecentRooms: () => void;
+  setControllerSensitivity: (sensitivity: 0.75 | 1 | 1.35) => void;
+  setControllerTouchOverride: (override: boolean) => void;
   setGameStatus: (status: GameStatus) => void;
   setLevel: (level: number) => void;
   setCustomLevel: (customLevel: MazeLevelDefinition) => void;
@@ -398,6 +404,8 @@ export const useGameStore = create<GameStoreState>()(
       hapticSignal: null,
       isHapticEnabled: true,
       recentRooms: [],
+      controllerSensitivity: 1,
+      controllerTouchOverride: false,
       errorMessage: null,
 
       setRoomId: (roomId) => set({ roomId }),
@@ -653,6 +661,10 @@ export const useGameStore = create<GameStoreState>()(
           return { recentRooms: [code, ...filtered].slice(0, 3) };
         }),
       clearRecentRooms: () => set({ recentRooms: [] }),
+      setControllerSensitivity: (controllerSensitivity) =>
+        set({ controllerSensitivity }),
+      setControllerTouchOverride: (controllerTouchOverride) =>
+        set({ controllerTouchOverride }),
       triggerBallReset: () => set((state) => resetRunFields(state)),
       triggerHaptic: (type, playerSlot) =>
         set((state) => ({
@@ -707,6 +719,8 @@ export const useGameStore = create<GameStoreState>()(
         showMiniMap: state.showMiniMap,
         isHapticEnabled: state.isHapticEnabled,
         recentRooms: state.recentRooms,
+        controllerSensitivity: state.controllerSensitivity,
+        controllerTouchOverride: state.controllerTouchOverride,
       }),
     },
   ),
