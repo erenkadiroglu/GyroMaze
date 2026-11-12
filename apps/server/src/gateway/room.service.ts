@@ -174,10 +174,32 @@ export class RoomService {
   }
 
   /**
+   * Uzun süreli çalışan sunucularda terk edilmiş/zaman aşımına uğramış odaları bellekten temizler.
+   */
+  public pruneExpiredRooms(maxAgeMs = 12 * 60 * 60 * 1000, now = Date.now()): number {
+    let pruned = 0;
+    for (const [roomId, room] of this.rooms.entries()) {
+      if (now - room.createdAt >= maxAgeMs) {
+        this.socketMembership.delete(room.hostSocketId);
+        if (room.controllerSocketId) {
+          this.socketMembership.delete(room.controllerSocketId);
+        }
+        if (room.secondControllerSocketId) {
+          this.socketMembership.delete(room.secondControllerSocketId);
+        }
+        this.rooms.delete(roomId);
+        pruned += 1;
+      }
+    }
+    return pruned;
+  }
+
+  /**
    * Masaüstü istemcisi (Host) için yeni bir oyun odası oluşturur.
    */
   public async createRoom(hostSocketId: string): Promise<RoomState> {
     this.removeSocket(hostSocketId);
+    this.pruneExpiredRooms();
 
     const roomId = this.generateRoomCode();
     const tunnelUrl = await this.detectActiveTunnelUrl();

@@ -137,7 +137,7 @@ export function Modal({
           transition={{ duration: 0.16 }}
           className="pointer-events-auto fixed inset-0 z-50 flex items-center justify-center bg-base/70 p-4 backdrop-blur-sm"
           onMouseDown={(e) => {
-            if (e.target === e.currentTarget) onClose();
+            if (!hideClose && e.target === e.currentTarget) onClose();
           }}
         >
           <motion.div

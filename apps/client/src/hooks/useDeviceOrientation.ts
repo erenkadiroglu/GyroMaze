@@ -33,6 +33,7 @@ export function useDeviceOrientation({
   const onOrientationDataRef = useRef(onOrientationData);
   onOrientationDataRef.current = onOrientationData;
   const hasSignalRef = useRef(false);
+  const pendingAutoCalibrateRef = useRef(false);
 
   const rawAnglesRef = useRef<{ alpha: number; beta: number; gamma: number }>({
     alpha: 0,
@@ -72,6 +73,9 @@ export function useDeviceOrientation({
     if (typeof OrientationEvent.requestPermission === 'function') {
       try {
         const response = await OrientationEvent.requestPermission();
+        if (response === 'granted') {
+          pendingAutoCalibrateRef.current = true;
+        }
         setPermissionState(response);
         return response === 'granted';
       } catch {
@@ -80,6 +84,7 @@ export function useDeviceOrientation({
       }
     }
 
+    pendingAutoCalibrateRef.current = true;
     setPermissionState('granted');
     return true;
   }, []);
@@ -88,6 +93,9 @@ export function useDeviceOrientation({
    * Kullanıcının telefonu o an tuttuğu açıyı (0, 0) referans noktası olarak kaydeder.
    */
   const calibrate = useCallback(() => {
+    if (!hasSignalRef.current) {
+      pendingAutoCalibrateRef.current = true;
+    }
     calibrationRef.current.betaOffset = rawAnglesRef.current.beta;
     calibrationRef.current.gammaOffset = rawAnglesRef.current.gamma;
     smoothedRef.current.beta = 0;
@@ -104,15 +112,11 @@ export function useDeviceOrientation({
       return;
     }
 
-    const wrapDelta = (angle: number) => ((((angle + 540) % 360) - 180));
+    const wrapDelta = (angle: number) => (((angle % 360) + 540) % 360) - 180;
 
     const handleOrientation = (event: DeviceOrientationEvent) => {
       if (event.beta === null && event.gamma === null) {
         return;
-      }
-      if (!hasSignalRef.current) {
-        hasSignalRef.current = true;
-        setHasSensorSignal(true);
       }
 
       const alpha = event.alpha ?? 0;
@@ -122,6 +126,18 @@ export function useDeviceOrientation({
       rawAnglesRef.current.alpha = alpha;
       rawAnglesRef.current.beta = beta;
       rawAnglesRef.current.gamma = gamma;
+
+      if (!hasSignalRef.current) {
+        hasSignalRef.current = true;
+        setHasSensorSignal(true);
+      }
+      if (pendingAutoCalibrateRef.current) {
+        pendingAutoCalibrateRef.current = false;
+        calibrationRef.current.betaOffset = beta;
+        calibrationRef.current.gammaOffset = gamma;
+        smoothedRef.current.beta = 0;
+        smoothedRef.current.gamma = 0;
+      }
 
       let deltaBeta = wrapDelta(beta - calibrationRef.current.betaOffset);
       let deltaGamma = wrapDelta(gamma - calibrationRef.current.gammaOffset);

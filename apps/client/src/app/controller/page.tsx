@@ -288,10 +288,8 @@ function MobileControllerContent() {
     const granted = await requestSensorPermission();
     if (granted) {
       setIsTouchOverride(false);
-      window.setTimeout(() => {
-        calibrate();
-        emitCalibrate();
-      }, 120);
+      calibrate();
+      emitCalibrate();
     } else {
       setIsTouchOverride(true);
     }

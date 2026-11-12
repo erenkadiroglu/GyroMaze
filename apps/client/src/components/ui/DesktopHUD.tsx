@@ -110,7 +110,7 @@ export function DesktopHUD() {
     hostname: 'localhost',
     port: '3000',
   });
-  const [playerName, setPlayerName] = useState('Eren Kadiroğlu');
+  const [playerName, setPlayerName] = useState('Oyuncu');
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
   const [selectedLeaderboardLevel, setSelectedLeaderboardLevel] = useState(1);
 
@@ -170,6 +170,14 @@ export function DesktopHUD() {
         hostname: window.location.hostname,
         port: window.location.port,
       });
+      try {
+        const savedName = window.localStorage.getItem('gyromaze_player_name_v1');
+        if (savedName && savedName.trim()) {
+          setPlayerName(savedName.trim().slice(0, 24));
+        }
+      } catch {
+        // LocalStorage erişimi yoksa varsayılan adla devam et
+      }
     }
   }, []);
 
@@ -338,8 +346,17 @@ export function DesktopHUD() {
   const handleScoreSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (scoreSubmitted) return;
+    const cleanName = playerName.trim().slice(0, 24) || 'Oyuncu';
+    setPlayerName(cleanName);
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.setItem('gyromaze_player_name_v1', cleanName);
+      } catch {
+        // LocalStorage yazma hatasını yoksay
+      }
+    }
     submitLeaderboardScore({
-      playerName: playerName.trim() || 'Eren Kadiroğlu',
+      playerName: cleanName,
       levelId: currentLevelInfo.id,
       timeSeconds: elapsedSeconds,
     });

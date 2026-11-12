@@ -171,6 +171,13 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Mobil Yuva Eşitleme & Jiroskop Delta Sıfırlaması (`controller/page.tsx`, `useSocket.ts`):** URL `?slot=2` sorgu parametresi canlı olarak senkronize edildi, dokunmatik gimbal yüzeyine WAI-ARIA etiketi eklendi ve yuva/oda değişimlerinde ilk sensör paketinin delta filtresine takılmaması için `lastSentBetaRef`/`lastSentGammaRef` tamponları sıfırlandı.
 - [x] **Ev Sahibi Yetkili Skor Gönderimi (`gyro.gateway.ts`, `room.service.ts`, `useSocket.ts`, `room.service.test.mjs`):** `LEADERBOARD_SUBMIT` olayı yalnızca doğrulanmış oda sahibi (`host`) soketlerine izin verecek ve `> 3600 sn` uç değerleri reddedecek şekilde sıkılaştırıldı; istemci skor gönderimi aktif `roomId` hazır olana dek bekletildi.
 
+## ✅ Faz 25: İlk Örnek Sıfır-Gecikmeli Kalibrasyon, Proxy Yaşam Döngüsü ve Oda Bellek Temizliği (Tamamlandı)
+
+- [x] **Yarışsız İlk Donanım Sensörü Kalibrasyonu (`useDeviceOrientation.ts`, `controller/page.tsx`):** İzin onayından sonraki `120 ms` zamanlayıcı yarışı yerine `pendingAutoCalibrateRef` ile ilk gerçek donanım `deviceorientation` olayı yakalandığı anda tutuş açısı otomatik sıfır referansı olarak kaydedilir hale getirildi; `wrapDelta` çift modül sarımı ile sertleştirildi.
+- [x] **WebSocket/HTTP Proxy Yaşam Döngüsü (`apps/client/server.mjs`):** İstemci veya arka uç bağlantıyı erken kestiğinde yarı açık soket sızıntısını önlemek için `close`/`aborted` temizlik dinleyicileri eklendi, `/socket.io` yol eşleşmesi sınırlandırıldı ve `SIGINT`/`SIGTERM` temiz sunucu kapanışı sağlandı.
+- [x] **Eylem Odaklı Modal Koruması & Oyuncu Adı Kalıcılığı (`primitives.tsx`, `DesktopHUD.tsx`):** Zafer ve süre doldu (`hideClose`) modallarında yanlışlıkla dış boşluğa tıklayarak turu sıfırlama riski kapatıldı; skor gönderim alanı nötr `'Oyuncu'` varsayılanı ve kalıcı `localStorage` (`gyromaze_player_name_v1`) desteğiyle güncellendi.
+- [x] **Zaman Aşımlı Oda Temizliği (`room.service.ts`, `room.service.test.mjs`):** Uzun süre açık kalan sunucularda terk edilmiş odaların bellek birikmesini önlemek için `pruneExpiredRooms` eklendi ve birim testiyle doğrulandı.
+
 
 
 

@@ -396,5 +396,21 @@ describe('RoomService — Oda Yönetimi, 6 Haneli Kod Eşleşmesi ve Skor Tablos
       ),
     );
   });
+
+  it('pruneExpiredRooms süresi dolan odaları ve bağlı soket üyeliklerini temizlemelidir', async () => {
+    const service = new RoomService();
+    const staleRoom = await service.createRoom('stale-host');
+    service.joinRoom(staleRoom.roomId, 'stale-ctrl', 1);
+    const freshRoom = await service.createRoom('fresh-host');
+
+    staleRoom.createdAt = Date.now() - 13 * 60 * 60 * 1000;
+    const prunedCount = service.pruneExpiredRooms();
+
+    assert.equal(prunedCount, 1);
+    assert.equal(service.getRoom(staleRoom.roomId), undefined);
+    assert.equal(service.getMembership('stale-host'), undefined);
+    assert.equal(service.getMembership('stale-ctrl'), undefined);
+    assert.ok(service.getRoom(freshRoom.roomId));
+  });
 });
 

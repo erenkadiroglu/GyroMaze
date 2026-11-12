@@ -13,12 +13,20 @@ const handle = app.getRequestHandler();
 await app.prepare();
 const nextUpgradeHandler = app.getUpgradeHandler();
 
+function isSocketIoUrl(url) {
+  return (
+    url === '/socket.io' ||
+    url.startsWith('/socket.io/') ||
+    url.startsWith('/socket.io?')
+  );
+}
+
 /**
  * Next.js ve NestJS Socket.io sunucusunu tek portta (3000) birleştiren,
  * Nagle algoritması devre dışı bırakılmış (TCP_NODELAY) sıfır gecikmeli WebSocket Proxy sunucusu.
  */
 const server = createServer((req, res) => {
-  if (req.url && req.url.startsWith('/socket.io')) {
+  if (req.url && isSocketIoUrl(req.url)) {
     const targetPath = req.url.startsWith('/socket.io/')
       ? req.url
       : req.url.replace('/socket.io', '/socket.io/');
@@ -41,7 +49,16 @@ const server = createServer((req, res) => {
       if (!res.headersSent) {
         res.writeHead(502);
       }
-      res.end('Socket.io arka uç sunucusuna ulaşılamadı.');
+      if (!res.writableEnded) {
+        res.end('Socket.io arka uç sunucusuna ulaşılamadı.');
+      }
+    });
+
+    req.on('aborted', () => proxyReq.destroy());
+    res.on('close', () => {
+      if (!res.writableEnded) {
+        proxyReq.destroy();
+      }
     });
 
     req.pipe(proxyReq, { end: true });
@@ -55,7 +72,7 @@ const server = createServer((req, res) => {
 server.on('upgrade', (req, socket, head) => {
   socket.setNoDelay(true);
 
-  if (req.url && req.url.startsWith('/socket.io')) {
+  if (req.url && isSocketIoUrl(req.url)) {
     const targetPath = req.url.startsWith('/socket.io/')
       ? req.url
       : req.url.replace('/socket.io', '/socket.io/');
@@ -80,6 +97,8 @@ server.on('upgrade', (req, socket, head) => {
 
     proxySocket.on('error', () => socket.destroy());
     socket.on('error', () => proxySocket.destroy());
+    proxySocket.on('close', () => socket.destroy());
+    socket.on('close', () => proxySocket.destroy());
     return;
   }
 
@@ -91,3 +110,10 @@ server.listen(port, hostname, () => {
     `> [GyroMaze] Düşük gecikmeli WebGL + WebSocket Proxy sunucusu hazır: http://${hostname}:${port}`,
   );
 });
+
+function closeServer() {
+  server.close(() => process.exit(0));
+}
+
+process.on('SIGINT', closeServer);
+process.on('SIGTERM', closeServer);
