@@ -106,6 +106,16 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
    */
   @SubscribeMessage(RoomEvents.ROOM_CREATE)
   public async handleCreateRoom(@ConnectedSocket() client: Socket): Promise<void> {
+    const previousMembership = this.roomService.getMembership(client.id);
+    if (previousMembership?.role === 'host') {
+      await client.leave(previousMembership.roomId);
+      this.server
+        .to(previousMembership.roomId)
+        .emit(RoomEvents.ROOM_HOST_DISCONNECTED, {
+          roomId: previousMembership.roomId,
+        });
+    }
+
     const room = await this.roomService.createRoom(client.id);
     await client.join(room.roomId);
     this.logger.log(

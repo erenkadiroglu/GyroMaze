@@ -532,5 +532,47 @@ describe('RoomService — Oda Yönetimi, 6 Haneli Kod Eşleşmesi ve Skor Tablos
     assert.ok(service.getRoom(room.roomId));
     assert.equal(service.getMembership('host-guard')?.role, 'host');
   });
+
+  it('GyroGateway ayni host soketi yeniden ROOM_CREATE gonderdiginde onceki odadaki kontrolculeri bilgilendirmelidir', async () => {
+    const service = new RoomService();
+    const emitted = [];
+    const gateway = new GyroGateway(service);
+    gateway.server = {
+      to(targetId) {
+        return {
+          emit(event, payload) {
+            emitted.push({ targetId, event, payload });
+          },
+        };
+      },
+    };
+
+    const joinedRooms = [];
+    const leftRooms = [];
+    const hostClient = {
+      id: 'host-renew',
+      async join(roomId) {
+        joinedRooms.push(roomId);
+      },
+      async leave(roomId) {
+        leftRooms.push(roomId);
+      },
+      emit() {},
+    };
+
+    await gateway.handleCreateRoom(hostClient);
+    const firstRoomId = joinedRooms[0];
+    assert.ok(firstRoomId);
+
+    await gateway.handleCreateRoom(hostClient);
+    const secondRoomId = joinedRooms[1];
+    assert.ok(secondRoomId && secondRoomId !== firstRoomId);
+    assert.deepEqual(leftRooms, [firstRoomId]);
+    assert.equal(service.getRoom(firstRoomId), undefined);
+    assert.ok(service.getRoom(secondRoomId));
+    assert.equal(emitted.length, 1);
+    assert.equal(emitted[0].targetId, firstRoomId);
+    assert.equal(emitted[0].event, RoomEvents.ROOM_HOST_DISCONNECTED);
+  });
 });
 

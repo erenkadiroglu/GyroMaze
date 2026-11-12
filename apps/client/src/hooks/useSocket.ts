@@ -8,6 +8,7 @@ import {
   GyroData,
   RoomErrorPayload,
   GameStatePayload,
+  GameStatus,
   ChangeLevelPayload,
   HapticPayload,
   CalibratePayload,
@@ -15,6 +16,15 @@ import {
 } from '@gyromaze/shared';
 import { useGameStore } from '@/store/useGameStore';
 import { getMazeLevel } from '@/components/scene/mazeLevels';
+
+const VALID_GAME_STATUSES: ReadonlySet<string> = new Set<GameStatus>([
+  'waiting',
+  'ready',
+  'playing',
+  'paused',
+  'won',
+  'lost',
+]);
 
 const HAPTIC_PATTERNS: Record<HapticPayload['type'], VibratePattern> = {
   wall: 18,
@@ -299,6 +309,9 @@ export function useSocket({
     });
 
     socket.on(RoomEvents.GAME_STATE_CHANGE, (payload: GameStatePayload) => {
+      if (!payload || !VALID_GAME_STATUSES.has(payload.status)) {
+        return;
+      }
       if (role === 'controller') {
         setRemoteProgress(payload);
       } else {

@@ -257,3 +257,8 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 ### Faz 40: Alt-Saniye Skor Tutarsızlığı ve Arka Plan Sekme Fizik Eşitlemesi (Tamamlandı)
 - [x] **Minimum Skor ve Rekor Sınırı (`useGameStore.ts`, `DesktopHUD.tsx`):** Çok hızlı bölüm tamamlamalarında `elapsedSeconds === 0` nedeniyle yerel rekorun `0.0` yazılması ve sunucunun `timeSeconds <= 0` kontrolü yüzünden skor gönderimini sessizce düşürmesi, `Math.max(0.1, ...)` alt sınırı ile önlendi.
 - [x] **3B Sahne Sekme Gizliliği Koruması (`MazeScene.tsx`):** `useFrame` içindeki `isInteractive` bayrağına `document.hidden` denetimi eklenerek tarayıcı sekmesi arka plandayken fizik, lazer kapıları ve hayalet zamanlayıcısının HUD saatiyle eşzamanlı duraklaması sağlandı.
+
+### Faz 41: Çoklu Dokunma Gimbal Koruması, Yeniden Oda Açılışı ve Durum Doğrulaması (Tamamlandı)
+- [x] **Çoklu Dokunma Gimbal İzolasyonu (`controller/page.tsx`):** Dokunmatik gimbal üzerinde `activePointerIdRef` takibi eklenerek aktif sürükleme sırasında ekrana değip çekilen ikinci bir parmağın ana kontrolü kesip eğimi `(0, 0)` konumuna düşürmesi engellendi.
+- [x] **Aynı Sokette Oda Yenileme Bildirimi (`gyro.gateway.ts`, `room.service.test.mjs`):** `handleCreateRoom` içinde aynı host soketinin mevcut odası varken yeni oda oluşturması durumunda önceki odadan ayrılıp bağlı kontrolcülere `ROOM_HOST_DISCONNECTED` olayı yayınlaması sağlandı ve birim testiyle doğrulandı.
+- [x] **İstemci Oyun Durumu Şema Koruması (`useSocket.ts`):** `GAME_STATE_CHANGE` dinleyicisine `VALID_GAME_STATUSES` kontrolü eklenerek bozuk veya bilinmeyen durum paketlerinin istemci durumunu bozması engellendi.

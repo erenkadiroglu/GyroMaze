@@ -82,6 +82,7 @@ function MobileControllerContent() {
   const rollValueRef = useRef<HTMLSpanElement | null>(null);
 
   const isPointerDraggingRef = useRef<boolean>(false);
+  const activePointerIdRef = useRef<number | null>(null);
   const gimbalBoundsRef = useRef<{
     centerX: number;
     centerY: number;
@@ -202,6 +203,7 @@ function MobileControllerContent() {
     if (wasGimbalVisibleRef.current) {
       wasGimbalVisibleRef.current = false;
       isPointerDraggingRef.current = false;
+      activePointerIdRef.current = null;
       pushGyroSample(0, 0);
     }
   }, [showGimbalSurface, pushGyroSample]);
@@ -334,7 +336,8 @@ function MobileControllerContent() {
   };
 
   const handlePointerDownOnGimbal = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!gimbalPadRef.current) return;
+    if (!gimbalPadRef.current || activePointerIdRef.current !== null) return;
+    activePointerIdRef.current = e.pointerId;
     isPointerDraggingRef.current = true;
     const rect = gimbalPadRef.current.getBoundingClientRect();
     gimbalBoundsRef.current.centerX = rect.left + rect.width * 0.5;
@@ -346,13 +349,24 @@ function MobileControllerContent() {
   };
 
   const handlePointerMoveOnGimbal = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isPointerDraggingRef.current) return;
+    if (
+      !isPointerDraggingRef.current ||
+      activePointerIdRef.current !== e.pointerId
+    ) {
+      return;
+    }
     updatePointerSample(e.clientX, e.clientY);
   };
 
-  const handlePointerEndOnGimbal = () => {
-    if (!isPointerDraggingRef.current) return;
+  const handlePointerEndOnGimbal = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (
+      !isPointerDraggingRef.current ||
+      activePointerIdRef.current !== e.pointerId
+    ) {
+      return;
+    }
     isPointerDraggingRef.current = false;
+    activePointerIdRef.current = null;
     pushGyroSample(0, 0);
   };
 
