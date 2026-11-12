@@ -653,3 +653,83 @@ export function getMazeLevel(
   }
   return generateProceduralLevel(safeId);
 }
+
+/**
+ * 2. oyuncu bilyesinin tahta sınırları, iç duvarlar ve tuzak delikleriyle
+ * çakışmayan en güvenli başlangıç sapmasını [offsetX, offsetZ] hesaplar.
+ */
+export function findSafeP2SpawnOffset(
+  levelData: MazeLevelDefinition,
+  ballRadius = 0.34,
+): [number, number] {
+  const [sx, , sz] = levelData.startPosition;
+  const halfBoard = levelData.boardSize / 2;
+  const minMargin = ballRadius + 0.04;
+  const minMarginSq = minMargin * minMargin;
+  const perimeterLimit = halfBoard - (ballRadius + 0.22);
+
+  const candidates: Array<[number, number]> = [
+    [0.72, 0],
+    [-0.72, 0],
+    [0, 0.72],
+    [0, -0.72],
+    [0.46, 0],
+    [-0.46, 0],
+    [0, 0.46],
+    [0, -0.46],
+  ];
+
+  for (const [ox, oz] of candidates) {
+    const px = sx + ox;
+    const pz = sz + oz;
+    if (Math.abs(px) > perimeterLimit || Math.abs(pz) > perimeterLimit) {
+      continue;
+    }
+
+    let blocked = false;
+    for (const wall of levelData.innerWalls) {
+      const [wx, , wz] = wall.position;
+      const halfW = wall.size[0] / 2;
+      const halfD = wall.size[2] / 2;
+      const dx = Math.max(Math.abs(px - wx) - halfW, 0);
+      const dz = Math.max(Math.abs(pz - wz) - halfD, 0);
+      if (dx * dx + dz * dz < minMarginSq) {
+        blocked = true;
+        break;
+      }
+    }
+    if (blocked) continue;
+
+    for (const hole of levelData.voidHoles) {
+      const safeRadius = (hole.radius ?? 0.42) + minMargin;
+      const dx = px - hole.position[0];
+      const dz = pz - hole.position[1];
+      if (dx * dx + dz * dz < safeRadius * safeRadius) {
+        blocked = true;
+        break;
+      }
+    }
+    if (!blocked) {
+      return [ox, oz];
+    }
+  }
+
+  return [0, 0];
+}
+
+/**
+ * Standart/prosedürel bölümlerde kimliği, özel editör haritalarında (`id === 99`)
+ * ise geometriyi tanımlayan benzersiz anahtar üretir.
+ */
+export function getLevelRevisionKey(levelData: MazeLevelDefinition): string {
+  if (levelData.id !== 99) {
+    return String(levelData.id);
+  }
+  const wallsSig = levelData.innerWalls
+    .map((w) => `${w.position[0]},${w.position[2]},${w.size[0]}x${w.size[2]}`)
+    .join(';');
+  const holesSig = levelData.voidHoles
+    .map((h) => `${h.position[0]},${h.position[1]}`)
+    .join(';');
+  return `99-${levelData.startPosition.join(',')}-${levelData.goalPosition.join(',')}-${wallsSig}-${holesSig}-${levelData.crystals.length}-${levelData.laserGates.length}`;
+}

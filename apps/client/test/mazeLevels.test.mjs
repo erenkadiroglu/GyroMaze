@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {
   MAZE_LEVELS,
   getMazeLevel,
+  findSafeP2SpawnOffset,
+  getLevelRevisionKey,
 } from '../src/components/scene/mazeLevels.ts';
 
 const BALL_RADIUS = 0.34;
@@ -177,6 +179,44 @@ describe('MAZE_LEVELS — 3B Harita Geometrisi, Engel Konumları ve Fizik Doğru
 
     assert.equal(getMazeLevel(0).id, 1);
     assert.equal(getMazeLevel(99, null).id, 99);
+  });
+
+  it('findSafeP2SpawnOffset standart ve duvarlı başlangıçlarda çakışmasız konum seçmelidir', () => {
+    for (let id = 1; id <= 15; id++) {
+      const lvl = getMazeLevel(id);
+      const [ox, oz] = findSafeP2SpawnOffset(lvl, BALL_RADIUS);
+      const px = lvl.startPosition[0] + ox;
+      const pz = lvl.startPosition[2] + oz;
+      for (const wall of lvl.innerWalls) {
+        assert.ok(
+          distancePointToWall(px, pz, wall) >= BALL_RADIUS,
+          `Bölüm ${id}: P2 başlangıcı iç duvarla çakışıyor`,
+        );
+      }
+    }
+
+    const blockedEastCustom = {
+      id: 99,
+      title: 'Sağı Duvarlı Özel',
+      subtitle: 'Test',
+      boardSize: 12,
+      startPosition: [0, 0.34, 0],
+      goalPosition: [4, 0.35, 4],
+      innerWalls: [{ position: [0.85, 0.425, 0], size: [0.6, 0.85, 1.4] }],
+      voidHoles: [],
+      crystals: [[2, 2]],
+      laserGates: [],
+    };
+    const [ox, oz] = findSafeP2SpawnOffset(blockedEastCustom, BALL_RADIUS);
+    assert.notEqual(ox, 0.72);
+    assert.notEqual(ox, 0.46);
+    assert.ok(
+      distancePointToWall(ox, oz, blockedEastCustom.innerWalls[0]) >= BALL_RADIUS,
+    );
+    assert.notEqual(
+      getLevelRevisionKey(blockedEastCustom),
+      getLevelRevisionKey({ ...blockedEastCustom, innerWalls: [] }),
+    );
   });
 });
 

@@ -152,6 +152,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Ağ Geçidi Yetki Doğrulaması & Çevrimdışı Skor Koruması (`gyro.gateway.ts`, `useSocket.ts`, `room.service.test.mjs`):** `GAME_HAPTIC`, `GAME_STATE_CHANGE` ve `GAME_CHANGE_LEVEL` olayları yalnız doğrulanmış oda rolü (`host` / `controller`) için izinli kılındı; `GAME_STATE_CHANGE` sunucu yankısı kesilerek yalnız odadaki kontrolcülere yönlendirildi ve `pendingScoreSubmission` bağlantının aktif olmasını bekler hale getirildi.
 - [x] **Dairesel Gimbal Sınırlandırması, P1/P2 Rozeti & Ortak WAI-ARIA Radyo Gezintisi (`controller/page.tsx`, `primitives.tsx`, `SettingsModal.tsx`, `DesktopHUD.tsx`):** Dokunmatik gimbal çapraz sürüklemeleri daire yarıçapı içine normalize edildi; mobil başlığa aktif `P1`/`P2` yuva rozeti ile eşleşme bekleme bildirimi eklendi; tüm radyo gruplarında ortak `handleRadioGroupKeyDown` (Ok / Home / End + gezen `tabIndex`) sağlandı.
 
+## ✅ Faz 22: Çarpışmasız P2 Doğuşu, Özel Harita Fizik Anahtarları ve WebGL Kurtarma Kalkanı (Tamamlandı)
+
+- [x] **Duvar/Delik Korumalı P2 Doğuşu (`mazeLevels.ts`, `MazeScene.tsx`, `mazeLevels.test.mjs`):** Çok oyunculu 2. bilyenin doğuş noktası sabit X sapması yerine Öklid duvar/delik ve tahta sınırı denetimi yapan `findSafeP2SpawnOffset` yardımcısına bağlandı; sıfırlama sırasında `transientGyro` / `transientGyroP2` mini-harita konumları da anında senkronize ediliyor.
+- [x] **Özel Harita Fizik Yenilemesi & Aktif Portal Koruması (`mazeLevels.ts`, `MazeScene.tsx`):** Editörden art arda kaydedilen özel haritaların (`id === 99`) Rapier çarpıştırıcılarını temiz güncellemesi için `getLevelRevisionKey` uygulanıp portal sensörü `handleReachGoal` girişinde `gameStatus === 'playing'` şartıyla korundu.
+- [x] **WebGL Bağlam Kaybı & Hata Sınırı Kurtarması (`MazeScene.tsx`):** `<Canvas>` etrafına `SceneErrorBoundary` ve `webglcontextlost`/`webglcontextrestored` dinleyicileri eklenerek grafik bağlamı koptuğunda tek tıkla sahneyi yeniden başlatan Türkçe kurtarma yüzeyi sağlandı.
+
 
 
 

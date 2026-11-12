@@ -1,6 +1,15 @@
 'use client';
 
-import { useRef, useEffect, useMemo, useCallback } from 'react';
+import {
+  Component,
+  ErrorInfo,
+  ReactNode,
+  useRef,
+  useEffect,
+  useMemo,
+  useCallback,
+  useState,
+} from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import {
   Physics,
@@ -16,7 +25,12 @@ import {
   transientGyro,
   transientGyroP2,
 } from '@/store/useGameStore';
-import { getMazeLevel, MazeLevelDefinition } from './mazeLevels';
+import {
+  getMazeLevel,
+  findSafeP2SpawnOffset,
+  getLevelRevisionKey,
+  MazeLevelDefinition,
+} from './mazeLevels';
 import { soundEngine } from '@/utils/soundEngine';
 
 // Garbage Collection (GC) duraksamalarını önlemek için modül seviyesinde önceden ayrılmış nesneler
@@ -323,14 +337,33 @@ function MazeStage({
     [halfBoard, levelData.boardSize],
   );
 
-  const p2SpawnOffsetX = levelData.startPosition[0] > halfBoard - 1.4 ? -0.45 : 0.45;
+  const levelRevisionKey = useMemo(
+    () => getLevelRevisionKey(levelData),
+    [levelData],
+  );
+  const [p2SpawnOffsetX, p2SpawnOffsetZ] = useMemo(
+    () => findSafeP2SpawnOffset(levelData, BALL_RADIUS),
+    [levelData],
+  );
 
   const resetSingleBall = useCallback(
     (body: RapierRigidBody | null, slot: 1 | 2) => {
-      if (!body) return;
       const [sx, , sz] = levelData.startPosition;
       const targetX = slot === 2 ? sx + p2SpawnOffsetX : sx;
-      body.setTranslation({ x: targetX, y: BALL_RADIUS, z: sz }, true);
+      const targetZ = slot === 2 ? sz + p2SpawnOffsetZ : sz;
+
+      if (slot === 2) {
+        transientGyroP2.ballX = targetX;
+        transientGyroP2.ballZ = targetZ;
+        transientGyroP2.ballSpeed = 0;
+      } else {
+        transientGyro.ballX = targetX;
+        transientGyro.ballZ = targetZ;
+        transientGyro.ballSpeed = 0;
+      }
+
+      if (!body) return;
+      body.setTranslation({ x: targetX, y: BALL_RADIUS, z: targetZ }, true);
       body.setLinvel({ x: 0, y: 0, z: 0 }, true);
       body.setAngvel({ x: 0, y: 0, z: 0 }, true);
       if (slot === 1) {
@@ -340,7 +373,7 @@ function MazeStage({
         }
       }
     },
-    [levelData.startPosition, p2SpawnOffsetX],
+    [levelData.startPosition, p2SpawnOffsetX, p2SpawnOffsetZ],
   );
 
   const resetBallAndBoard = useCallback(() => {
@@ -351,17 +384,25 @@ function MazeStage({
     const [sx, , sz] = levelData.startPosition;
     runPathRef.current = [[Number(sx.toFixed(2)), Number(sz.toFixed(2))]];
     runPathP2Ref.current = [
-      [Number((sx + p2SpawnOffsetX).toFixed(2)), Number(sz.toFixed(2))],
+      [
+        Number((sx + p2SpawnOffsetX).toFixed(2)),
+        Number((sz + p2SpawnOffsetZ).toFixed(2)),
+      ],
     ];
     runElapsedRef.current = 0;
     lastSampleTimeRef.current = 0;
     resetSingleBall(ballBodyRef.current, 1);
     resetSingleBall(ball2BodyRef.current, 2);
-  }, [levelData.startPosition, p2SpawnOffsetX, resetSingleBall]);
+  }, [
+    levelData.startPosition,
+    p2SpawnOffsetX,
+    p2SpawnOffsetZ,
+    resetSingleBall,
+  ]);
 
   useEffect(() => {
     resetBallAndBoard();
-  }, [resetCount, levelData.id, resetBallAndBoard]);
+  }, [resetCount, levelRevisionKey, resetBallAndBoard]);
 
   const handleBallCollision = useCallback(
     (slot: 1 | 2) => {
@@ -836,7 +877,7 @@ function MazeStage({
 
         {levelData.innerWalls.map((wall, idx) => (
           <CuboidCollider
-            key={`phys-inner-${levelData.id}-${idx}`}
+            key={`phys-inner-${levelRevisionKey}-${idx}`}
             args={[wall.size[0] / 2, wall.size[1] / 2, wall.size[2] / 2]}
             position={wall.position}
           />
@@ -860,7 +901,7 @@ function MazeStage({
         {/* Tuzak Delikleri (Void Holes) Sensörleri */}
         {levelData.voidHoles.map((hole, idx) => (
           <CylinderCollider
-            key={`phys-hole-${levelData.id}-${idx}`}
+            key={`phys-hole-${levelRevisionKey}-${idx}`}
             args={[0.4, (hole.radius ?? 0.42) * 0.68]}
             position={[hole.position[0], 0.25, hole.position[1]]}
             sensor
@@ -927,7 +968,7 @@ function MazeStage({
           position={[
             levelData.startPosition[0] + p2SpawnOffsetX,
             BALL_RADIUS,
-            levelData.startPosition[2],
+            levelData.startPosition[2] + p2SpawnOffsetZ,
           ]}
           enabledTranslations={[true, false, true]}
           enabledRotations={[false, false, false]}
@@ -975,7 +1016,7 @@ function MazeStage({
 
         {levelData.innerWalls.map((wall, idx) => (
           <mesh
-            key={`vis-inner-${levelData.id}-${idx}`}
+            key={`vis-inner-${levelRevisionKey}-${idx}`}
             position={wall.position}
             material={_innerWallMaterial}
             castShadow
@@ -1003,7 +1044,7 @@ function MazeStage({
           const r = hole.radius ?? 0.42;
           return (
             <group
-              key={`vis-hole-${levelData.id}-${idx}`}
+              key={`vis-hole-${levelRevisionKey}-${idx}`}
               position={[hole.position[0], 0.02, hole.position[1]]}
             >
               <mesh
@@ -1028,7 +1069,7 @@ function MazeStage({
           const isCollected = collectedCrystals.includes(idx);
           return (
             <mesh
-              key={`crystal-${levelData.id}-${idx}`}
+              key={`crystal-${levelRevisionKey}-${idx}`}
               ref={(el) => {
                 crystalMeshesRef.current[idx] = el;
               }}
@@ -1049,7 +1090,7 @@ function MazeStage({
           const yawAngle = Math.atan2(dx, dz);
           return (
             <group
-              key={`boost-${levelData.id}-${idx}`}
+              key={`boost-${levelRevisionKey}-${idx}`}
               position={[bx, 0.02, bz]}
               rotation={[0, yawAngle, 0]}
             >
@@ -1074,7 +1115,7 @@ function MazeStage({
         {(levelData.teleporters ?? []).map((pair, idx) =>
           [pair.entry, pair.exit].map(([tx, tz], subIdx) => (
             <group
-              key={`teleporter-${levelData.id}-${idx}-${subIdx}`}
+              key={`teleporter-${levelRevisionKey}-${idx}-${subIdx}`}
               position={[tx, 0.025, tz]}
             >
               <mesh
@@ -1112,7 +1153,7 @@ function MazeStage({
               : [0.08, 0.14, gate.length];
 
           return (
-            <group key={`laser-${levelData.id}-${idx}`}>
+            <group key={`laser-${levelRevisionKey}-${idx}`}>
               <mesh position={p1} material={_laserPillarMaterial}>
                 <cylinderGeometry args={[0.1, 0.12, 0.7, 12]} />
               </mesh>
@@ -1135,7 +1176,7 @@ function MazeStage({
         {/* Hareketli Kinetik Devriye Engelleri (Moving Obstacles) */}
         {(levelData.movingObstacles ?? []).map((obs, idx) => (
           <mesh
-            key={`moving-obs-${levelData.id}-${idx}`}
+            key={`moving-obs-${levelRevisionKey}-${idx}`}
             ref={(el) => {
               movingObstacleMeshesRef.current[idx] = el;
             }}
@@ -1234,7 +1275,7 @@ function MazeStage({
           position={[
             levelData.startPosition[0] + p2SpawnOffsetX,
             BALL_RADIUS,
-            levelData.startPosition[2],
+            levelData.startPosition[2] + p2SpawnOffsetZ,
           ]}
           material={_ball2Material}
           castShadow
@@ -1244,6 +1285,53 @@ function MazeStage({
       </group>
     </>
   );
+}
+
+/**
+ * WebGL / Rapier WASM başlatma hatalarında uygulamanın çökmesini önleyen sınır bileşeni.
+ */
+class SceneErrorBoundary extends Component<
+  { children: ReactNode; onRetry: () => void },
+  { hasError: boolean }
+> {
+  public constructor(props: { children: ReactNode; onRetry: () => void }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  public static getDerivedStateFromError(): { hasError: boolean } {
+    return { hasError: true };
+  }
+
+  public override componentDidCatch(_err: Error, _info: ErrorInfo): void {
+    // WebGL veya fizik başlatma hatası kurtarma ekranına yönlendirildi.
+  }
+
+  public override render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex h-full w-full flex-col items-center justify-center bg-base p-6 text-center text-fg">
+          <div className="max-w-sm rounded-2xl border border-line bg-surface p-6 shadow-xl">
+            <h2 className="text-base font-semibold">3B sahne başlatılamadı</h2>
+            <p className="mt-2 text-xs leading-relaxed text-muted">
+              Tarayıcı WebGL grafik bağlamı kullanılamıyor veya sıfırlandı.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                this.setState({ hasError: false });
+                this.props.onRetry();
+              }}
+              className="mt-4 min-h-10 cursor-pointer rounded-xl bg-brass px-4 text-xs font-semibold text-brass-fg"
+            >
+              Sahneyi yeniden başlat
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
 
 /**
@@ -1264,6 +1352,16 @@ export function MazeScene() {
   const showHudNotification = useGameStore((s) => s.showHudNotification);
 
   const lastLockedWarnTimeRef = useRef<number>(0);
+  const contextCleanupRef = useRef<(() => void) | null>(null);
+  const [isContextLost, setIsContextLost] = useState(false);
+  const [canvasRevision, setCanvasRevision] = useState(0);
+
+  useEffect(() => {
+    return () => {
+      contextCleanupRef.current?.();
+      contextCleanupRef.current = null;
+    };
+  }, []);
 
   const activeLevel = useMemo(
     () => getMazeLevel(level, customLevel),
@@ -1308,6 +1406,9 @@ export function MazeScene() {
   const handleReachGoal = useCallback(
     (runPath: Array<[number, number]>, winnerSlot: 1 | 2 = 1) => {
       const state = useGameStore.getState();
+      if (state.gameStatus !== 'playing') {
+        return;
+      }
       if (
         state.isPairingModalOpen ||
         state.isSettingsOpen ||
@@ -1339,18 +1440,16 @@ export function MazeScene() {
         return;
       }
 
-      if (state.gameStatus !== 'won' && state.gameStatus !== 'lost') {
-        if (!isSoundMuted) {
-          soundEngine.playVictory();
-        }
-        triggerHaptic('goal');
-        recordLevelCompletion(
-          activeLevel.id,
-          state.elapsedSeconds,
-          runPath,
-          winnerSlot,
-        );
+      if (!isSoundMuted) {
+        soundEngine.playVictory();
       }
+      triggerHaptic('goal');
+      recordLevelCompletion(
+        activeLevel.id,
+        state.elapsedSeconds,
+        runPath,
+        winnerSlot,
+      );
     },
     [
       isSoundMuted,
@@ -1424,52 +1523,100 @@ export function MazeScene() {
     [isSoundMuted, triggerHaptic],
   );
 
+  const handleSceneRetry = useCallback(() => {
+    setIsContextLost(false);
+    setCanvasRevision((prev) => prev + 1);
+  }, []);
+
   return (
     <div
       className="fixed inset-0 z-0 h-screen w-screen bg-base transition-colors duration-300"
     >
-      <Canvas
-        shadows
-        dpr={[1, 1.5]}
-        gl={{ powerPreference: 'high-performance', antialias: true }}
-        camera={{ position: [0, 14.5, 10.2], fov: 42, near: 0.1, far: 60 }}
-      >
-        <color attach="background" args={[sceneBgColor]} />
-        <fog attach="fog" args={[sceneBgColor, 18, 38]} />
+      <SceneErrorBoundary key={canvasRevision} onRetry={handleSceneRetry}>
+        {isContextLost ? (
+          <div className="flex h-full w-full flex-col items-center justify-center bg-base p-6 text-center text-fg">
+            <div className="max-w-sm rounded-2xl border border-line bg-surface p-6 shadow-xl">
+              <h2 className="text-base font-semibold">
+                3B grafik bağlamı kesildi
+              </h2>
+              <p className="mt-2 text-xs leading-relaxed text-muted">
+                Tarayıcı WebGL bağlamını geçici olarak serbest bıraktı.
+              </p>
+              <button
+                type="button"
+                onClick={handleSceneRetry}
+                className="mt-4 min-h-10 cursor-pointer rounded-xl bg-brass px-4 text-xs font-semibold text-brass-fg"
+              >
+                Sahneyi yeniden başlat
+              </button>
+            </div>
+          </div>
+        ) : (
+          <Canvas
+            key={canvasRevision}
+            shadows
+            dpr={[1, 1.5]}
+            gl={{ powerPreference: 'high-performance', antialias: true }}
+            camera={{ position: [0, 14.5, 10.2], fov: 42, near: 0.1, far: 60 }}
+            onCreated={({ gl }) => {
+              contextCleanupRef.current?.();
+              const dom = gl.domElement;
+              const handleContextLost = (e: Event) => {
+                e.preventDefault();
+                setIsContextLost(true);
+              };
+              const handleContextRestored = () => {
+                setIsContextLost(false);
+              };
+              dom.addEventListener('webglcontextlost', handleContextLost);
+              dom.addEventListener('webglcontextrestored', handleContextRestored);
+              contextCleanupRef.current = () => {
+                dom.removeEventListener('webglcontextlost', handleContextLost);
+                dom.removeEventListener(
+                  'webglcontextrestored',
+                  handleContextRestored,
+                );
+              };
+            }}
+          >
+            <color attach="background" args={[sceneBgColor]} />
+            <fog attach="fog" args={[sceneBgColor, 18, 38]} />
 
-        <ambientLight intensity={isLightScene ? 1.25 : 0.7} />
-        <directionalLight
-          position={[8, 16, 10]}
-          intensity={isLightScene ? 2.1 : 1.75}
-          castShadow
-          shadow-mapSize={[1024, 1024]}
-          shadow-camera-left={-shadowMargin}
-          shadow-camera-right={shadowMargin}
-          shadow-camera-top={shadowMargin}
-          shadow-camera-bottom={-shadowMargin}
-        />
-        <pointLight
-          position={[-8, 6, -8]}
-          intensity={isLightScene ? 0.65 : 1.1}
-          color="#38bdf8"
-        />
+            <ambientLight intensity={isLightScene ? 1.25 : 0.7} />
+            <directionalLight
+              position={[8, 16, 10]}
+              intensity={isLightScene ? 2.1 : 1.75}
+              castShadow
+              shadow-mapSize={[1024, 1024]}
+              shadow-camera-left={-shadowMargin}
+              shadow-camera-right={shadowMargin}
+              shadow-camera-top={shadowMargin}
+              shadow-camera-bottom={-shadowMargin}
+            />
+            <pointLight
+              position={[-8, 6, -8]}
+              intensity={isLightScene ? 0.65 : 1.1}
+              color="#38bdf8"
+            />
 
-        <Physics gravity={[0, 0, 0]}>
-          <MazeStage
-            levelData={activeLevel}
-            isGoalUnlocked={isGoalUnlocked}
-            collectedCrystals={collectedCrystals}
-            ghostPath={ghostPaths[activeLevel.id]}
-            onCollectCrystal={handleCollectCrystal}
-            onReachGoal={handleReachGoal}
-            onFallIntoHole={handleFallIntoHole}
-            onLaserHit={handleLaserHit}
-            onBoostHit={handleBoostHit}
-            onTeleportHit={handleTeleportHit}
-            onWallHit={handleWallHit}
-          />
-        </Physics>
-      </Canvas>
+            <Physics gravity={[0, 0, 0]}>
+              <MazeStage
+                levelData={activeLevel}
+                isGoalUnlocked={isGoalUnlocked}
+                collectedCrystals={collectedCrystals}
+                ghostPath={ghostPaths[activeLevel.id]}
+                onCollectCrystal={handleCollectCrystal}
+                onReachGoal={handleReachGoal}
+                onFallIntoHole={handleFallIntoHole}
+                onLaserHit={handleLaserHit}
+                onBoostHit={handleBoostHit}
+                onTeleportHit={handleTeleportHit}
+                onWallHit={handleWallHit}
+              />
+            </Physics>
+          </Canvas>
+        )}
+      </SceneErrorBoundary>
     </div>
   );
 }
