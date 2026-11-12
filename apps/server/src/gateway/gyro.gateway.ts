@@ -14,11 +14,40 @@ import {
   JoinRoomPayload,
   GyroUpdatePayload,
   GameStatePayload,
+  GameStatus,
   ChangeLevelPayload,
   HapticPayload,
+  HapticType,
   SubmitScorePayload,
 } from '@gyromaze/shared';
 import { RoomService } from './room.service';
+
+const VALID_HAPTIC_TYPES: ReadonlySet<string> = new Set<HapticType>([
+  'wall',
+  'hole',
+  'goal',
+  'calibrate',
+  'crystal',
+  'laser',
+  'boost',
+  'teleport',
+]);
+
+const VALID_GAME_STATUSES: ReadonlySet<string> = new Set<GameStatus>([
+  'waiting',
+  'ready',
+  'playing',
+  'paused',
+  'won',
+  'lost',
+]);
+
+function matchesOptionalRoomId(roomId: unknown, expectedRoomId: string): boolean {
+  if (roomId === undefined || roomId === '') {
+    return true;
+  }
+  return typeof roomId === 'string' && roomId.trim() === expectedRoomId;
+}
 
 /**
  * GyroMaze gerçek zamanlı WebSocket ağ geçidi.
@@ -239,10 +268,16 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: HapticPayload,
   ): void {
     const membership = this.roomService.getMembership(client.id);
-    if (!membership || membership.role !== 'host' || !payload?.type) {
+    if (
+      !membership ||
+      membership.role !== 'host' ||
+      !payload ||
+      typeof payload.type !== 'string' ||
+      !VALID_HAPTIC_TYPES.has(payload.type)
+    ) {
       return;
     }
-    if (payload.roomId && payload.roomId !== membership.roomId) {
+    if (!matchesOptionalRoomId(payload.roomId, membership.roomId)) {
       return;
     }
 
@@ -277,10 +312,16 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: GameStatePayload,
   ): void {
     const membership = this.roomService.getMembership(client.id);
-    if (!membership || membership.role !== 'host' || !payload) {
+    if (
+      !membership ||
+      membership.role !== 'host' ||
+      !payload ||
+      typeof payload.status !== 'string' ||
+      !VALID_GAME_STATUSES.has(payload.status)
+    ) {
       return;
     }
-    if (payload.roomId && payload.roomId !== membership.roomId) {
+    if (!matchesOptionalRoomId(payload.roomId, membership.roomId)) {
       return;
     }
 
@@ -315,7 +356,7 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (!membership || membership.role !== 'controller' || !payload) {
       return;
     }
-    if (payload.roomId && payload.roomId !== membership.roomId) {
+    if (!matchesOptionalRoomId(payload.roomId, membership.roomId)) {
       return;
     }
 

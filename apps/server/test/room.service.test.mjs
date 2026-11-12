@@ -479,5 +479,45 @@ describe('RoomService — Oda Yönetimi, 6 Haneli Kod Eşleşmesi ve Skor Tablos
     assert.equal(errors[0].event, RoomEvents.ROOM_ERROR);
     assert.equal(errors[0].payload.code, 'INVALID_PAYLOAD');
   });
+
+  it('GyroGateway gecersiz haptic, durum veya metin disi roomId iletilerini sessizce yoksaymalidir', async () => {
+    const service = new RoomService();
+    const { roomId } = await service.createRoom('host-val');
+    service.joinRoom(roomId, 'ctrl-val', 1);
+
+    const emitted = [];
+    const gateway = new GyroGateway(service);
+    gateway.server = {
+      to(targetId) {
+        return {
+          emit(event, payload) {
+            emitted.push({ targetId, event, payload });
+          },
+          volatile: {
+            emit(event, payload) {
+              emitted.push({ targetId, event, payload });
+            },
+          },
+        };
+      },
+    };
+
+    const hostClient = { id: 'host-val' };
+    const ctrlClient = { id: 'ctrl-val' };
+
+    gateway.handleGameHaptic(hostClient, { type: 123, roomId });
+    gateway.handleGameHaptic(hostClient, { type: 'unknown', roomId });
+    gateway.handleGameHaptic(hostClient, { type: 'wall', roomId: 123456 });
+    gateway.handleGameStateChange(hostClient, { status: 'hacked', roomId });
+    gateway.handleGameStateChange(hostClient, { status: 'playing', roomId: 999 });
+    gateway.handleChangeLevel(ctrlClient, { level: 1, roomId: { bad: true } });
+
+    assert.equal(emitted.length, 0);
+
+    gateway.handleGameHaptic(hostClient, { type: 'crystal', roomId });
+    assert.equal(emitted.length, 1);
+    assert.equal(emitted[0].event, RoomEvents.GAME_HAPTIC);
+    assert.equal(emitted[0].payload.type, 'crystal');
+  });
 });
 

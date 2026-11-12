@@ -16,6 +16,28 @@ import {
 import { useGameStore } from '@/store/useGameStore';
 import { getMazeLevel } from '@/components/scene/mazeLevels';
 
+const HAPTIC_PATTERNS: Record<HapticPayload['type'], VibratePattern> = {
+  wall: 18,
+  hole: [70, 40, 110],
+  goal: [50, 50, 50, 50, 140],
+  calibrate: 30,
+  crystal: [25, 30, 45],
+  laser: [90, 30, 90],
+  boost: [30, 20, 40],
+  teleport: [20, 40, 20, 40, 60],
+};
+
+function triggerDeviceVibrate(pattern: VibratePattern): void {
+  if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') {
+    return;
+  }
+  try {
+    navigator.vibrate(pattern);
+  } catch {
+    // WebView veya tarayıcı titreşim kısıtını sessizce yoksay
+  }
+}
+
 /**
  * Hem yerel geliştirme ortamında (localhost:4000) hem de tek portlu HTTPS tünellerinde
  * (server.mjs TCP_NODELAY WebSocket Proxy) kesintisiz çalışan sunucu adresi çözücü.
@@ -174,12 +196,8 @@ export function useSocket({
       }
       setErrorMessage(null);
 
-      if (
-        role === 'controller' &&
-        typeof navigator !== 'undefined' &&
-        'vibrate' in navigator
-      ) {
-        navigator.vibrate([35, 50, 65]);
+      if (role === 'controller') {
+        triggerDeviceVibrate([35, 50, 65]);
       }
     });
 
@@ -251,34 +269,12 @@ export function useSocket({
       );
     } else if (role === 'controller') {
       socket.on(RoomEvents.GAME_HAPTIC, (payload: HapticPayload) => {
-        if (typeof navigator === 'undefined' || !('vibrate' in navigator)) {
+        if (!payload?.type) {
           return;
         }
-        switch (payload.type) {
-          case 'wall':
-            navigator.vibrate(18);
-            break;
-          case 'hole':
-            navigator.vibrate([70, 40, 110]);
-            break;
-          case 'goal':
-            navigator.vibrate([50, 50, 50, 50, 140]);
-            break;
-          case 'calibrate':
-            navigator.vibrate(30);
-            break;
-          case 'crystal':
-            navigator.vibrate([25, 30, 45]);
-            break;
-          case 'laser':
-            navigator.vibrate([90, 30, 90]);
-            break;
-          case 'boost':
-            navigator.vibrate([30, 20, 40]);
-            break;
-          case 'teleport':
-            navigator.vibrate([20, 40, 20, 40, 60]);
-            break;
+        const pattern = HAPTIC_PATTERNS[payload.type];
+        if (pattern !== undefined) {
+          triggerDeviceVibrate(pattern);
         }
       });
     }

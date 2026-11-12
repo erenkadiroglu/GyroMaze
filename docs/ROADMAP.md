@@ -216,6 +216,10 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Güncel Tünel ve LAN Adresi Eşitleme (`useSocket.ts`):** `ROOM_CREATED` ve `ROOM_PAIRED` olaylarında `lanIp` ve `tunnelUrl` değerleri eski değerde takılı kalmayacak biçimde güncellenerek kapanan tünel sonrası QR kodunun geçersiz HTTPS adresinde kalması önlendi.
 - [x] **Klavye Yedek Kontrolü & Proxy Akış Güvenliği (`useKeyboardFallback.ts`, `apps/client/server.mjs`):** `Ctrl`/`Meta`/`Alt` kısayol kombinasyonları ile `contentEditable` alanları filtrelendi, sekme gizlendiğinde (`visibilitychange`) takılı yön tuşlarının sıfırlanması sağlandı ve `/socket.io` HTTP proxy yanıt akışına `proxyRes.on('error')` koruması eklendi.
 
+### Faz 33: Haptik Yardımcı Birleştirmesi ve Gateway Yük Doğrulaması (Tamamlandı)
+- [x] **Merkezi Titreşim Yardımcısı (`useSocket.ts`):** `ROOM_PAIRED` ve `GAME_HAPTIC` olaylarındaki yinelenen `navigator.vibrate` kontrolleri, `HAPTIC_PATTERNS` haritası ve `try/catch` korumalı `triggerDeviceVibrate` yardımcısında birleştirildi (`typeof navigator.vibrate === 'function'` kontrolü eklendi).
+- [x] **Ağ Geçidi İleti Doğrulaması (`gyro.gateway.ts`):** `handleGameHaptic`, `handleGameStateChange` ve `handleChangeLevel` işleyicilerinde metin dışı `roomId` değerleri (`matchesOptionalRoomId`), geçersiz `HapticType` türleri ve geçersiz `GameStatus` değerleri ek yayın yapılmadan güvenli şekilde elendi (`room.service.test.mjs` birim testiyle doğrulandı).
+
 
 
 
