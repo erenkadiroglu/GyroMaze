@@ -39,6 +39,7 @@ import { resolveKeyboardShortcut } from '@/utils/keyboardShortcuts';
 import { LevelEditorModal } from './LevelEditorModal';
 import { SettingsModal } from './SettingsModal';
 import { HelpShortcutsModal } from './HelpShortcutsModal';
+import { LeaderboardModal } from './LeaderboardModal';
 import { AttitudeGauge } from './AttitudeGauge';
 import {
   Modal,
@@ -95,7 +96,6 @@ export function DesktopHUD() {
   const elapsedSeconds = useGameStore((s) => s.elapsedSeconds);
   const setElapsedSeconds = useGameStore((s) => s.setElapsedSeconds);
   const bestTimes = useGameStore((s) => s.bestTimes);
-  const leaderboard = useGameStore((s) => s.leaderboard);
   const submitLeaderboardScore = useGameStore((s) => s.submitLeaderboardScore);
   const collectedCrystals = useGameStore((s) => s.collectedCrystals);
   const isSoundMuted = useGameStore((s) => s.isSoundMuted);
@@ -117,7 +117,6 @@ export function DesktopHUD() {
   });
   const [playerName, setPlayerName] = useState('Oyuncu');
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
-  const [selectedLeaderboardLevel, setSelectedLeaderboardLevel] = useState(1);
   const [isPageHidden, setIsPageHidden] = useState(false);
 
   const levelPopoverRef = useRef<HTMLDivElement | null>(null);
@@ -168,12 +167,6 @@ export function DesktopHUD() {
   useEffect(() => {
     setScoreSubmitted(false);
   }, [level, gameStatus]);
-
-  useEffect(() => {
-    if (isLeaderboardOpen) {
-      setSelectedLeaderboardLevel(level === 99 ? 1 : Math.max(1, level));
-    }
-  }, [isLeaderboardOpen, level]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -459,10 +452,6 @@ export function DesktopHUD() {
     });
     setScoreSubmitted(true);
   };
-
-  const filteredLeaderboard = leaderboard
-    .filter((entry) => entry.levelId === selectedLeaderboardLevel)
-    .sort((a, b) => a.timeSeconds - b.timeSeconds);
 
   const isAnyControllerPaired =
     isSocketConnected && (isControllerPaired || isSecondControllerPaired);
@@ -919,12 +908,7 @@ export function DesktopHUD() {
 
             <IconButton
               label="Skor tablosu"
-              onClick={() => {
-                setSelectedLeaderboardLevel(
-                  currentLevelInfo.id === 99 ? 1 : currentLevelInfo.id,
-                );
-                setLeaderboardOpen(true);
-              }}
+              onClick={() => setLeaderboardOpen(true)}
             >
               <Medal className="h-4 w-4" aria-hidden="true" />
             </IconButton>
@@ -1049,91 +1033,11 @@ export function DesktopHUD() {
       </Modal>
 
       {/* KÜRESEL SKOR TABLOSU MODALI */}
-      <Modal
+      <LeaderboardModal
         open={isLeaderboardOpen}
         onClose={() => setLeaderboardOpen(false)}
-        size="md"
-        title="Skor tablosu"
-        description="Bölümlerde kaydedilen en hızlı tamamlama süreleri"
-        icon={<Trophy className="h-4 w-4" aria-hidden="true" />}
-      >
-        <div className="mb-4 flex items-center gap-1 rounded-xl border border-line bg-surface-2/70 p-1">
-          <IconButton
-            size="sm"
-            label="Önceki bölüm skorları"
-            onClick={() =>
-              setSelectedLeaderboardLevel((prev) => Math.max(1, prev - 1))
-            }
-          >
-            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-          </IconButton>
-
-          <div className="grid flex-1 grid-cols-5 gap-1">
-            {[0, 1, 2, 3, 4].map((offset) => {
-              const startLvl = Math.max(1, selectedLeaderboardLevel - 2);
-              const tabLvl = startLvl + offset;
-              const active = selectedLeaderboardLevel === tabLvl;
-              return (
-                <button
-                  key={tabLvl}
-                  type="button"
-                  onClick={() => setSelectedLeaderboardLevel(tabLvl)}
-                  className={cx(
-                    'gm-num h-8 cursor-pointer rounded-lg text-xs font-semibold transition-colors',
-                    active
-                      ? 'bg-brass text-brass-fg'
-                      : 'text-muted hover:text-fg',
-                  )}
-                >
-                  Böl. {tabLvl < 10 ? `0${tabLvl}` : tabLvl}
-                </button>
-              );
-            })}
-          </div>
-
-          <IconButton
-            size="sm"
-            label="Sonraki bölüm skorları"
-            onClick={() => setSelectedLeaderboardLevel((prev) => prev + 1)}
-          >
-            <ChevronRight className="h-4 w-4" aria-hidden="true" />
-          </IconButton>
-        </div>
-
-        <div className="space-y-2">
-          {filteredLeaderboard.length === 0 ? (
-            <div className="rounded-xl border border-line bg-surface-2/40 py-10 text-center text-sm text-muted">
-              Bu bölüm için henüz kayıtlı bir skor yok. İlk rekoru sen kır.
-            </div>
-          ) : (
-            filteredLeaderboard.map((item, idx) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between rounded-xl border border-line bg-surface-2/50 px-4 py-2.5"
-              >
-                <div className="flex items-center gap-3">
-                  <span
-                    className={cx(
-                      'gm-num flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold',
-                      idx === 0
-                        ? 'bg-brass/20 text-brass'
-                        : 'bg-surface text-muted',
-                    )}
-                  >
-                    {idx + 1}
-                  </span>
-                  <span className="text-sm font-medium text-fg">
-                    {item.playerName}
-                  </span>
-                </div>
-                <span className="gm-num text-sm font-semibold text-ok">
-                  {item.timeSeconds.toFixed(1)} sn
-                </span>
-              </div>
-            ))
-          )}
-        </div>
-      </Modal>
+        initialLevel={currentLevelInfo.id === 99 ? 1 : currentLevelInfo.id}
+      />
 
       {/* BÖLÜM TAMAMLANDI MODALI */}
       <Modal
