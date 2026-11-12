@@ -1,65 +1,32 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import {
-  Smartphone,
-  RotateCcw,
-  Trophy,
-  ArrowRight,
-  Copy,
-  Check,
-  Volume2,
-  VolumeX,
-  Gem,
-  Lock,
-  Unlock,
-  Wrench,
-  Medal,
-  Camera,
-  Sun,
-  Moon,
-  SlidersHorizontal,
-  Users,
-  Timer,
-  HelpCircle,
-} from 'lucide-react';
+import { Smartphone, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/store/useGameStore';
 import { getMazeLevel } from '@/components/scene/mazeLevels';
 import { soundEngine } from '@/utils/soundEngine';
 import { resolveKeyboardShortcut } from '@/utils/keyboardShortcuts';
+import { calculateTimeAttackLimit } from '@/utils/hudUtils';
 import { LevelEditorModal } from './LevelEditorModal';
 import { SettingsModal } from './SettingsModal';
 import { HelpShortcutsModal } from './HelpShortcutsModal';
 import { LeaderboardModal } from './LeaderboardModal';
 import { PairingModal } from './PairingModal';
 import { GameOutcomeModals } from './GameOutcomeModals';
-import { LevelSelectPopover } from './LevelSelectPopover';
 import { AttitudeGauge } from './AttitudeGauge';
-import {
-  IconButton,
-  Button,
-  Kbd,
-  cx,
-  handleRadioGroupKeyDown,
-} from './primitives';
+import { DesktopHeader } from './DesktopHeader';
+import { QuickControlsToolbar } from './QuickControlsToolbar';
+import { Button, Kbd, cx } from './primitives';
 
 /**
- * Masaüstü 3B sahne üzerindeki düzenli, tek odaklı HUD katmanı:
- * - Üst çubuk: Marka, bölüm gezgini, okunan telemetri ve yalnızca iki ana eylem (Bağla, Ayarlar)
- * - Sol alt: Yapay ufuk kokpit göstergesi ve 2B canlı radar
- * - Sağ alt: Hızlı kontroller araç çubuğu
- * - Modallar: Telefon eşleştirme, küresel skor tablosu, zafer ve süre doldu pencereleri
+ * Masaüstü 3B sahne üzerindeki düzenli, tek odaklı HUD orkestratörü:
+ * - Üst çubuk: DesktopHeader (marka, seviye seçici, kristal, süre, oda ve ayarlar)
+ * - Duraklatma / Yeniden bağlanma ve sahne üstü bildirim şeritleri
+ * - Alt bölge: Kokpit göstergesi (AttitudeGauge), klavye ipuçları ve QuickControlsToolbar
+ * - Modallar: Eşleştirme, skor tablosu, ayarlar, editör, yardım ve oyun sonu
  */
 export function DesktopHUD() {
-  const roomId = useGameStore((s) => s.roomId);
-  const lanIp = useGameStore((s) => s.lanIp);
-  const tunnelUrl = useGameStore((s) => s.tunnelUrl);
-  const isSocketConnected = useGameStore((s) => s.isSocketConnected);
-  const isControllerPaired = useGameStore((s) => s.isControllerPaired);
-  const isSecondControllerPaired = useGameStore(
-    (s) => s.isSecondControllerPaired,
-  );
   const isPairingModalOpen = useGameStore((s) => s.isPairingModalOpen);
   const setPairingModalOpen = useGameStore((s) => s.setPairingModalOpen);
   const isLeaderboardOpen = useGameStore((s) => s.isLeaderboardOpen);
@@ -67,7 +34,6 @@ export function DesktopHUD() {
   const isEditorOpen = useGameStore((s) => s.isEditorOpen);
   const setEditorOpen = useGameStore((s) => s.setEditorOpen);
   const isSettingsOpen = useGameStore((s) => s.isSettingsOpen);
-  const setSettingsOpen = useGameStore((s) => s.setSettingsOpen);
   const isHelpOpen = useGameStore((s) => s.isHelpOpen);
   const setHelpOpen = useGameStore((s) => s.setHelpOpen);
   const resetCount = useGameStore((s) => s.resetCount);
@@ -76,41 +42,36 @@ export function DesktopHUD() {
   const setGameStatus = useGameStore((s) => s.setGameStatus);
   const gameMode = useGameStore((s) => s.gameMode);
   const level = useGameStore((s) => s.level);
-  const cameraMode = useGameStore((s) => s.cameraMode);
   const cycleCameraMode = useGameStore((s) => s.cycleCameraMode);
-  const colorScheme = useGameStore((s) => s.colorScheme);
   const toggleColorScheme = useGameStore((s) => s.toggleColorScheme);
   const hudNotification = useGameStore((s) => s.hudNotification);
   const showHudNotification = useGameStore((s) => s.showHudNotification);
   const customLevel = useGameStore((s) => s.customLevel);
   const setLevel = useGameStore((s) => s.setLevel);
-  const latencyMs = useGameStore((s) => s.latencyMs);
-  const elapsedSeconds = useGameStore((s) => s.elapsedSeconds);
   const setElapsedSeconds = useGameStore((s) => s.setElapsedSeconds);
-  const bestTimes = useGameStore((s) => s.bestTimes);
   const collectedCrystals = useGameStore((s) => s.collectedCrystals);
   const isSoundMuted = useGameStore((s) => s.isSoundMuted);
   const toggleSoundMuted = useGameStore((s) => s.toggleSoundMuted);
   const triggerBallReset = useGameStore((s) => s.triggerBallReset);
   const triggerHaptic = useGameStore((s) => s.triggerHaptic);
+  const isControllerPaired = useGameStore((s) => s.isControllerPaired);
+  const isSecondControllerPaired = useGameStore(
+    (s) => s.isSecondControllerPaired,
+  );
   const isMultiplayer = useGameStore((s) => s.isMultiplayer);
-  const winnerPlayer = useGameStore((s) => s.winnerPlayer);
   const showMiniMap = useGameStore((s) => s.showMiniMap);
 
   const [isPageHidden, setIsPageHidden] = useState(false);
   const lastWarnedSecondRef = useRef<number | null>(null);
 
   const currentLevelInfo = getMazeLevel(level, customLevel);
-  const currentBestTime = bestTimes[currentLevelInfo.id];
   const totalCrystals = currentLevelInfo.crystals.length;
   const remainingCrystals = currentLevelInfo.crystals.filter(
     (_, idx) => !collectedCrystals.includes(idx),
   );
   const isPortalUnlocked = collectedCrystals.length >= totalCrystals;
 
-  const [, twoStarLimit] = currentLevelInfo.starThresholds ?? [15, 24];
-  const timeAttackLimit = Math.max(14, Math.round(twoStarLimit * 1.15));
-  const timeRemaining = Math.max(0, timeAttackLimit - elapsedSeconds);
+  const timeAttackLimit = calculateTimeAttackLimit(currentLevelInfo.starThresholds);
   const isTimeAttack = gameMode === 'time_attack';
   const isAnyOverlayOpen =
     isPairingModalOpen ||
@@ -118,13 +79,6 @@ export function DesktopHUD() {
     isEditorOpen ||
     isLeaderboardOpen ||
     isHelpOpen;
-
-  const cameraModeLabel =
-    cameraMode === 'isometric'
-      ? 'İzometrik'
-      : cameraMode === 'topdown'
-        ? 'Üstten'
-        : 'Takip';
 
   // Sekme gizlendiğinde oyun saatini dondurarak arka planda süre atlamasını önle
   useEffect(() => {
@@ -270,149 +224,10 @@ export function DesktopHUD() {
     triggerBallReset();
   };
 
-  const isAnyControllerPaired =
-    isSocketConnected && (isControllerPaired || isSecondControllerPaired);
-  const connectionDotColor = isAnyControllerPaired
-    ? 'bg-ok'
-    : isSocketConnected
-      ? 'bg-brass'
-      : 'bg-danger';
-
-  const visibleTimerValue = isTimeAttack ? timeRemaining : elapsedSeconds;
-  const timerColorClass = isTimeAttack
-    ? timeRemaining <= 4
-      ? 'text-danger'
-      : timeRemaining <= 8
-        ? 'text-warn'
-        : 'text-fg'
-    : 'text-fg';
-
   return (
     <div className="pointer-events-none fixed inset-0 z-10 flex flex-col justify-between p-4 sm:p-5">
-      {/* ÜST ÇUBUK */}
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        {/* Sol Kapsül: Marka ve Bölüm Seçici */}
-        <div className="gm-panel pointer-events-auto relative flex items-center gap-2.5 rounded-2xl px-3.5 py-2 shadow-lg">
-          <div className="flex items-center gap-2 pr-1">
-            <span
-              className={cx('h-2.5 w-2.5 rounded-full', connectionDotColor)}
-              aria-hidden="true"
-            />
-            <span className="text-base font-semibold tracking-tight text-fg">
-              GyroMaze
-            </span>
-          </div>
-
-          <span className="h-4 w-px bg-line" aria-hidden="true" />
-
-          <LevelSelectPopover />
-        </div>
-
-        {/* Sağ Kapsül: Durum Okumaları ve 2 Ana Eylem */}
-        <div className="gm-panel pointer-events-auto flex flex-wrap items-center gap-2.5 rounded-2xl px-3.5 py-2 shadow-lg">
-          {/* Kristal ve Portal Durumu */}
-          <div
-            className="flex items-center gap-1.5 px-1 text-sm"
-            title={
-              isPortalUnlocked
-                ? 'Hedef portalı açık'
-                : `Portalı açmak için ${totalCrystals - collectedCrystals.length} kristal kaldı`
-            }
-          >
-            <Gem className="h-3.5 w-3.5 text-signal" aria-hidden="true" />
-            <span className="gm-num font-semibold text-fg">
-              {collectedCrystals.length}/{totalCrystals}
-            </span>
-            {isPortalUnlocked ? (
-              <Unlock className="h-3.5 w-3.5 text-ok" aria-label="Portal açık" />
-            ) : (
-              <Lock className="h-3.5 w-3.5 text-muted" aria-label="Portal kilitli" />
-            )}
-          </div>
-
-          <span className="h-4 w-px bg-line" aria-hidden="true" />
-
-          {/* Süre (veya Süreye Karşı geri sayım) */}
-          <div className="flex items-center gap-1.5 px-1 text-sm">
-            {isTimeAttack && (
-              <Timer
-                className={cx('h-3.5 w-3.5', timerColorClass)}
-                aria-label="Geri sayım"
-              />
-            )}
-            <span className={cx('gm-num font-semibold', timerColorClass)}>
-              {visibleTimerValue.toFixed(1)} sn
-            </span>
-            {currentBestTime !== undefined && !isTimeAttack && (
-              <span
-                className="gm-num hidden items-center gap-1 text-xs text-brass sm:inline-flex"
-                title="Bölüm rekorun"
-              >
-                <Trophy className="h-3 w-3" aria-hidden="true" />
-                {currentBestTime.toFixed(1)}
-              </span>
-            )}
-          </div>
-
-          {isMultiplayer && (
-            <>
-              <span className="h-4 w-px bg-line" aria-hidden="true" />
-              <span
-                className="inline-flex items-center gap-1 rounded-lg bg-brass/15 px-2 py-0.5 text-xs font-medium text-brass"
-                title={
-                  isSecondControllerPaired
-                    ? '2. telefon bağlı'
-                    : 'Klavyede 1. Oyuncu WASD, 2. Oyuncu Ok Tuşları'
-                }
-              >
-                <Users className="h-3 w-3" aria-hidden="true" />
-                2 Oyuncu
-              </span>
-            </>
-          )}
-
-          <span className="h-4 w-px bg-line" aria-hidden="true" />
-
-          {/* Oda Kodu & Eşleştir Düğmesi */}
-          <Button
-            variant={isAnyControllerPaired ? 'secondary' : 'primary'}
-            size="sm"
-            icon={<Smartphone className="h-3.5 w-3.5" aria-hidden="true" />}
-            onClick={() => setPairingModalOpen(true)}
-            title="Oda kodu ve QR bağlantı penceresini aç"
-          >
-            <span className="gm-num tracking-wider">
-              {roomId ?? '......'}
-            </span>
-            {isAnyControllerPaired ? (
-              <span className="gm-num hidden text-xs text-ok sm:inline">
-                {latencyMs}ms
-              </span>
-            ) : (
-              <span className="hidden sm:inline">Bağla</span>
-            )}
-          </Button>
-
-          {/* Ayarlar Paneli Düğmesi */}
-          <Button
-            variant="secondary"
-            size="sm"
-            icon={<SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" />}
-            onClick={() => setSettingsOpen(true)}
-          >
-            Ayarlar
-          </Button>
-
-          {/* Kısayollar ve Yardım Rehberi */}
-          <IconButton
-            label="Klavye kısayolları ve yardım rehberi"
-            shortcut="H"
-            onClick={() => setHelpOpen(true)}
-          >
-            <HelpCircle className="h-4 w-4 text-brass" aria-hidden="true" />
-          </IconButton>
-        </div>
-      </header>
+      {/* ÜST ÇUBUK (MARKA, SEVİYE SEÇİCİ, DURUM OKUMALARI VE ANA EYLEMLER) */}
+      <DesktopHeader />
 
       {/* DURAKLATMA / BAĞLANTI KOPTU KURTARMA ÇUBUĞU */}
       {gameStatus === 'paused' && !isAnyOverlayOpen && (
@@ -519,77 +334,7 @@ export function DesktopHUD() {
         )}
 
         {/* Sağ Alt Hızlı İkon Araç Çubuğu */}
-        <div
-          role="toolbar"
-          aria-label="Hızlı sahne kontrolleri"
-          className="gm-panel pointer-events-auto flex items-center gap-1 rounded-2xl p-1.5 shadow-lg"
-        >
-          <div role="group" aria-label="Görünüm ve ses" className="flex items-center gap-0.5">
-            <IconButton
-              label="Topu başa al"
-              shortcut="R"
-              onClick={handleResetClick}
-            >
-              <RotateCcw className="h-4 w-4" aria-hidden="true" />
-            </IconButton>
-
-            <IconButton
-              label={`Kamera açısı: ${cameraModeLabel}`}
-              shortcut="C"
-              onClick={cycleCameraMode}
-            >
-              <Camera className="h-4 w-4" aria-hidden="true" />
-            </IconButton>
-
-            <IconButton
-              label={colorScheme === 'light' ? 'Gece moduna geç' : 'Gündüz moduna geç'}
-              shortcut="L"
-              pressed={colorScheme === 'light'}
-              onClick={toggleColorScheme}
-            >
-              {colorScheme === 'light' ? (
-                <Sun className="h-4 w-4" aria-hidden="true" />
-              ) : (
-                <Moon className="h-4 w-4" aria-hidden="true" />
-              )}
-            </IconButton>
-
-            <IconButton
-              label={isSoundMuted ? 'Sesi aç' : 'Sesi kapat'}
-              shortcut="M"
-              pressed={isSoundMuted}
-              onClick={toggleSoundMuted}
-            >
-              {isSoundMuted ? (
-                <VolumeX className="h-4 w-4 text-danger" aria-hidden="true" />
-              ) : (
-                <Volume2 className="h-4 w-4" aria-hidden="true" />
-              )}
-            </IconButton>
-          </div>
-
-          <span
-            role="separator"
-            aria-orientation="vertical"
-            className="mx-1 h-5 w-px bg-line"
-          />
-
-          <div role="group" aria-label="Araçlar" className="flex items-center gap-0.5">
-            <IconButton
-              label="Harita editörü"
-              onClick={() => setEditorOpen(true)}
-            >
-              <Wrench className="h-4 w-4" aria-hidden="true" />
-            </IconButton>
-
-            <IconButton
-              label="Skor tablosu"
-              onClick={() => setLeaderboardOpen(true)}
-            >
-              <Medal className="h-4 w-4" aria-hidden="true" />
-            </IconButton>
-          </div>
-        </div>
+        <QuickControlsToolbar onResetClick={handleResetClick} />
       </footer>
 
       {/* YARDIMCI PANELLER */}
