@@ -58,7 +58,25 @@ function loadBestTimes(): Record<number, number> {
   if (typeof window === 'undefined') return {};
   try {
     const raw = window.localStorage.getItem(BEST_TIMES_STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as Record<number, number>) : {};
+    if (!raw) return {};
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return {};
+    }
+    const result: Record<number, number> = {};
+    for (const [key, val] of Object.entries(parsed)) {
+      const levelNum = Number(key);
+      if (
+        Number.isInteger(levelNum) &&
+        levelNum > 0 &&
+        typeof val === 'number' &&
+        Number.isFinite(val) &&
+        val > 0
+      ) {
+        result[levelNum] = val;
+      }
+    }
+    return result;
   } catch {
     return {};
   }
@@ -68,9 +86,31 @@ function loadGhostPaths(): Record<number, Array<[number, number]>> {
   if (typeof window === 'undefined') return {};
   try {
     const raw = window.localStorage.getItem(GHOST_PATHS_STORAGE_KEY);
-    return raw
-      ? (JSON.parse(raw) as Record<number, Array<[number, number]>>)
-      : {};
+    if (!raw) return {};
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return {};
+    }
+    const result: Record<number, Array<[number, number]>> = {};
+    for (const [key, points] of Object.entries(parsed)) {
+      const levelNum = Number(key);
+      if (!Number.isInteger(levelNum) || levelNum <= 0 || !Array.isArray(points)) {
+        continue;
+      }
+      const validPoints = points.filter(
+        (pt): pt is [number, number] =>
+          Array.isArray(pt) &&
+          pt.length === 2 &&
+          typeof pt[0] === 'number' &&
+          Number.isFinite(pt[0]) &&
+          typeof pt[1] === 'number' &&
+          Number.isFinite(pt[1]),
+      );
+      if (validPoints.length > 0) {
+        result[levelNum] = validPoints;
+      }
+    }
+    return result;
   } catch {
     return {};
   }
@@ -226,6 +266,7 @@ interface GameStoreState {
   triggerBallReset: () => void;
   triggerHaptic: (type: HapticType, playerSlot?: 1 | 2) => void;
   setErrorMessage: (message: string | null) => void;
+  hydrateLocalRecords: () => void;
   updateTransientGyro: (data: GyroData) => void;
   resetTransientGyro: (slot?: 1 | 2) => void;
 }
@@ -268,8 +309,8 @@ export const useGameStore = create<GameStoreState>()(
   customLevel: null,
   latencyMs: 0,
   elapsedSeconds: 0,
-  bestTimes: loadBestTimes(),
-  ghostPaths: loadGhostPaths(),
+  bestTimes: {},
+  ghostPaths: {},
   leaderboard: [],
   pendingScoreSubmission: null,
   isSoundMuted: false,
@@ -373,16 +414,17 @@ export const useGameStore = create<GameStoreState>()(
         'daylight',
       ];
       const nextIdx = (order.indexOf(state.boardTheme) + 1) % order.length;
+      const nextTheme = order[nextIdx];
       return {
-        boardTheme: order[nextIdx],
-        colorScheme: order[nextIdx] === 'daylight' ? 'light' : state.colorScheme,
+        boardTheme: nextTheme,
+        colorScheme: nextTheme === 'daylight' ? 'light' : 'dark',
       };
     }),
   setBoardTheme: (boardTheme) =>
-    set((state) => ({
+    set({
       boardTheme,
-      colorScheme: boardTheme === 'daylight' ? 'light' : state.colorScheme,
-    })),
+      colorScheme: boardTheme === 'daylight' ? 'light' : 'dark',
+    }),
   toggleColorScheme: () =>
     set((state) => {
       const nextScheme: ColorScheme =
@@ -512,6 +554,11 @@ export const useGameStore = create<GameStoreState>()(
       },
     })),
   setErrorMessage: (errorMessage) => set({ errorMessage }),
+  hydrateLocalRecords: () =>
+    set({
+      bestTimes: loadBestTimes(),
+      ghostPaths: loadGhostPaths(),
+    }),
 
   updateTransientGyro: (data) => {
     if (data.playerSlot === 2) {

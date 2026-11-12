@@ -17,6 +17,7 @@ export function useAppPreferences() {
 
   useEffect(() => {
     void useGameStore.persist.rehydrate();
+    useGameStore.getState().hydrateLocalRecords();
   }, []);
 
   useEffect(() => {

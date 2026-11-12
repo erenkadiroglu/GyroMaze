@@ -68,8 +68,9 @@ GyroMaze/
 ├── apps/
 │   ├── client/                  # Next.js 15 + React 19 + R3F İstemci & TCP_NODELAY Proxy
 │   └── server/                  # NestJS + Socket.io WebSocket Sunucusu
-└── packages/
-    └── shared/                  # Paylaşılan TypeScript arayüzleri (GyroData, RoomEvents vb.)
+├── packages/
+│   └── shared/                  # Paylaşılan TypeScript arayüzleri (GyroData, RoomEvents vb.)
+└── scripts/                     # Paralel geliştirme başlatıcısı ve statik kod denetimi
 ```
 
 ---
@@ -80,11 +81,12 @@ Telefon bağlı olmadığında veya masaüstü üzerinden hızlı kontrol sağla
 
 | Tuş | İşlev |
 | :--- | :--- |
-| **`W` `A` `S` `D` / `Yön Tuşları`** | Labirente masaüstünden eğim verir |
+| **`W` `A` `S` `D` / `Yön Tuşları`** | Tek oyunculu modda labirente masaüstünden eğim verir (2 oyunculuda `WASD` 1. oyuncuyu, `Yön Tuşları` 2. oyuncuyu kontrol eder) |
 | **`R`** | Topu başlangıç noktasına sıfırlar |
 | **`L`** | Aydınlık / Karanlık modu değiştirir |
 | **`C`** | Kamera bakış açısını değiştirir (*İzometrik*, *Üstten*, *Takip*) |
 | **`M`** | Prosedürel ses motorunu açar / kapatır |
+| **`Tab`** *(Pencere içinde)* | Açık pencere / çekmece içindeki etkileşimli kontroller arasında odak taşır |
 
 ---
 
@@ -111,23 +113,23 @@ Kök dizinde çalıştıracağınız tek komut tüm çalışma alanlarını (`cl
 npm install
 ```
 
-### 3. Ortak Tipleri Derleyin
+### 3. Geliştirme Sunucularını Başlatın
 
-```bash
-npm run build --workspace=@gyromaze/shared
-```
-
-### 4. Geliştirme Sunucularını Başlatın
-
-Hem Next.js istemcisini hem de NestJS WebSocket sunucusunu paralel olarak başlatmak için:
+Hem ortak `@gyromaze/shared` paketini derlemek hem de Next.js istemcisini + NestJS WebSocket sunucusunu paralel başlatmak için:
 
 ```bash
 npm run dev
 ```
 
-veya servisleri ayrı terminallerde çalıştırmak için:
+veya üretim (production) derlemesinden sonra servisleri başlatmak / ayrı terminallerde çalıştırmak için:
 
 ```bash
+# Tüm çalışma alanlarını derleyip üretim sunucularını başlatır
+npm run build && npm run start
+
+# Sadece Ortak Tipleri Derle
+npm run build:shared
+
 # Sadece WebSocket Sunucusu (Varsayılan port: 4000)
 npm run dev:server
 
@@ -135,7 +137,15 @@ npm run dev:server
 npm run dev:client
 ```
 
-> **Not (iOS / Safari İzinleri):** Modern mobil tarayıcılarda `DeviceOrientationEvent.requestPermission()` API'sinin çalışabilmesi için yerel ağ testlerinde HTTPS bağlantısı veya güvenli tünel (örn. `ngrok` / `cloudflared` ya da yerel SSL sertifikası) kullanılması önerilir.
+### 4. Tip Kontrolü, Testler ve Statik Denetim
+
+```bash
+npm run typecheck
+npm test
+npm run lint
+```
+
+> **Not (iOS / Safari ve Yerel Ağ İzinleri):** Modern mobil tarayıcılarda `DeviceOrientationEvent.requestPermission()` API'sinin çalışabilmesi için HTTPS bağlantısı önerilir. Masaüstünden QR kod tararken tünel aktif değilse uygulama otomatik olarak yerel ağ IPv4 adresinize yönlendirir; HTTP üzerinden açıldığında ise ekrandaki sanal eğim halkası dokunmatik kontrolle anında kullanılabilir.
 
 ---
 

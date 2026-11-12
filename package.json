@@ -10,6 +10,8 @@
     "packages/*"
   ],
   "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "start": "node scripts/dev.mjs --prod",
     "dev:client": "npm run dev --workspace=@gyromaze/client",
     "dev:server": "npm run start:dev --workspace=@gyromaze/server",
     "dev:tunnel": "ngrok http 3000",
@@ -19,7 +21,7 @@
     "build": "npm run build:shared && npm run build:server && npm run build:client",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present"
+    "lint": "node scripts/lint.mjs"
   },
   "engines": {
     "node": ">=20.0.0",

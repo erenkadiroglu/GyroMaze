@@ -140,6 +140,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Sıkı Klavye Aktiflik Koruması & Yön Tuşu Kaydırma Engeli (`useKeyboardFallback.ts`):** Klavye girişleri yalnızca aktif `gameStatus === 'playing'` durumunda işlenerek `AttitudeGauge` önizlemesinin oyun öncesi kayması önlendi ve ok tuşlarıyla oynarken sayfa kaydırma olayları (`e.preventDefault()`) engellendi.
 - [x] **WAI-ARIA Odak Döngüsü, Ses Düğümü Temizliği & Genişletilmiş Harita Testleri (`primitives.tsx`, `soundEngine.ts`, `mazeLevels.test.mjs`):** `Modal` ve `Drawer` içine `Tab` / `Shift+Tab` odak hapsi ve `Segmented` radyo gruplarına yön tuşu gezintisi eklendi; `SoundEngine` ortak `createVoice` yardımcısı üzerinden biten osilatör/kazanç düğümlerini (`onended`) anında serbest bırakır hale getirildi ve prosedürel harita doğrulama testleri `Bölüm 06..50` aralığına genişletildi.
 
+## ✅ Faz 20: Tema Seçim Simetrisi, SSR Hidrasyon Güvenliği ve Çalışma Alanı Orkestrasyonu (Tamamlandı)
+
+- [x] **Karanlık 3B Tahta Teması Seçim Simetrisi (`useGameStore.ts`):** Aydınlık moddayken (`colorScheme === 'light'`) `Zümrüt`, `Siberpunk` veya `Kızıl Kor` tahta temalarından biri seçildiğinde `colorScheme` değerinin otomatik olarak `'dark'` konumuna dönmesi sağlandı (`setBoardTheme` ve `cycleBoardTheme`).
+- [x] **SSR Uyumlu Rekor Hidrasyonu (`useGameStore.ts`, `useAppPreferences.ts`):** `bestTimes` ve `ghostPaths` alanlarının ilk render'da `{}` olarak başlatılıp istemci `useEffect` fazında şema doğrulamalı (`hydrateLocalRecords`) yüklenmesiyle React 19 SSR hidrasyon uyumsuzluğu önlendi.
+- [x] **Çalışma Alanı Geliştirme ve Statik Denetim Betikleri (`scripts/dev.mjs`, `scripts/lint.mjs`, `package.json`, `README.md`):** Kök dizine `npm run dev` ve `npm run start` paralel başlatıcıları (`@gyromaze/shared` otomatik derleme + temiz süreç kapatma) eklendi; etkileşimli hata veren `next lint` yerine tüm çalışma alanları için sıfır bağımlılıklı statik tip ve kural denetimi (`npm run lint`) yapılandırıldı.
+
 
 
 

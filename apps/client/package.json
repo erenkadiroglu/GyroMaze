@@ -9,7 +9,7 @@
     "dev": "node server.mjs",
     "build": "next build",
     "start": "NODE_ENV=production node server.mjs",
-    "lint": "next lint",
+    "lint": "node ../../scripts/lint.mjs --client",
     "test": "node --test test/mazeLevels.test.mjs",
     "typecheck": "tsc --noEmit"
   },
