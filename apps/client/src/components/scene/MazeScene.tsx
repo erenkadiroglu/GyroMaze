@@ -11,8 +11,6 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import {
   Physics,
   RigidBody,
-  CuboidCollider,
-  CylinderCollider,
   BallCollider,
   RapierRigidBody,
 } from '@react-three/rapier';
@@ -67,6 +65,8 @@ import { MazeStageWalls } from './MazeStageWalls';
 import { MazeStageHazards } from './MazeStageHazards';
 import { MazeStageCollectibles } from './MazeStageCollectibles';
 import { MazeStageActors } from './MazeStageActors';
+import { MazeStageColliders } from './MazeStageColliders';
+import { calculateSlerpAlpha } from '@/utils/sceneColliderUtils';
 
 interface MazeStageProps {
   levelData: MazeLevelDefinition;
@@ -453,7 +453,7 @@ function MazeStage({
     _targetQuat.setFromEuler(_targetEuler);
 
     // 1. Seçilen tepkisellik katsayısı (tiltResponsiveness) ile anında eğim tepkisi
-    const slerpAlpha = 1 - Math.exp(-tiltResponsiveness * safeDelta);
+    const slerpAlpha = calculateSlerpAlpha(tiltResponsiveness, safeDelta);
     _currentQuat.slerp(_targetQuat, slerpAlpha);
     _currentEuler.setFromQuaternion(_currentQuat, 'XYZ');
 
@@ -660,79 +660,21 @@ function MazeStage({
   return (
     <>
       {/* 1. SABİT FİZİK ÇARPIŞTIRICILARI (TAHTA-YEREL UZAY) */}
-      <RigidBody type="fixed" colliders={false} friction={0.12} restitution={0.18}>
-        {outerWalls.map((wall, idx) => (
-          <CuboidCollider
-            key={`phys-outer-${idx}`}
-            args={[wall.size[0] / 2, wall.size[1] / 2, wall.size[2] / 2]}
-            position={wall.position}
-          />
-        ))}
-
-        {levelData.innerWalls.map((wall, idx) => (
-          <CuboidCollider
-            key={`phys-inner-${levelRevisionKey}-${idx}`}
-            args={[wall.size[0] / 2, wall.size[1] / 2, wall.size[2] / 2]}
-            position={wall.position}
-          />
-        ))}
-
-        {/* Hedef Portalı Sensörü */}
-        <CylinderCollider
-          args={[0.4, 0.46]}
-          position={levelData.goalPosition}
-          sensor
-          onIntersectionEnter={(payload) => {
-            const slot =
-              payload.other.rigidBodyObject?.name === 'ball-p2' ? 2 : 1;
-            onReachGoal(
-              slot === 2 ? runPathP2Ref.current : runPathRef.current,
-              slot,
-            );
-          }}
-        />
-
-        {/* Tuzak Delikleri (Void Holes) Sensörleri */}
-        {levelData.voidHoles.map((hole, idx) => (
-          <CylinderCollider
-            key={`phys-hole-${levelRevisionKey}-${idx}`}
-            args={[0.4, (hole.radius ?? 0.42) * 0.68]}
-            position={[hole.position[0], 0.25, hole.position[1]]}
-            sensor
-            onIntersectionEnter={(payload) => {
-              const state = useGameStore.getState();
-              if (
-                state.gameStatus !== 'playing' ||
-                (typeof document !== 'undefined' && document.hidden)
-              ) {
-                return;
-              }
-              if (
-                state.isPairingModalOpen ||
-                state.isSettingsOpen ||
-                state.isEditorOpen ||
-                state.isLeaderboardOpen
-              ) {
-                return;
-              }
-              const slot: 1 | 2 =
-                payload.other.rigidBodyObject?.name === 'ball-p2' ? 2 : 1;
-              const nowMs = performance.now();
-              if (nowMs - lastHoleHitMsRef.current[slot] < 350) return;
-              lastHoleHitMsRef.current[slot] = nowMs;
-              onFallIntoHole(slot);
-              if (isMultiplayer) {
-                resetSingleBall(
-                  slot === 2 ? ball2BodyRef.current : ballBodyRef.current,
-                  slot,
-                );
-              } else {
-                resetBallAndBoard();
-              }
-            }}
-          />
-        ))}
-      </RigidBody>
+      <MazeStageColliders
+        levelRevisionKey={levelRevisionKey}
+        levelData={levelData}
+        outerWalls={outerWalls}
+        runPathRef={runPathRef}
+        runPathP2Ref={runPathP2Ref}
+        lastHoleHitMsRef={lastHoleHitMsRef}
+        isMultiplayer={isMultiplayer}
+        ballBodyRef={ballBodyRef}
+        ball2BodyRef={ball2BodyRef}
+        onReachGoal={onReachGoal}
+        onFallIntoHole={onFallIntoHole}
+        resetSingleBall={resetSingleBall}
+        resetBallAndBoard={resetBallAndBoard}
+      />
 
       {/* 1. Oyuncu Dinamik Fizik Küresi (Y ekseni kilitli -> Sıfır Zıplama!) */}
       <RigidBody
