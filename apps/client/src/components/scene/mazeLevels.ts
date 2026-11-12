@@ -1528,3 +1528,53 @@ export function buildLevelFromEditorGrid(
     movingObstacles,
   };
 }
+
+/** Paylaşılabilir özel harita bağlantıları için URL sorgu parametresi anahtarı */
+export const CUSTOM_MAP_URL_PARAM = 'map';
+
+const MAX_ENCODED_MAP_LENGTH = 16_384;
+
+/**
+ * Özel bir labirent tanımını UTF-8 Base64url dizesine kodlar.
+ */
+export function encodeCustomMazeLevelForUrl(level: MazeLevelDefinition): string {
+  const json = JSON.stringify(level);
+  const bytes = new TextEncoder().encode(json);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 1) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+/**
+ * URL `?map=` parametresinden gelen Base64url dizesini çözer ve doğrular.
+ * Geçersiz veya bozuk veride `null` döndürür.
+ */
+export function decodeCustomMazeLevelFromUrl(
+  encoded: string,
+): MazeLevelDefinition | null {
+  const trimmed = encoded.trim();
+  if (
+    !trimmed ||
+    trimmed.length > MAX_ENCODED_MAP_LENGTH ||
+    !/^[A-Za-z0-9_-]+$/.test(trimmed)
+  ) {
+    return null;
+  }
+
+  try {
+    const base64 = trimmed.replace(/-/g, '+').replace(/_/g, '/');
+    const padLen = (4 - (base64.length % 4)) % 4;
+    const binary = atob(`${base64}${'='.repeat(padLen)}`);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    const json = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    const parsed: unknown = JSON.parse(json);
+    return parseCustomMazeLevel(parsed);
+  } catch {
+    return null;
+  }
+}

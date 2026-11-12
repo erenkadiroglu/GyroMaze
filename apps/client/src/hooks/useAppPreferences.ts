@@ -1,12 +1,17 @@
 'use client';
 
 import { useEffect } from 'react';
+import {
+  CUSTOM_MAP_URL_PARAM,
+  decodeCustomMazeLevelFromUrl,
+} from '@/components/scene/mazeLevels';
 import { useGameStore } from '@/store/useGameStore';
 import { soundEngine } from '@/utils/soundEngine';
 
 /**
  * Kalıcı kullanıcı tercihlerini istemcide geri yükler ve uygulama geneline uygular:
  * - `localStorage` üzerindeki ayarları (tema, fizik, ses, katmanlar) depoya aktarır,
+ * - URL `?map=` parametresi varsa paylaşılan özel haritayı otomatik yükler,
  * - `<html data-scheme>` özniteliğini aydınlık/karanlık moda göre günceller,
  * - Web Audio ses seviyesini senkronize eder.
  */
@@ -18,7 +23,29 @@ export function useAppPreferences() {
 
   useEffect(() => {
     void useGameStore.persist.rehydrate();
-    useGameStore.getState().hydrateLocalRecords();
+    const store = useGameStore.getState();
+    store.hydrateLocalRecords();
+
+    const url = new URL(window.location.href);
+    const encodedMap = url.searchParams.get(CUSTOM_MAP_URL_PARAM);
+    if (encodedMap) {
+      const imported = decodeCustomMazeLevelFromUrl(encodedMap);
+      if (imported) {
+        store.setCustomLevel(imported);
+        store.showHudNotification(
+          `“${imported.title}” paylaşılan bağlantıdan yüklendi.`,
+          'success',
+        );
+      } else {
+        store.showHudNotification(
+          'Paylaşılan özel harita bağlantısı geçersiz veya bozuk.',
+          'warn',
+        );
+      }
+      url.searchParams.delete(CUSTOM_MAP_URL_PARAM);
+      const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+      window.history.replaceState(null, '', nextUrl);
+    }
   }, []);
 
   useEffect(() => {

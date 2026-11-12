@@ -14,6 +14,8 @@ import {
   validateEditorGrid,
   levelDefinitionToEditorGrid,
   buildLevelFromEditorGrid,
+  encodeCustomMazeLevelForUrl,
+  decodeCustomMazeLevelFromUrl,
 } from '../src/components/scene/mazeLevels.ts';
 
 const BALL_RADIUS = 0.34;
@@ -462,6 +464,37 @@ describe('MAZE_LEVELS — 3B Harita Geometrisi, Engel Konumları ve Fizik Doğru
     assert.equal(roundTrippedGrid[7][7], 'goal');
     assert.equal(roundTrippedGrid[0][1], 'portal');
     assert.equal(roundTrippedGrid[5][5], 'portal');
+  });
+
+  it('encodeCustomMazeLevelForUrl ve decodeCustomMazeLevelFromUrl Türkçe haritaları Base64url ile gidiş-dönüş taşır', () => {
+    const mkGrid = () =>
+      Array.from({ length: 8 }, () => Array.from({ length: 8 }, () => 'erase'));
+    const grid = mkGrid();
+    grid[0][0] = 'start';
+    grid[7][7] = 'goal';
+    grid[1][2] = 'portal';
+    grid[5][4] = 'portal';
+    grid[3][3] = 'crystal';
+
+    const original = buildLevelFromEditorGrid(grid, {
+      title: 'Şehir Işınlanma Üssü — Çağıl',
+      boardSize: 14,
+    });
+    const encoded = encodeCustomMazeLevelForUrl(original);
+
+    assert.match(encoded, /^[A-Za-z0-9_-]+$/);
+    const decoded = decodeCustomMazeLevelFromUrl(encoded);
+    assert.ok(decoded);
+    assert.equal(decoded.id, 99);
+    assert.equal(decoded.title, 'Şehir Işınlanma Üssü — Çağıl');
+    assert.equal(decoded.boardSize, 14);
+    assert.equal(decoded.teleporters?.length, 1);
+    assert.deepEqual(decoded.crystals, original.crystals);
+
+    assert.equal(decodeCustomMazeLevelFromUrl(''), null);
+    assert.equal(decodeCustomMazeLevelFromUrl('%%%bozuk%%%'), null);
+    assert.equal(decodeCustomMazeLevelFromUrl('e30'), null);
+    assert.equal(decodeCustomMazeLevelFromUrl('a'.repeat(20_000)), null);
   });
 });
 

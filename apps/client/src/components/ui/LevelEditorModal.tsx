@@ -18,12 +18,16 @@ import {
   Wrench,
   Upload,
   Orbit,
+  Link2,
 } from 'lucide-react';
 import { useGameStore } from '@/store/useGameStore';
 import {
   MazeLevelDefinition,
   EditorCellTool,
   parseCustomMazeLevel,
+  CUSTOM_MAP_URL_PARAM,
+  encodeCustomMazeLevelForUrl,
+  decodeCustomMazeLevelFromUrl,
   EDITOR_GRID_SIZE,
   validateEditorGrid,
   levelDefinitionToEditorGrid,
@@ -143,17 +147,17 @@ export function LevelEditorModal() {
   const setCustomLevel = useGameStore((s) => s.setCustomLevel);
 
   const cellRefs = useRef<Array<HTMLButtonElement | null>>([]);
-  const copiedJsonTimerRef = useRef<number | null>(null);
+  const copyTimerRef = useRef<number | null>(null);
   const [activeTool, setActiveTool] = useState<CellTool>('wall');
   const [customTitle, setCustomTitle] = useState('Özel Labirent — Tasarım 1');
   const [boardSize, setBoardSize] = useState<number>(12);
-  const [copiedJson, setCopiedJson] = useState(false);
+  const [copiedKind, setCopiedKind] = useState<'json' | 'link' | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
 
   useEffect(() => {
     return () => {
-      if (copiedJsonTimerRef.current !== null) {
-        window.clearTimeout(copiedJsonTimerRef.current);
+      if (copyTimerRef.current !== null) {
+        window.clearTimeout(copyTimerRef.current);
       }
     };
   }, []);
@@ -285,25 +289,38 @@ export function LevelEditorModal() {
     setCustomLevel(buildLevelDefinition());
   };
 
-  const handleCopyJson = async () => {
+  const handleCopyExport = async (kind: 'json' | 'link') => {
     const portalCount = grid.flat().filter((c) => c === 'portal').length;
     if (portalCount % 2 !== 0) {
       setImportError(
-        'JSON dışa aktarmadan önce açıkta kalan kuantum portal için bir eş daha yerleştirin.',
+        'Dışa aktarmadan önce açıkta kalan kuantum portal için bir eş daha yerleştirin.',
       );
       return;
     }
     try {
       const levelDef = buildLevelDefinition();
-      await navigator.clipboard.writeText(JSON.stringify(levelDef, null, 2));
-      setCopiedJson(true);
-      setImportError(null);
-      if (copiedJsonTimerRef.current !== null) {
-        window.clearTimeout(copiedJsonTimerRef.current);
+      let payload: string;
+      if (kind === 'link') {
+        const encoded = encodeCustomMazeLevelForUrl(levelDef);
+        const shareUrl = new URL(window.location.href);
+        shareUrl.pathname = '/';
+        shareUrl.search = '';
+        shareUrl.hash = '';
+        shareUrl.searchParams.set(CUSTOM_MAP_URL_PARAM, encoded);
+        payload = shareUrl.toString();
+      } else {
+        payload = JSON.stringify(levelDef, null, 2);
       }
-      copiedJsonTimerRef.current = window.setTimeout(() => {
-        setCopiedJson(false);
-        copiedJsonTimerRef.current = null;
+
+      await navigator.clipboard.writeText(payload);
+      setCopiedKind(kind);
+      setImportError(null);
+      if (copyTimerRef.current !== null) {
+        window.clearTimeout(copyTimerRef.current);
+      }
+      copyTimerRef.current = window.setTimeout(() => {
+        setCopiedKind(null);
+        copyTimerRef.current = null;
       }, 2000);
     } catch {
       setImportError('Pano erişimi reddedildi; harita kopyalanamadı.');
@@ -312,18 +329,36 @@ export function LevelEditorModal() {
 
   const handleImportFromClipboard = async () => {
     try {
-      const raw = await navigator.clipboard.readText();
-      const parsed: unknown = JSON.parse(raw);
-      const validated = parseCustomMazeLevel(parsed);
+      const raw = (await navigator.clipboard.readText()).trim();
+      let validated: MazeLevelDefinition | null = null;
+      if (raw.startsWith('{')) {
+        const parsed: unknown = JSON.parse(raw);
+        validated = parseCustomMazeLevel(parsed);
+      } else {
+        let encodedParam: string | null = null;
+        try {
+          const parsedUrl = new URL(raw);
+          encodedParam = parsedUrl.searchParams.get(CUSTOM_MAP_URL_PARAM);
+        } catch {
+          encodedParam = raw;
+        }
+        if (encodedParam) {
+          validated = decodeCustomMazeLevelFromUrl(encodedParam);
+        }
+      }
       if (!validated) {
-        setImportError('Panodaki metin geçerli bir GyroMaze JSON haritası değil.');
+        setImportError(
+          'Panodaki metin geçerli bir GyroMaze JSON haritası veya paylaşım bağlantısı değil.',
+        );
         return;
       }
 
       setImportError(null);
       setCustomLevel(validated);
     } catch {
-      setImportError('Panodan geçerli bir JSON haritası okunamadı.');
+      setImportError(
+        'Panodan geçerli bir GyroMaze haritası veya paylaşım bağlantısı okunamadı.',
+      );
     }
   };
 
@@ -377,15 +412,29 @@ export function LevelEditorModal() {
               variant="secondary"
               size="sm"
               icon={
-                copiedJson ? (
+                copiedKind === 'json' ? (
                   <Check className="h-3.5 w-3.5 text-ok" aria-hidden="true" />
                 ) : (
                   <Copy className="h-3.5 w-3.5" aria-hidden="true" />
                 )
               }
-              onClick={handleCopyJson}
+              onClick={() => handleCopyExport('json')}
             >
-              {copiedJson ? 'JSON kopyalandı' : 'JSON kopyala'}
+              {copiedKind === 'json' ? 'JSON kopyalandı' : 'JSON kopyala'}
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={
+                copiedKind === 'link' ? (
+                  <Check className="h-3.5 w-3.5 text-ok" aria-hidden="true" />
+                ) : (
+                  <Link2 className="h-3.5 w-3.5 text-brass" aria-hidden="true" />
+                )
+              }
+              onClick={() => handleCopyExport('link')}
+            >
+              {copiedKind === 'link' ? 'Bağlantı kopyalandı' : 'Bağlantı kopyala'}
             </Button>
             <Button
               variant="secondary"
