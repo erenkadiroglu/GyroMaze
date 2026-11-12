@@ -306,6 +306,22 @@ interface GameStoreState {
 
 let nextHudNotificationId = 0;
 
+function zeroTransientGyro(slot?: 1 | 2): void {
+  const now = Date.now();
+  if (slot !== 2) {
+    transientGyro.alpha = 0;
+    transientGyro.beta = 0;
+    transientGyro.gamma = 0;
+    transientGyro.timestamp = now;
+  }
+  if (slot !== 1) {
+    transientGyroP2.alpha = 0;
+    transientGyroP2.beta = 0;
+    transientGyroP2.gamma = 0;
+    transientGyroP2.timestamp = now;
+  }
+}
+
 /**
  * Her yeni tur, mod değişimi veya harita sıfırlamasında ortak başlangıç
  * alanlarını tek noktadan sıfırlar.
@@ -402,10 +418,13 @@ export const useGameStore = create<GameStoreState>()(
           ),
         })),
       toggleMultiplayer: () =>
-        set((state) => ({
-          isMultiplayer: !state.isMultiplayer,
-          ...resetRunFields(state),
-        })),
+        set((state) => {
+          zeroTransientGyro(2);
+          return {
+            isMultiplayer: !state.isMultiplayer,
+            ...resetRunFields(state),
+          };
+        }),
       updateSettings: (partial) => set((state) => ({ ...state, ...partial })),
       setGameStatus: (gameStatus) => set({ gameStatus }),
       setLevel: (level) =>
@@ -640,19 +659,7 @@ export const useGameStore = create<GameStoreState>()(
       },
 
       resetTransientGyro: (slot) => {
-        const now = Date.now();
-        if (slot !== 2) {
-          transientGyro.alpha = 0;
-          transientGyro.beta = 0;
-          transientGyro.gamma = 0;
-          transientGyro.timestamp = now;
-        }
-        if (slot !== 1) {
-          transientGyroP2.alpha = 0;
-          transientGyroP2.beta = 0;
-          transientGyroP2.gamma = 0;
-          transientGyroP2.timestamp = now;
-        }
+        zeroTransientGyro(slot);
       },
     }),
     {

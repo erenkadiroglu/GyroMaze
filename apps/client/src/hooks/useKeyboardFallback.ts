@@ -41,7 +41,7 @@ export function useKeyboardFallback(): void {
         transientGyro.gamma = 0;
         transientGyro.timestamp = Date.now();
       }
-      if (isMultiplayer && !isSecondControllerPaired) {
+      if (!isSecondControllerPaired) {
         transientGyroP2.beta = 0;
         transientGyroP2.gamma = 0;
         transientGyroP2.timestamp = Date.now();
@@ -167,6 +167,7 @@ export function useKeyboardFallback(): void {
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleReleaseAllKeys);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      resetKeyboardAxes();
     };
   }, [
     isControllerPaired,

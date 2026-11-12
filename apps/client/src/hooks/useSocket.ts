@@ -441,14 +441,17 @@ export function useSocket({
   const emitGyroUpdate = useCallback((targetRoom: string, data: GyroData) => {
     if (!socketRef.current?.connected) return;
     const now = performance.now();
-    const isZeroReset = data.beta === 0 && data.gamma === 0;
+    const isZero = data.beta === 0 && data.gamma === 0;
+    const wasNonZero =
+      lastSentBetaRef.current !== 0 || lastSentGammaRef.current !== 0;
+    const isZeroTransition = isZero && wasNonZero;
 
-    if (!isZeroReset && now - lastEmitTimeRef.current < 15) return;
+    if (!isZeroTransition && now - lastEmitTimeRef.current < 15) return;
 
     const deltaBeta = Math.abs(data.beta - lastSentBetaRef.current);
     const deltaGamma = Math.abs(data.gamma - lastSentGammaRef.current);
 
-    if (!isZeroReset && deltaBeta < 0.1 && deltaGamma < 0.1) {
+    if (!isZeroTransition && deltaBeta < 0.1 && deltaGamma < 0.1) {
       return;
     }
 

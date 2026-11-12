@@ -263,8 +263,19 @@ export class RoomService {
       };
     }
 
-    // Kontrolcü daha önce başka bir odaya bağlıysa eski odadan temizle
+    // Masaüstü ana oturumu kendi veya başka bir odanın kontrolcüsü olarak katılamaz
     const previousMembership = this.socketMembership.get(controllerSocketId);
+    if (previousMembership?.role === 'host') {
+      return {
+        ok: false,
+        error: {
+          code: 'INVALID_PAYLOAD',
+          message: 'Masaüstü ana oturumu kontrolcü olarak katılamaz.',
+        },
+      };
+    }
+
+    // Kontrolcü daha önce başka bir odaya bağlıysa eski odadan temizle
     const previousRoomId =
       previousMembership && previousMembership.roomId !== roomId
         ? previousMembership.roomId

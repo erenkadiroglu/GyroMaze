@@ -519,5 +519,18 @@ describe('RoomService — Oda Yönetimi, 6 Haneli Kod Eşleşmesi ve Skor Tablos
     assert.equal(emitted[0].event, RoomEvents.GAME_HAPTIC);
     assert.equal(emitted[0].payload.type, 'crystal');
   });
+
+  it('ev sahibi (host) soketinin kendi veya baska bir odaya kontrolcu olarak katilmasini engellemelidir', async () => {
+    const service = new RoomService();
+    const room = await service.createRoom('host-guard');
+
+    const res = service.joinRoom(room.roomId, 'host-guard', 1);
+    assert.equal(res.ok, false);
+    if (!res.ok) {
+      assert.equal(res.error.code, 'INVALID_PAYLOAD');
+    }
+    assert.ok(service.getRoom(room.roomId));
+    assert.equal(service.getMembership('host-guard')?.role, 'host');
+  });
 });
 
