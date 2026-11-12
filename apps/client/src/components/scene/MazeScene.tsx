@@ -33,6 +33,15 @@ import {
 } from './mazeLevels';
 import { soundEngine } from '@/utils/soundEngine';
 import { calculateEarnedStars } from '@/utils/gameOutcomeUtils';
+import {
+  isLaserGateActive,
+  calculateMovingObstacleOffset,
+  calculateCameraTargetTransform,
+  calculateGhostPlaybackCoord,
+  calculateTrailScale,
+  resolveThemePalette,
+  resolveBallSkinColors,
+} from '@/utils/sceneUtils';
 
 // Garbage Collection (GC) duraksamalarını önlemek için modül seviyesinde önceden ayrılmış nesneler
 const _targetEuler = new THREE.Euler(0, 0, 0, 'XYZ');
@@ -164,20 +173,6 @@ const MAX_TILT_RADIANS = THREE.MathUtils.degToRad(24);
 const BALL_RADIUS = 0.34;
 const TRAIL_COUNT = 7;
 
-/**
- * Periyodik lazer kapısının verilen sahne süresinde aktif (tehlikeli) olup olmadığını hesaplar.
- * Fizik çarpışma kontrolü ile görsel ışın görünürlüğünü tek formülde eşitler.
- */
-function isLaserGateActive(
-  elapsed: number,
-  periodSeconds: number,
-  phaseOffset: number,
-): boolean {
-  const period = Math.max(0.2, periodSeconds);
-  const cycleTime = (((elapsed + phaseOffset) % period) + period) % period;
-  return cycleTime < period * 0.52;
-}
-
 interface MazeStageProps {
   levelData: MazeLevelDefinition;
   isGoalUnlocked: boolean;
@@ -259,57 +254,22 @@ function MazeStage({
 
   // Seçilen 3B görsel temaya, Aydınlık/Karanlık moda ve Bilye Kaplamasına (Skin) göre paylaşılan materyal renklerini güncelle
   useEffect(() => {
-    if (isLightBoard) {
-      _boardMaterial.color.set('#ffffff');
-      _boardMaterial.roughness = 0.42;
-      _boardMaterial.metalness = 0.08;
-      _outerWallMaterial.color.set('#475569');
-      _innerWallMaterial.color.set('#64748b');
-      _trailMaterial.color.set('#0284c7');
-    } else if (boardTheme === 'cyberpunk') {
-      _boardMaterial.color.set('#0f1026');
-      _boardMaterial.roughness = 0.55;
-      _boardMaterial.metalness = 0.25;
-      _outerWallMaterial.color.set('#1e1b4b');
-      _innerWallMaterial.color.set('#312e81');
-      _trailMaterial.color.set('#f472b6');
-    } else if (boardTheme === 'crimson') {
-      _boardMaterial.color.set('#1c1214');
-      _boardMaterial.roughness = 0.55;
-      _boardMaterial.metalness = 0.25;
-      _outerWallMaterial.color.set('#3f1d24');
-      _innerWallMaterial.color.set('#57242c');
-      _trailMaterial.color.set('#fb923c');
-    } else {
-      _boardMaterial.color.set('#18181b');
-      _boardMaterial.roughness = 0.55;
-      _boardMaterial.metalness = 0.25;
-      _outerWallMaterial.color.set('#27272a');
-      _innerWallMaterial.color.set('#3f3f46');
-      _trailMaterial.color.set('#38bdf8');
-    }
+    const themePalette = resolveThemePalette(boardTheme, colorScheme);
+    _boardMaterial.color.set(themePalette.boardColor);
+    _boardMaterial.roughness = themePalette.boardRoughness;
+    _boardMaterial.metalness = themePalette.boardMetalness;
+    _outerWallMaterial.color.set(themePalette.outerWallColor);
+    _innerWallMaterial.color.set(themePalette.innerWallColor);
+    _trailMaterial.color.set(themePalette.trailColor);
 
-    if (ballSkin === 'emerald') {
-      _ballMaterial.color.set('#10b981');
-      _ballMaterial.emissive.set('#059669');
-      _ballMaterial.emissiveIntensity = 0.7;
-      _trailMaterial.color.set('#34d399');
-    } else if (ballSkin === 'plasma') {
-      _ballMaterial.color.set('#a855f7');
-      _ballMaterial.emissive.set('#7e22ce');
-      _ballMaterial.emissiveIntensity = 0.75;
-      _trailMaterial.color.set('#c084fc');
-    } else if (ballSkin === 'crimson') {
-      _ballMaterial.color.set('#f43f5e');
-      _ballMaterial.emissive.set('#e11d48');
-      _ballMaterial.emissiveIntensity = 0.75;
-      _trailMaterial.color.set('#fb7185');
-    } else {
-      _ballMaterial.color.set(isLightBoard ? '#18181b' : '#f4f4f5');
-      _ballMaterial.emissive.set('#000000');
-      _ballMaterial.emissiveIntensity = 0;
+    const skinColors = resolveBallSkinColors(ballSkin, isLightBoard);
+    _ballMaterial.color.set(skinColors.color);
+    _ballMaterial.emissive.set(skinColors.emissive);
+    _ballMaterial.emissiveIntensity = skinColors.emissiveIntensity;
+    if (skinColors.trailColor) {
+      _trailMaterial.color.set(skinColors.trailColor);
     }
-  }, [boardTheme, isLightBoard, ballSkin]);
+  }, [boardTheme, colorScheme, isLightBoard, ballSkin]);
 
   const halfBoard = levelData.boardSize / 2;
   const wallHeight = 0.85;
@@ -567,8 +527,12 @@ function MazeStage({
       ) {
         for (let i = 0; i < movingObstacles.length; i++) {
           const obs = movingObstacles[i];
-          const offset =
-            Math.sin(elapsed * obs.speed + obs.phaseOffset) * obs.amplitude;
+          const offset = calculateMovingObstacleOffset(
+            elapsed,
+            obs.speed,
+            obs.phaseOffset,
+            obs.amplitude,
+          );
           const ox = obs.axis === 'x' ? obs.center[0] + offset : obs.center[0];
           const oz = obs.axis === 'z' ? obs.center[1] + offset : obs.center[1];
           const dx = pos.x - ox;
@@ -654,8 +618,12 @@ function MazeStage({
       const obs = movingObstacles[i];
       const mesh = movingObstacleMeshesRef.current[i];
       if (mesh) {
-        const offset =
-          Math.sin(hazardElapsed * obs.speed + obs.phaseOffset) * obs.amplitude;
+        const offset = calculateMovingObstacleOffset(
+          hazardElapsed,
+          obs.speed,
+          obs.phaseOffset,
+          obs.amplitude,
+        );
         const ox = obs.axis === 'x' ? obs.center[0] + offset : obs.center[0];
         const oz = obs.axis === 'z' ? obs.center[1] + offset : obs.center[1];
         mesh.position.set(ox, 0.36, oz);
@@ -744,24 +712,23 @@ function MazeStage({
           }
         }
 
-        if (
-          ghostBallMeshRef.current &&
-          showGhost &&
-          ghostPath &&
-          ghostPath.length > 1
-        ) {
-          const exactIdx = runElapsedRef.current * 10;
-          const idx0 = Math.min(ghostPath.length - 1, Math.floor(exactIdx));
-          const idx1 = Math.min(ghostPath.length - 1, idx0 + 1);
-          const frac = exactIdx - idx0;
-          const gx =
-            ghostPath[idx0][0] + (ghostPath[idx1][0] - ghostPath[idx0][0]) * frac;
-          const gz =
-            ghostPath[idx0][1] + (ghostPath[idx1][1] - ghostPath[idx0][1]) * frac;
-          ghostBallMeshRef.current.visible = idx0 < ghostPath.length - 1;
-          ghostBallMeshRef.current.position.set(gx, BALL_RADIUS, gz);
-        } else if (ghostBallMeshRef.current) {
-          ghostBallMeshRef.current.visible = false;
+        if (ghostBallMeshRef.current) {
+          if (showGhost) {
+            const ghost = calculateGhostPlaybackCoord(
+              ghostPath,
+              runElapsedRef.current,
+            );
+            ghostBallMeshRef.current.visible = ghost.isVisible;
+            if (ghost.isVisible) {
+              ghostBallMeshRef.current.position.set(
+                ghost.coord[0],
+                BALL_RADIUS,
+                ghost.coord[1],
+              );
+            }
+          } else {
+            ghostBallMeshRef.current.visible = false;
+          }
         }
       } else if (ghostBallMeshRef.current) {
         ghostBallMeshRef.current.visible = false;
@@ -781,7 +748,7 @@ function MazeStage({
         if (trailMesh) {
           trailMesh.visible = showTrail;
           trailMesh.position.set(history[i].x, 0.025, history[i].z);
-          const scale = Math.max(0.15, 1 - i / (TRAIL_COUNT + 1));
+          const scale = calculateTrailScale(i, TRAIL_COUNT);
           trailMesh.scale.set(scale, scale, 1);
         }
       }
@@ -875,28 +842,14 @@ function MazeStage({
       }
 
       // 3. Seçili Kamera Moduna Göre Dinamik Kamera Konumlandırma
-      if (cameraMode === 'topdown') {
-        _cameraTargetPos.set(
-          -clampedRoll * 1.2,
-          18.2,
-          0.6 + clampedPitch * 1.2,
-        );
-        _cameraLookAt.set(0, 0, 0);
-      } else if (cameraMode === 'follow') {
-        _cameraTargetPos.set(
-          pos.x * 0.62 - clampedRoll * 1.8,
-          10.8,
-          pos.z * 0.62 + 6.8 + clampedPitch * 1.5,
-        );
-        _cameraLookAt.set(pos.x * 0.52, 0, pos.z * 0.52);
-      } else {
-        _cameraTargetPos.set(
-          -clampedRoll * 2.4,
-          14.5,
-          10.2 + clampedPitch * 2.0,
-        );
-        _cameraLookAt.set(0, 0, 0);
-      }
+      const { targetPos, lookAt } = calculateCameraTargetTransform(
+        cameraMode,
+        pos,
+        clampedRoll,
+        clampedPitch,
+      );
+      _cameraTargetPos.set(...targetPos);
+      _cameraLookAt.set(...lookAt);
     }
 
     state.camera.position.lerp(

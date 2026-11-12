@@ -385,4 +385,9 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Harita Editörü Izgara ve Araç Mantığı Motoru (`editorUtils.ts`, `editorUtils.test.mjs`):** Başlangıç/hedef tekilliğini koruyan ve hücre toggle'ı yöneten `applyToolToCell`, çözülebilir ve geçerli labirent üreten `generateRandomEditorGrid`, kuantum portal çifti denetimi `countGridPortals` / `isPortalCountBalanced` ve editör sabitleri (`BOARD_SIZE_OPTIONS`, `EDITOR_GRID_SIZE`) geliştirildi; 6 yeni birim test ile doğrulandı (toplam 90 istemci testi, 118 monorepo testi).
 - [x] **Yalıtılmış Editör Bileşen Mimarisi (`LevelEditorToolbar.tsx`, `LevelEditorGrid.tsx`, `LevelEditorTemplatesList.tsx`, `LevelEditorMetaControls.tsx`, `LevelEditorFooter.tsx`, `LevelEditorModal.tsx`):** Harita editörü modülü bağımsız alt parçalara bölünerek klavye erişilebilirliği ve DOM yönetimi güçlendirildi; `LevelEditorModal.tsx` 664 satırdan 239 satıra sadeleştirildi.
 
+### Faz 73: 3B Sahne Matematik Motoru, Lazer/Engel Simülasyonu, Dinamik Kamera ve Tema Çözümleyici (Tamamlandı)
+- [x] **3B Sahne Matematik ve Görsel Efekt Motoru (`sceneUtils.ts`, `sceneUtils.test.mjs`):** Periyodik lazer kapısı zamanlayıcısı `isLaserGateActive`, hareketli kinetik devriye engeli sinüzoidal ötelemesi `calculateMovingObstacleOffset`, çok modlu dinamik kamera konumlandırıcısı `calculateCameraTargetTransform`, hayalet yarışçı enterpolasyonu `calculateGhostPlaybackCoord`, neon iz halkası ölçekleyicisi `calculateTrailScale`, atmosferik sahne paleti `resolveThemePalette` ve bilye kaplama rengi `resolveBallSkinColors` geliştirildi; 6 yeni birim test ile doğrulandı (toplam 96 istemci testi, 124 monorepo testi).
+- [x] **Sahne Mimarisi Entegrasyonu (`MazeScene.tsx`):** `MazeScene.tsx` bileşenindeki inline matematiksel formüller, gömülü renk dallanmaları ve kamera dönüşümleri saf yardımcı motora devredilerek kod okunabilirliği ve test güvencesi artırıldı.
+
+
 
