@@ -344,7 +344,7 @@ function MobileControllerContent() {
   const handleManualConnect = (e: React.FormEvent) => {
     e.preventDefault();
     const cleaned = manualRoomInput.trim().toUpperCase();
-    if (cleaned.length < 4) {
+    if (cleaned.length !== 6) {
       setErrorMessage('Geçerli bir 6 haneli oda kodu girin.');
       return;
     }

@@ -353,6 +353,11 @@ function MazeStage({
       const targetX = slot === 2 ? sx + p2SpawnOffsetX : sx;
       const targetZ = slot === 2 ? sz + p2SpawnOffsetZ : sz;
 
+      lastBoostTimeRef.current[slot] = -1;
+      lastTeleportTimeRef.current[slot] = -1;
+      lastMovingHitTimeRef.current[slot] = -1;
+      lastHazardResetTimeRef.current[slot] = -1;
+
       if (slot === 2) {
         transientGyroP2.ballX = targetX;
         transientGyroP2.ballZ = targetZ;
@@ -393,14 +398,6 @@ function MazeStage({
     runElapsedRef.current = 0;
     hazardElapsedRef.current = 0;
     lastSampleTimeRef.current = 0;
-    lastBoostTimeRef.current[1] = -1;
-    lastBoostTimeRef.current[2] = -1;
-    lastTeleportTimeRef.current[1] = -1;
-    lastTeleportTimeRef.current[2] = -1;
-    lastMovingHitTimeRef.current[1] = -1;
-    lastMovingHitTimeRef.current[2] = -1;
-    lastHazardResetTimeRef.current[1] = -1;
-    lastHazardResetTimeRef.current[2] = -1;
     resetSingleBall(ballBodyRef.current, 1);
     resetSingleBall(ball2BodyRef.current, 2);
   }, [
@@ -709,7 +706,10 @@ function MazeStage({
         shouldSampleGhost =
           runElapsedRef.current - lastSampleTimeRef.current >= 0.1;
         if (shouldSampleGhost) {
-          lastSampleTimeRef.current = runElapsedRef.current;
+          lastSampleTimeRef.current =
+            runElapsedRef.current - lastSampleTimeRef.current > 0.25
+              ? runElapsedRef.current
+              : lastSampleTimeRef.current + 0.1;
           if (runPathRef.current.length < 600) {
             runPathRef.current.push([
               Math.round(pos.x * 100) / 100,

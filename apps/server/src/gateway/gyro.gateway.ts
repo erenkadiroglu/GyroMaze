@@ -166,9 +166,31 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
+    const { beta, gamma, alpha, timestamp } = payload.data;
+    if (
+      typeof beta !== 'number' ||
+      !Number.isFinite(beta) ||
+      typeof gamma !== 'number' ||
+      !Number.isFinite(gamma)
+    ) {
+      return;
+    }
+
+    const clampedBeta = Math.max(-45, Math.min(45, beta));
+    const clampedGamma = Math.max(-45, Math.min(45, gamma));
+    const safeAlpha =
+      typeof alpha === 'number' && Number.isFinite(alpha) ? alpha : 0;
+    const safeTimestamp =
+      typeof timestamp === 'number' && Number.isFinite(timestamp)
+        ? timestamp
+        : Date.now();
+
     const slot = membership.playerSlot ?? payload.data.playerSlot ?? 1;
     this.server.to(room.hostSocketId).volatile.emit(RoomEvents.GYRO_SYNC, {
-      ...payload.data,
+      alpha: safeAlpha,
+      beta: clampedBeta,
+      gamma: clampedGamma,
+      timestamp: safeTimestamp,
       playerSlot: slot,
     });
   }

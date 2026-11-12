@@ -119,9 +119,18 @@ export function useDeviceOrientation({
         return;
       }
 
-      const alpha = event.alpha ?? 0;
-      const beta = event.beta ?? 0;
-      const gamma = event.gamma ?? 0;
+      const alpha =
+        typeof event.alpha === 'number' && Number.isFinite(event.alpha)
+          ? event.alpha
+          : 0;
+      const beta =
+        typeof event.beta === 'number' && Number.isFinite(event.beta)
+          ? event.beta
+          : 0;
+      const gamma =
+        typeof event.gamma === 'number' && Number.isFinite(event.gamma)
+          ? event.gamma
+          : 0;
 
       rawAnglesRef.current.alpha = alpha;
       rawAnglesRef.current.beta = beta;

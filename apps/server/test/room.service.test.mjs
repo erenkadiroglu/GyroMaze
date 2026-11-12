@@ -412,5 +412,50 @@ describe('RoomService — Oda Yönetimi, 6 Haneli Kod Eşleşmesi ve Skor Tablos
     assert.equal(service.getMembership('stale-ctrl'), undefined);
     assert.ok(service.getRoom(freshRoom.roomId));
   });
+
+  it('GyroGateway handleGyroUpdate NaN/Infinity açılarını elemeli ve aşırı eğimleri [-45, 45] içine sınırlamalıdır', async () => {
+    const service = new RoomService();
+    const room = await service.createRoom('host-gyro');
+    service.joinRoom(room.roomId, 'ctrl-gyro', 2);
+
+    const relayed = [];
+    const gateway = new GyroGateway(service);
+    gateway.server = {
+      to(targetId) {
+        return {
+          volatile: {
+            emit(event, payload) {
+              relayed.push({ targetId, event, payload });
+            },
+          },
+        };
+      },
+    };
+
+    gateway.handleGyroUpdate(
+      { id: 'ctrl-gyro' },
+      { roomId: room.roomId, data: { alpha: 0, beta: Number.NaN, gamma: 10, timestamp: 1 } },
+    );
+    gateway.handleGyroUpdate(
+      { id: 'ctrl-gyro' },
+      { roomId: room.roomId, data: { alpha: 0, beta: 5, gamma: Number.POSITIVE_INFINITY, timestamp: 1 } },
+    );
+    assert.equal(relayed.length, 0);
+
+    gateway.handleGyroUpdate(
+      { id: 'ctrl-gyro' },
+      { roomId: room.roomId, data: { alpha: Number.NaN, beta: 90, gamma: -120, timestamp: 1234 } },
+    );
+    assert.equal(relayed.length, 1);
+    assert.equal(relayed[0].targetId, 'host-gyro');
+    assert.equal(relayed[0].event, RoomEvents.GYRO_SYNC);
+    assert.deepEqual(relayed[0].payload, {
+      alpha: 0,
+      beta: 45,
+      gamma: -45,
+      timestamp: 1234,
+      playerSlot: 2,
+    });
+  });
 });
 

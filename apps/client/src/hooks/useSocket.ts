@@ -26,10 +26,12 @@ function resolveSocketServerUrl(): string {
   }
   if (typeof window !== 'undefined') {
     const { protocol, hostname, origin } = window.location;
-    if (
-      protocol === 'https:' ||
-      (hostname !== 'localhost' && hostname !== '127.0.0.1')
-    ) {
+    const isLoopback =
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname === '::1' ||
+      hostname === '[::1]';
+    if (protocol === 'https:' || !isLoopback) {
       return origin;
     }
     return `http://${hostname}:4000`;

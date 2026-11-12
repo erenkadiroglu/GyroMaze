@@ -253,10 +253,18 @@ export function DesktopHUD() {
   // Global klavye kısayolları (R: Sıfırla, C: Kamera, M: Ses, L: Gece/Gündüz)
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (isAnyOverlayOpen) return;
+      if (isAnyOverlayOpen || e.repeat) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
-      const tag = (e.target as HTMLElement | null)?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (
+        tag === 'INPUT' ||
+        tag === 'TEXTAREA' ||
+        tag === 'SELECT' ||
+        target?.isContentEditable
+      ) {
+        return;
+      }
       const key = e.key.toLowerCase();
       if (key === 'r') {
         triggerBallReset();

@@ -184,6 +184,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Çakışmasız HUD Bildirim Kimliği ve Tur Sıfırlama Yardımcısı (`useGameStore.ts`):** Aynı milisaniye içinde peş peşe tetiklenen bildirimlerin aynı `Date.now()` kimliği yüzünden birbirinin `2800 ms` zamanlayıcısını iptal etmesini önlemek için monotonik `nextHudNotificationId` sayacına geçildi ve tekrarlayan 7 tur sıfırlama bloğu `resetRunFields` yardımcısında birleştirildi.
 - [x] **IPv6 Loopback LAN QR Algılama (`DesktopHUD.tsx`):** Tarayıcı `::1` veya `[::1]` yerel adresi üzerinden açıldığında da telefonla taranabilir yerel ağ QR bağlantısı oluşturulması için `isLocalLoopback` denetimi genişletildi.
 
+## ✅ Faz 27: Jiroskop NaN Koruması, Çok Oyunculu Doğma Paritesi ve Giriş Dayanıklılığı (Tamamlandı)
+
+- [x] **Jiroskop `NaN`/Sınır Koruması (`gyro.gateway.ts`, `useDeviceOrientation.ts`, `room.service.test.mjs`):** WebSocket ağ geçidinde `NaN`/`Infinity` veya sayı dışı `beta`/`gamma` değerlerinin 3B Rapier fizik motorunu bozmasını önlemek için sonluluk kontrolü ve `[-45, 45]` derece sınırlaması eklendi; cihaz tarafında da `Number.isFinite` koruması sağlandı ve ağ geçidi birim testiyle doğrulandı.
+- [x] **Çok Oyunculu Yeniden Doğma ve Hayalet Örnekleme Paritesi (`MazeScene.tsx`):** `resetSingleBall` içine yuva bazlı rampa/portal/lazer/hareketli engel bekleme sürelerinin sıfırlanması taşınarak tek oyunculu ve 2 oyunculu yeniden doğma davranışları eşitlendi; 10 Hz hayalet kaydında kare hızına bağlı kümülatif zaman kayması giderildi.
+- [x] **Klavye Tekrar Koruması, 6 Haneli Kod Doğrulama ve IPv6 Soket Yönlendirme (`DesktopHUD.tsx`, `controller/page.tsx`, `useSocket.ts`):** `R`/`C`/`M`/`L` kısayollarında tuş basılı tutma (`e.repeat`) ve `contentEditable` alan çakışmaları engellendi; mobil kontrolcü formunda tam 6 karakterlik oda kodu zorunluluğu sağlandı ve `resolveSocketServerUrl` IPv6 loopback adresleriyle uyumlu hale getirildi.
+
 
 
 
