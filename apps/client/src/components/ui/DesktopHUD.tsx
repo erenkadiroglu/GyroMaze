@@ -18,10 +18,6 @@ import {
   Camera,
   Sun,
   Moon,
-  ChevronLeft,
-  ChevronRight,
-  ChevronDown,
-  Sparkles,
   SlidersHorizontal,
   Users,
   Timer,
@@ -38,6 +34,7 @@ import { HelpShortcutsModal } from './HelpShortcutsModal';
 import { LeaderboardModal } from './LeaderboardModal';
 import { PairingModal } from './PairingModal';
 import { GameOutcomeModals } from './GameOutcomeModals';
+import { LevelSelectPopover } from './LevelSelectPopover';
 import { AttitudeGauge } from './AttitudeGauge';
 import {
   IconButton,
@@ -87,8 +84,6 @@ export function DesktopHUD() {
   const showHudNotification = useGameStore((s) => s.showHudNotification);
   const customLevel = useGameStore((s) => s.customLevel);
   const setLevel = useGameStore((s) => s.setLevel);
-  const nextLevel = useGameStore((s) => s.nextLevel);
-  const prevLevel = useGameStore((s) => s.prevLevel);
   const latencyMs = useGameStore((s) => s.latencyMs);
   const elapsedSeconds = useGameStore((s) => s.elapsedSeconds);
   const setElapsedSeconds = useGameStore((s) => s.setElapsedSeconds);
@@ -102,14 +97,10 @@ export function DesktopHUD() {
   const winnerPlayer = useGameStore((s) => s.winnerPlayer);
   const showMiniMap = useGameStore((s) => s.showMiniMap);
 
-  const [isLevelMenuOpen, setIsLevelMenuOpen] = useState(false);
   const [isPageHidden, setIsPageHidden] = useState(false);
-
-  const levelPopoverRef = useRef<HTMLDivElement | null>(null);
   const lastWarnedSecondRef = useRef<number | null>(null);
 
   const currentLevelInfo = getMazeLevel(level, customLevel);
-  const activeNumericLevel = level === 99 ? 1 : Math.max(1, level);
   const currentBestTime = bestTimes[currentLevelInfo.id];
   const totalCrystals = currentLevelInfo.crystals.length;
   const remainingCrystals = currentLevelInfo.crystals.filter(
@@ -134,33 +125,6 @@ export function DesktopHUD() {
       : cameraMode === 'topdown'
         ? 'Üstten'
         : 'Takip';
-
-  const shortLevelTag =
-    currentLevelInfo.id === 99
-      ? 'Özel'
-      : `Bölüm ${currentLevelInfo.id < 10 ? `0${currentLevelInfo.id}` : currentLevelInfo.id}`;
-
-  // Bölüm menüsü dışına tıklanınca veya Esc basılınca kapat
-  useEffect(() => {
-    if (!isLevelMenuOpen) return;
-    const onMouseDown = (e: MouseEvent) => {
-      if (
-        levelPopoverRef.current &&
-        !levelPopoverRef.current.contains(e.target as Node)
-      ) {
-        setIsLevelMenuOpen(false);
-      }
-    };
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsLevelMenuOpen(false);
-    };
-    window.addEventListener('mousedown', onMouseDown);
-    window.addEventListener('keydown', onKeyDown);
-    return () => {
-      window.removeEventListener('mousedown', onMouseDown);
-      window.removeEventListener('keydown', onKeyDown);
-    };
-  }, [isLevelMenuOpen]);
 
   // Sekme gizlendiğinde oyun saatini dondurarak arka planda süre atlamasını önle
   useEffect(() => {
@@ -306,16 +270,6 @@ export function DesktopHUD() {
     triggerBallReset();
   };
 
-  const handleJumpProceduralLevel = () => {
-    const nextProc = level < 6 || level === 99 ? 6 : level + 1;
-    setLevel(nextProc);
-    setIsLevelMenuOpen(false);
-    showHudNotification(
-      `Prosedürel Bölüm ${nextProc < 10 ? `0${nextProc}` : nextProc} oluşturuldu`,
-      'info',
-    );
-  };
-
   const isAnyControllerPaired =
     isSocketConnected && (isControllerPaired || isSecondControllerPaired);
   const connectionDotColor = isAnyControllerPaired
@@ -338,10 +292,7 @@ export function DesktopHUD() {
       {/* ÜST ÇUBUK */}
       <header className="flex flex-wrap items-center justify-between gap-3">
         {/* Sol Kapsül: Marka ve Bölüm Seçici */}
-        <div
-          ref={levelPopoverRef}
-          className="gm-panel pointer-events-auto relative flex items-center gap-2.5 rounded-2xl px-3.5 py-2 shadow-lg"
-        >
+        <div className="gm-panel pointer-events-auto relative flex items-center gap-2.5 rounded-2xl px-3.5 py-2 shadow-lg">
           <div className="flex items-center gap-2 pr-1">
             <span
               className={cx('h-2.5 w-2.5 rounded-full', connectionDotColor)}
@@ -354,145 +305,7 @@ export function DesktopHUD() {
 
           <span className="h-4 w-px bg-line" aria-hidden="true" />
 
-          <div className="flex items-center gap-1">
-            <IconButton
-              size="sm"
-              label="Önceki bölüm"
-              onClick={prevLevel}
-              disabled={activeNumericLevel <= 1 && level !== 99}
-            >
-              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-            </IconButton>
-
-            <button
-              type="button"
-              aria-expanded={isLevelMenuOpen}
-              aria-haspopup="menu"
-              onClick={() => setIsLevelMenuOpen((v) => !v)}
-              className="flex h-8 cursor-pointer items-center gap-1.5 rounded-xl px-2.5 text-sm font-medium text-fg transition-colors hover:bg-surface-2"
-              title={currentLevelInfo.subtitle}
-            >
-              <span className="gm-num font-semibold text-brass">
-                {shortLevelTag}
-              </span>
-              <span className="hidden max-w-[180px] truncate text-xs text-muted md:inline">
-                {currentLevelInfo.title.replace(/^Bölüm \d+\s*[—-]\s*/, '')}
-              </span>
-              <ChevronDown
-                className={cx(
-                  'h-3.5 w-3.5 text-muted transition-transform',
-                  isLevelMenuOpen && 'rotate-180',
-                )}
-                aria-hidden="true"
-              />
-            </button>
-
-            <IconButton
-              size="sm"
-              label="Sonraki bölüm"
-              onClick={nextLevel}
-            >
-              <ChevronRight className="h-4 w-4" aria-hidden="true" />
-            </IconButton>
-          </div>
-
-          {/* Açılır Bölüm Seçici Menüsü */}
-          <AnimatePresence>
-            {isLevelMenuOpen && (
-              <motion.div
-                role="menu"
-                aria-label="Bölüm listesi"
-                initial={{ opacity: 0, y: 6, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 6, scale: 0.98 }}
-                transition={{ duration: 0.14 }}
-                className="absolute top-[calc(100%+8px)] left-0 z-40 w-72 rounded-2xl border border-line bg-surface p-3 shadow-2xl"
-              >
-                <div className="mb-2 flex items-center justify-between px-1">
-                  <span className="text-xs font-medium text-muted">
-                    Standart bölümler
-                  </span>
-                  {bestTimes[currentLevelInfo.id] !== undefined && (
-                    <span className="gm-num text-xs text-brass">
-                      En iyi {bestTimes[currentLevelInfo.id].toFixed(1)} sn
-                    </span>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-5 gap-1.5">
-                  {[1, 2, 3, 4, 5].map((id) => {
-                    const active = currentLevelInfo.id === id;
-                    return (
-                      <button
-                        key={id}
-                        type="button"
-                        role="menuitem"
-                        onClick={() => {
-                          setLevel(id);
-                          setIsLevelMenuOpen(false);
-                        }}
-                        className={cx(
-                          'gm-num h-9 cursor-pointer rounded-xl border text-sm font-semibold transition-colors',
-                          active
-                            ? 'border-brass bg-brass text-brass-fg'
-                            : 'border-line bg-surface-2/60 text-fg hover:border-muted/60',
-                        )}
-                      >
-                        0{id}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="mt-3 border-t border-line pt-3 space-y-1.5">
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={handleJumpProceduralLevel}
-                    className={cx(
-                      'flex w-full cursor-pointer items-center justify-between rounded-xl border px-3 py-2 text-xs font-medium transition-colors',
-                      level >= 6 && level !== 99
-                        ? 'border-brass bg-brass/15 text-brass'
-                        : 'border-line bg-surface-2/70 text-fg hover:border-brass/60',
-                    )}
-                  >
-                    <span className="flex items-center gap-2">
-                      <Sparkles className="h-3.5 w-3.5 text-brass" aria-hidden="true" />
-                      Sonsuz prosedürel bölüm üret
-                    </span>
-                    <span
-                      className={cx(
-                        'gm-num',
-                        level >= 6 && level !== 99 ? 'text-brass font-semibold' : 'text-muted',
-                      )}
-                    >
-                      {level >= 6 && level !== 99 ? `${shortLevelTag} +1` : '06+'}
-                    </span>
-                  </button>
-
-                  {customLevel && (
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => {
-                        setLevel(99);
-                        setIsLevelMenuOpen(false);
-                      }}
-                      className={cx(
-                        'flex w-full cursor-pointer items-center justify-between rounded-xl border px-3 py-2 text-xs font-medium transition-colors',
-                        level === 99
-                          ? 'border-brass bg-brass/15 text-brass'
-                          : 'border-line bg-surface-2/70 text-fg hover:border-muted/60',
-                      )}
-                    >
-                      <span className="truncate">{customLevel.title}</span>
-                      <span className="text-[11px] text-muted">Özel</span>
-                    </button>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <LevelSelectPopover />
         </div>
 
         {/* Sağ Kapsül: Durum Okumaları ve 2 Ana Eylem */}
