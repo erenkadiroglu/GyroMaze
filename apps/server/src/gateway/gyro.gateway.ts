@@ -213,29 +213,37 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: HapticPayload,
   ): void {
     const membership = this.roomService.getMembership(client.id);
-    const roomId = membership?.roomId ?? payload?.roomId;
-    if (!roomId) return;
+    if (!membership || membership.role !== 'host' || !payload?.type) {
+      return;
+    }
+    if (payload.roomId && payload.roomId !== membership.roomId) {
+      return;
+    }
 
-    const room = this.roomService.getRoom(roomId);
+    const room = this.roomService.getRoom(membership.roomId);
     if (!room) return;
 
+    const syncedPayload: HapticPayload = {
+      ...payload,
+      roomId: membership.roomId,
+    };
     const sendToSlot1 = !payload.playerSlot || payload.playerSlot === 1;
     const sendToSlot2 = !payload.playerSlot || payload.playerSlot === 2;
 
     if (sendToSlot1 && room.controllerSocketId) {
       this.server
         .to(room.controllerSocketId)
-        .volatile.emit(RoomEvents.GAME_HAPTIC, payload);
+        .volatile.emit(RoomEvents.GAME_HAPTIC, syncedPayload);
     }
     if (sendToSlot2 && room.secondControllerSocketId) {
       this.server
         .to(room.secondControllerSocketId)
-        .volatile.emit(RoomEvents.GAME_HAPTIC, payload);
+        .volatile.emit(RoomEvents.GAME_HAPTIC, syncedPayload);
     }
   }
 
   /**
-   * Oyun durumu değişimlerini (playing, paused, won, level, kristal sayısı) odadaki tüm cihazlara senkronize eder.
+   * Oyun durumu değişimlerini (playing, paused, won, level, kristal sayısı) odadaki kontrolcülere senkronize eder.
    */
   @SubscribeMessage(RoomEvents.GAME_STATE_CHANGE)
   public handleGameStateChange(
@@ -243,12 +251,30 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: GameStatePayload,
   ): void {
     const membership = this.roomService.getMembership(client.id);
-    const roomId = membership?.roomId ?? payload?.roomId;
-    if (!roomId) {
+    if (!membership || membership.role !== 'host' || !payload) {
+      return;
+    }
+    if (payload.roomId && payload.roomId !== membership.roomId) {
       return;
     }
 
-    this.server.to(roomId).emit(RoomEvents.GAME_STATE_CHANGE, payload);
+    const room = this.roomService.getRoom(membership.roomId);
+    if (!room) return;
+
+    const syncedPayload: GameStatePayload = {
+      ...payload,
+      roomId: membership.roomId,
+    };
+    if (room.controllerSocketId) {
+      this.server
+        .to(room.controllerSocketId)
+        .emit(RoomEvents.GAME_STATE_CHANGE, syncedPayload);
+    }
+    if (room.secondControllerSocketId) {
+      this.server
+        .to(room.secondControllerSocketId)
+        .emit(RoomEvents.GAME_STATE_CHANGE, syncedPayload);
+    }
   }
 
   /**
@@ -260,16 +286,29 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: ChangeLevelPayload,
   ): void {
     const membership = this.roomService.getMembership(client.id);
-    const roomId = membership?.roomId ?? payload?.roomId;
-    if (!roomId) {
+    if (!membership || membership.role !== 'controller' || !payload) {
+      return;
+    }
+    if (payload.roomId && payload.roomId !== membership.roomId) {
       return;
     }
 
-    const room = this.roomService.getRoom(roomId);
+    const validDirection =
+      payload.direction === 'next' || payload.direction === 'prev';
+    const validLevel =
+      typeof payload.level === 'number' &&
+      Number.isInteger(payload.level) &&
+      payload.level >= 1;
+    if (!validDirection && !validLevel) {
+      return;
+    }
+
+    const room = this.roomService.getRoom(membership.roomId);
     if (room) {
-      this.server
-        .to(room.hostSocketId)
-        .emit(RoomEvents.GAME_CHANGE_LEVEL, payload);
+      this.server.to(room.hostSocketId).emit(RoomEvents.GAME_CHANGE_LEVEL, {
+        ...payload,
+        roomId: membership.roomId,
+      });
     }
   }
 

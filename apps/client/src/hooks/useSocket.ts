@@ -146,9 +146,7 @@ export function useSocket({
       if (room.lanIp) setLanIp(room.lanIp);
       if (room.tunnelUrl) setTunnelUrl(room.tunnelUrl);
       if (role === 'host') {
-        setControllerPaired(
-          Boolean(room.isControllerConnected || room.isSecondControllerConnected),
-        );
+        setControllerPaired(Boolean(room.isControllerConnected));
         setSecondControllerPaired(Boolean(room.isSecondControllerConnected));
         if (!room.isControllerConnected) {
           resetTransientGyro(1);
@@ -184,12 +182,7 @@ export function useSocket({
       RoomEvents.ROOM_CONTROLLER_DISCONNECTED,
       (remainingRoom?: RoomState) => {
         if (role === 'host' && remainingRoom) {
-          setControllerPaired(
-            Boolean(
-              remainingRoom.isControllerConnected ||
-                remainingRoom.isSecondControllerConnected,
-            ),
-          );
+          setControllerPaired(Boolean(remainingRoom.isControllerConnected));
           setSecondControllerPaired(
             Boolean(remainingRoom.isSecondControllerConnected),
           );
@@ -221,7 +214,9 @@ export function useSocket({
 
     socket.on(RoomEvents.ROOM_ERROR, (error: RoomErrorPayload) => {
       setErrorMessage(error.message);
-      setControllerPaired(false);
+      if (role === 'controller') {
+        setControllerPaired(false);
+      }
     });
 
     if (role === 'host') {
@@ -329,7 +324,13 @@ export function useSocket({
 
   // Masaüstündeki bölüm, oyun durumu ve kristal ilerlemesini mobil kontrolcüye senkronize et
   useEffect(() => {
-    if (role !== 'host' || !roomId || !isControllerPaired) return;
+    if (
+      role !== 'host' ||
+      !roomId ||
+      (!isControllerPaired && !isSecondControllerPaired)
+    ) {
+      return;
+    }
     const currentLvl = getMazeLevel(level, customLevel);
 
     socketRef.current?.emit(RoomEvents.GAME_STATE_CHANGE, {
@@ -391,13 +392,20 @@ export function useSocket({
   }, [role, hapticSignal, roomId]);
 
   useEffect(() => {
-    if (role !== 'host' || !pendingScoreSubmission) return;
-    socketRef.current?.emit(
+    if (
+      role !== 'host' ||
+      !pendingScoreSubmission ||
+      !isSocketConnected ||
+      !socketRef.current?.connected
+    ) {
+      return;
+    }
+    socketRef.current.emit(
       RoomEvents.LEADERBOARD_SUBMIT,
       pendingScoreSubmission,
     );
     submitLeaderboardScore(null);
-  }, [role, pendingScoreSubmission, submitLeaderboardScore]);
+  }, [role, pendingScoreSubmission, isSocketConnected, submitLeaderboardScore]);
 
   /**
    * 60Hz frekansında ve delta filtreli volatile WebSocket çerçevesi gönderir.

@@ -17,6 +17,7 @@ import {
   Segmented,
   SwitchRow,
   Button,
+  handleRadioGroupKeyDown,
 } from './primitives';
 
 const BALL_SKIN_SWATCHES: Array<{
@@ -199,7 +200,7 @@ export function SettingsModal() {
             aria-label="Bilye görünümü"
             className="grid grid-cols-4 gap-1.5"
           >
-            {BALL_SKIN_SWATCHES.map((skin) => {
+            {BALL_SKIN_SWATCHES.map((skin, idx) => {
               const active = ballSkin === skin.value;
               return (
                 <button
@@ -207,7 +208,17 @@ export function SettingsModal() {
                   type="button"
                   role="radio"
                   aria-checked={active}
+                  tabIndex={active ? 0 : -1}
                   onClick={() => setBallSkin(skin.value)}
+                  onKeyDown={(e) =>
+                    handleRadioGroupKeyDown(
+                      e,
+                      idx,
+                      BALL_SKIN_SWATCHES.length,
+                      (nextIdx) =>
+                        setBallSkin(BALL_SKIN_SWATCHES[nextIdx].value),
+                    )
+                  }
                   className={`flex cursor-pointer flex-col items-center gap-1.5 rounded-xl border py-2 text-xs font-medium transition-colors ${
                     active
                       ? 'border-brass bg-surface-2 text-fg'

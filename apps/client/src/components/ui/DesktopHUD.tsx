@@ -37,7 +37,14 @@ import { soundEngine } from '@/utils/soundEngine';
 import { LevelEditorModal } from './LevelEditorModal';
 import { SettingsModal } from './SettingsModal';
 import { AttitudeGauge } from './AttitudeGauge';
-import { Modal, IconButton, Button, Kbd, cx } from './primitives';
+import {
+  Modal,
+  IconButton,
+  Button,
+  Kbd,
+  cx,
+  handleRadioGroupKeyDown,
+} from './primitives';
 
 /**
  * Masaüstü 3B sahne üzerindeki düzenli, tek odaklı HUD katmanı:
@@ -343,7 +350,8 @@ export function DesktopHUD() {
     .filter((entry) => entry.levelId === selectedLeaderboardLevel)
     .sort((a, b) => a.timeSeconds - b.timeSeconds);
 
-  const connectionDotColor = isControllerPaired
+  const isAnyControllerPaired = isControllerPaired || isSecondControllerPaired;
+  const connectionDotColor = isAnyControllerPaired
     ? 'bg-ok'
     : isSocketConnected
       ? 'bg-brass'
@@ -587,7 +595,7 @@ export function DesktopHUD() {
 
           {/* Oda Kodu & Eşleştir Düğmesi */}
           <Button
-            variant={isControllerPaired ? 'secondary' : 'primary'}
+            variant={isAnyControllerPaired ? 'secondary' : 'primary'}
             size="sm"
             icon={<Smartphone className="h-3.5 w-3.5" aria-hidden="true" />}
             onClick={() => setPairingModalOpen(true)}
@@ -596,7 +604,7 @@ export function DesktopHUD() {
             <span className="gm-num tracking-wider">
               {roomId ?? '......'}
             </span>
-            {isControllerPaired ? (
+            {isAnyControllerPaired ? (
               <span className="gm-num hidden text-xs text-ok sm:inline">
                 {latencyMs}ms
               </span>
@@ -659,11 +667,21 @@ export function DesktopHUD() {
           <div className="gm-panel hidden items-center gap-2 rounded-xl px-3 py-1.5 text-xs text-muted lg:flex">
             {isMultiplayer ? (
               <>
-                <Kbd>WASD</Kbd>
-                <span>1. Bilye</span>
-                <span className="text-line">·</span>
-                <Kbd>Oklar</Kbd>
-                <span>2. Bilye</span>
+                {!isControllerPaired && (
+                  <>
+                    <Kbd>WASD</Kbd>
+                    <span>1. Bilye</span>
+                  </>
+                )}
+                {!isControllerPaired && !isSecondControllerPaired && (
+                  <span className="text-line">·</span>
+                )}
+                {!isSecondControllerPaired && (
+                  <>
+                    <Kbd>Oklar</Kbd>
+                    <span>2. Bilye</span>
+                  </>
+                )}
               </>
             ) : (
               <>
@@ -803,30 +821,32 @@ export function DesktopHUD() {
               aria-label="Eşleştirilecek oyuncu"
               className="grid grid-cols-2 gap-1 rounded-xl border border-line bg-surface-2 p-1"
             >
-              <button
-                type="button"
-                role="radio"
-                aria-checked={pairingSlot === 1}
-                onClick={() => setPairingSlot(1)}
-                className={cx(
-                  'h-9 cursor-pointer rounded-lg text-xs font-semibold transition-colors',
-                  pairingSlot === 1 ? 'bg-surface text-fg shadow' : 'text-muted',
-                )}
-              >
-                1. Oyuncu QR ({isControllerPaired ? 'Bağlı' : 'Bekliyor'})
-              </button>
-              <button
-                type="button"
-                role="radio"
-                aria-checked={pairingSlot === 2}
-                onClick={() => setPairingSlot(2)}
-                className={cx(
-                  'h-9 cursor-pointer rounded-lg text-xs font-semibold transition-colors',
-                  pairingSlot === 2 ? 'bg-surface text-fg shadow' : 'text-muted',
-                )}
-              >
-                2. Oyuncu QR ({isSecondControllerPaired ? 'Bağlı' : 'Bekliyor'})
-              </button>
+              {([1, 2] as const).map((slot, idx) => {
+                const active = pairingSlot === slot;
+                const paired =
+                  slot === 1 ? isControllerPaired : isSecondControllerPaired;
+                return (
+                  <button
+                    key={slot}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    tabIndex={active ? 0 : -1}
+                    onClick={() => setPairingSlot(slot)}
+                    onKeyDown={(e) =>
+                      handleRadioGroupKeyDown(e, idx, 2, (nextIdx) =>
+                        setPairingSlot(nextIdx === 0 ? 1 : 2),
+                      )
+                    }
+                    className={cx(
+                      'h-9 cursor-pointer rounded-lg text-xs font-semibold transition-colors',
+                      active ? 'bg-surface text-fg shadow' : 'text-muted',
+                    )}
+                  >
+                    {slot}. Oyuncu QR ({paired ? 'Bağlı' : 'Bekliyor'})
+                  </button>
+                );
+              })}
             </div>
           )}
 

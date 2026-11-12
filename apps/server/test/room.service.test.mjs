@@ -267,5 +267,49 @@ describe('RoomService — Oda Yönetimi, 6 Haneli Kod Eşleşmesi ve Skor Tablos
 
     assert.equal(service.getLeaderboard().length, initialCount);
   });
+
+  it('GyroGateway oda dışı sahte haptik, durum ve bölüm değiştirme isteklerini reddetmelidir', async () => {
+    const service = new RoomService();
+    const room = await service.createRoom('host-auth');
+    service.joinRoom(room.roomId, 'ctrl-auth', 1);
+
+    const emitted = [];
+    const gateway = new GyroGateway(service);
+    gateway.server = {
+      to(target) {
+        return {
+          emit(event, payload) {
+            emitted.push({ target, event, payload });
+          },
+          volatile: {
+            emit(event, payload) {
+              emitted.push({ target, event, payload });
+            },
+          },
+        };
+      },
+    };
+
+    const intruder = { id: 'rogue-socket' };
+    const host = { id: 'host-auth' };
+    const controller = { id: 'ctrl-auth' };
+
+    gateway.handleGameHaptic(intruder, { roomId: room.roomId, type: 'goal' });
+    gateway.handleGameHaptic(controller, { roomId: room.roomId, type: 'goal' });
+    gateway.handleGameStateChange(intruder, { roomId: room.roomId, status: 'won' });
+    gateway.handleChangeLevel(intruder, { roomId: room.roomId, direction: 'next' });
+    gateway.handleChangeLevel(host, { roomId: room.roomId, direction: 'next' });
+    assert.equal(emitted.length, 0);
+
+    gateway.handleGameStateChange(host, { roomId: room.roomId, status: 'playing', level: 2 });
+    assert.equal(emitted.length, 1);
+    assert.equal(emitted[0].target, 'ctrl-auth');
+    assert.equal(emitted[0].event, RoomEvents.GAME_STATE_CHANGE);
+
+    gateway.handleChangeLevel(controller, { roomId: room.roomId, direction: 'next' });
+    assert.equal(emitted.length, 2);
+    assert.equal(emitted[1].target, 'host-auth');
+    assert.equal(emitted[1].event, RoomEvents.GAME_CHANGE_LEVEL);
+  });
 });
 

@@ -146,6 +146,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **SSR Uyumlu Rekor Hidrasyonu (`useGameStore.ts`, `useAppPreferences.ts`):** `bestTimes` ve `ghostPaths` alanlarının ilk render'da `{}` olarak başlatılıp istemci `useEffect` fazında şema doğrulamalı (`hydrateLocalRecords`) yüklenmesiyle React 19 SSR hidrasyon uyumsuzluğu önlendi.
 - [x] **Çalışma Alanı Geliştirme ve Statik Denetim Betikleri (`scripts/dev.mjs`, `scripts/lint.mjs`, `package.json`, `README.md`):** Kök dizine `npm run dev` ve `npm run start` paralel başlatıcıları (`@gyromaze/shared` otomatik derleme + temiz süreç kapatma) eklendi; etkileşimli hata veren `next lint` yerine tüm çalışma alanları için sıfır bağımlılıklı statik tip ve kural denetimi (`npm run lint`) yapılandırıldı.
 
+## ✅ Faz 21: Oyuncu Yuvası İzolasyonu, Ağ Güvenliği, Dairesel Dokunmatik Gimbal ve Radyo Erişilebilirliği (Tamamlandı)
+
+- [x] **1./2. Oyuncu Yuva İzolasyonu (`useGameStore.ts`, `useSocket.ts`, `DesktopHUD.tsx`):** Çok oyunculu modda yalnızca 2. oyuncu telefonla katıldığında 1. oyuncunun `isControllerPaired` bayrağının yanlışlıkla `true` sayılması ve masaüstü `WASD` kontrolünün kilitlenmesi düzeltildi; durum geçişleri (`resolvePairingGameStatus`) ve alt klavye ipuçları yuva bazında ayrıştırıldı.
+- [x] **Ağ Geçidi Yetki Doğrulaması & Çevrimdışı Skor Koruması (`gyro.gateway.ts`, `useSocket.ts`, `room.service.test.mjs`):** `GAME_HAPTIC`, `GAME_STATE_CHANGE` ve `GAME_CHANGE_LEVEL` olayları yalnız doğrulanmış oda rolü (`host` / `controller`) için izinli kılındı; `GAME_STATE_CHANGE` sunucu yankısı kesilerek yalnız odadaki kontrolcülere yönlendirildi ve `pendingScoreSubmission` bağlantının aktif olmasını bekler hale getirildi.
+- [x] **Dairesel Gimbal Sınırlandırması, P1/P2 Rozeti & Ortak WAI-ARIA Radyo Gezintisi (`controller/page.tsx`, `primitives.tsx`, `SettingsModal.tsx`, `DesktopHUD.tsx`):** Dokunmatik gimbal çapraz sürüklemeleri daire yarıçapı içine normalize edildi; mobil başlığa aktif `P1`/`P2` yuva rozeti ile eşleşme bekleme bildirimi eklendi; tüm radyo gruplarında ortak `handleRadioGroupKeyDown` (Ok / Home / End + gezen `tabIndex`) sağlandı.
+
 
 
 

@@ -356,6 +356,36 @@ export function Button({
 /*  Form denetimleri                                                          */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * WAI-ARIA radyo grupları için ortak klavye yön tuşu (Ok / Home / End) gezinti yardımcısı.
+ */
+export function handleRadioGroupKeyDown(
+  e: React.KeyboardEvent<HTMLButtonElement>,
+  idx: number,
+  total: number,
+  onSelectIndex: (nextIndex: number) => void,
+) {
+  if (total < 2) return;
+  let nextIdx = -1;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+    nextIdx = (idx + 1) % total;
+  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+    nextIdx = (idx - 1 + total) % total;
+  } else if (e.key === 'Home') {
+    nextIdx = 0;
+  } else if (e.key === 'End') {
+    nextIdx = total - 1;
+  }
+  if (nextIdx >= 0) {
+    e.preventDefault();
+    onSelectIndex(nextIdx);
+    const sibling = e.currentTarget.parentElement?.children.item(
+      nextIdx,
+    ) as HTMLElement | null;
+    sibling?.focus({ preventScroll: true });
+  }
+}
+
 interface SegmentedProps<T extends string | number> {
   label: string;
   value: T;
@@ -372,6 +402,8 @@ export function Segmented<T extends string | number>({
   options,
   onChange,
 }: SegmentedProps<T>) {
+  const hasMatchedValue = options.some((opt) => opt.value === value);
+
   return (
     <div
       role="radiogroup"
@@ -387,26 +419,14 @@ export function Segmented<T extends string | number>({
             type="button"
             role="radio"
             aria-checked={active}
-            tabIndex={active ? 0 : -1}
+            tabIndex={active || (!hasMatchedValue && idx === 0) ? 0 : -1}
             title={opt.hint}
             onClick={() => onChange(opt.value)}
-            onKeyDown={(e) => {
-              if (options.length < 2) return;
-              let nextIdx = -1;
-              if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-                nextIdx = (idx + 1) % options.length;
-              } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-                nextIdx = (idx - 1 + options.length) % options.length;
-              }
-              if (nextIdx >= 0) {
-                e.preventDefault();
-                onChange(options[nextIdx].value);
-                const sibling = e.currentTarget.parentElement?.children.item(
-                  nextIdx,
-                ) as HTMLElement | null;
-                sibling?.focus({ preventScroll: true });
-              }
-            }}
+            onKeyDown={(e) =>
+              handleRadioGroupKeyDown(e, idx, options.length, (nextIdx) =>
+                onChange(options[nextIdx].value),
+              )
+            }
             className={cx(
               'min-h-9 cursor-pointer rounded-lg px-2 text-sm font-medium transition-colors',
               active

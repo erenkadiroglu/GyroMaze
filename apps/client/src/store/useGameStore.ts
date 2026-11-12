@@ -116,6 +116,22 @@ function loadGhostPaths(): Record<number, Array<[number, number]>> {
   }
 }
 
+function resolvePairingGameStatus(
+  wasAny: boolean,
+  nextAny: boolean,
+  currentStatus: GameStatus,
+): GameStatus {
+  if (!wasAny && nextAny) {
+    return currentStatus === 'waiting' || currentStatus === 'paused'
+      ? 'playing'
+      : currentStatus;
+  }
+  if (wasAny && !nextAny && currentStatus === 'playing') {
+    return 'paused';
+  }
+  return currentStatus;
+}
+
 /**
  * GyroMaze merkezi uygulama ve oyun durumu arayüzü.
  */
@@ -329,13 +345,11 @@ export const useGameStore = create<GameStoreState>()(
     set((state) => ({
       isControllerPaired,
       isPairingModalOpen: isControllerPaired ? false : state.isPairingModalOpen,
-      gameStatus: isControllerPaired
-        ? state.gameStatus === 'waiting' || state.gameStatus === 'paused'
-          ? 'playing'
-          : state.gameStatus
-        : state.gameStatus === 'playing'
-          ? 'paused'
-          : state.gameStatus,
+      gameStatus: resolvePairingGameStatus(
+        state.isControllerPaired || state.isSecondControllerPaired,
+        isControllerPaired || state.isSecondControllerPaired,
+        state.gameStatus,
+      ),
     })),
   setPairingModalOpen: (isPairingModalOpen) => set({ isPairingModalOpen }),
   setLeaderboardOpen: (isLeaderboardOpen) => set({ isLeaderboardOpen }),
@@ -348,6 +362,11 @@ export const useGameStore = create<GameStoreState>()(
         ? false
         : state.isPairingModalOpen,
       isMultiplayer: isSecondControllerPaired ? true : state.isMultiplayer,
+      gameStatus: resolvePairingGameStatus(
+        state.isControllerPaired || state.isSecondControllerPaired,
+        state.isControllerPaired || isSecondControllerPaired,
+        state.gameStatus,
+      ),
     })),
   toggleMultiplayer: () =>
     set((state) => ({

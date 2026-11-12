@@ -26,7 +26,7 @@ import { useGameStore } from '@/store/useGameStore';
 import { useSocket } from '@/hooks/useSocket';
 import { useDeviceOrientation } from '@/hooks/useDeviceOrientation';
 import { useAppPreferences } from '@/hooks/useAppPreferences';
-import { cx } from '@/components/ui/primitives';
+import { cx, handleRadioGroupKeyDown } from '@/components/ui/primitives';
 
 /**
  * Mobil cihazın HTML5 jiroskop sensörlerini ve dokunmatik (touch) sanal gimbal
@@ -247,7 +247,7 @@ function MobileControllerContent() {
       const gamma = liveGyroRef.current.gamma;
 
       if (gimbalDotRef.current) {
-        const maxOffsetPx = 76;
+        const maxOffsetPx = 68;
         const offsetX = (gamma / 35) * maxOffsetPx;
         const offsetY = (beta / 35) * maxOffsetPx;
 
@@ -304,8 +304,14 @@ function MobileControllerContent() {
 
   const updatePointerSample = (clientX: number, clientY: number) => {
     const { centerX, centerY, maxRadius } = gimbalBoundsRef.current;
-    const dx = Math.max(-maxRadius, Math.min(maxRadius, clientX - centerX));
-    const dy = Math.max(-maxRadius, Math.min(maxRadius, clientY - centerY));
+    let dx = clientX - centerX;
+    let dy = clientY - centerY;
+    const dist = Math.hypot(dx, dy);
+    if (dist > maxRadius && dist > 0) {
+      const scale = maxRadius / dist;
+      dx *= scale;
+      dy *= scale;
+    }
 
     const gamma = Math.round((dx / maxRadius) * 280) / 10;
     const beta = Math.round((dy / maxRadius) * 280) / 10;
@@ -371,6 +377,16 @@ function MobileControllerContent() {
               <span>Oda:</span>
               <span className="gm-num font-semibold tracking-wider text-brass">
                 {activeRoomCode || 'Yok'}
+              </span>
+              <span
+                className={cx(
+                  'gm-num rounded-md border px-1.5 py-0.5 text-[10px] font-semibold',
+                  playerSlot === 2
+                    ? 'border-warn/40 bg-warn/10 text-warn'
+                    : 'border-brass/40 bg-brass/10 text-brass',
+                )}
+              >
+                P{playerSlot}
               </span>
             </div>
           </div>
@@ -689,6 +705,14 @@ function MobileControllerContent() {
             <p className="mt-2.5 text-center text-xs text-muted">
               Telefonu eğ veya dairedeki küreyi parmağınla sürükle
             </p>
+            {!isControllerPaired && !errorMessage && (
+              <p
+                role="status"
+                className="mt-1.5 rounded-xl border border-brass/30 bg-brass/10 px-3 py-1.5 text-center text-[11px] text-brass"
+              >
+                Masaüstü eşleşmesi bekleniyor — oda kodunu kontrol et
+              </p>
+            )}
             {sensorSignalTimedOut && !isTouchOverride && !hasSensorSignal && (
               <p
                 role="status"
@@ -732,7 +756,7 @@ function MobileControllerContent() {
                   { mult: 1, label: 'Standart' },
                   { mult: 1.35, label: 'Hızlı' },
                 ] as const
-              ).map((item) => {
+              ).map((item, idx, list) => {
                 const active = sensitivityMultiplier === item.mult;
                 return (
                   <button
@@ -740,7 +764,13 @@ function MobileControllerContent() {
                     type="button"
                     role="radio"
                     aria-checked={active}
+                    tabIndex={active ? 0 : -1}
                     onClick={() => setSensitivityMultiplier(item.mult)}
+                    onKeyDown={(e) =>
+                      handleRadioGroupKeyDown(e, idx, list.length, (nextIdx) =>
+                        setSensitivityMultiplier(list[nextIdx].mult),
+                      )
+                    }
                     className={cx(
                       'min-h-[38px] cursor-pointer rounded-xl text-xs font-semibold transition-colors',
                       active
@@ -760,44 +790,45 @@ function MobileControllerContent() {
               aria-label="Oyuncu yuvası"
               className="mt-2 grid w-64 grid-cols-2 gap-1 rounded-2xl border border-line bg-surface p-1"
             >
-              <button
-                type="button"
-                role="radio"
-                aria-checked={playerSlot === 1}
-                onClick={() => {
-                  if (playerSlot !== 1) {
+              {(
+                [
+                  { slot: 1, label: '1. Oyuncu (Ana)' },
+                  { slot: 2, label: '2. Oyuncu (Altın)' },
+                ] as const
+              ).map((entry, idx, list) => {
+                const active = playerSlot === entry.slot;
+                const selectSlot = (targetSlot: 1 | 2) => {
+                  if (playerSlot !== targetSlot) {
                     pushGyroSample(0, 0);
-                    setPlayerSlot(1);
+                    setPlayerSlot(targetSlot);
                   }
-                }}
-                className={cx(
-                  'min-h-[38px] cursor-pointer rounded-xl text-xs font-semibold transition-colors',
-                  playerSlot === 1
-                    ? 'bg-surface-2 text-brass ring-1 ring-brass/60'
-                    : 'text-muted hover:text-fg',
-                )}
-              >
-                1. Oyuncu (Ana)
-              </button>
-              <button
-                type="button"
-                role="radio"
-                aria-checked={playerSlot === 2}
-                onClick={() => {
-                  if (playerSlot !== 2) {
-                    pushGyroSample(0, 0);
-                    setPlayerSlot(2);
-                  }
-                }}
-                className={cx(
-                  'min-h-[38px] cursor-pointer rounded-xl text-xs font-semibold transition-colors',
-                  playerSlot === 2
-                    ? 'bg-surface-2 text-warn ring-1 ring-warn/60'
-                    : 'text-muted hover:text-fg',
-                )}
-              >
-                2. Oyuncu (Altın)
-              </button>
+                };
+                return (
+                  <button
+                    key={entry.slot}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    tabIndex={active ? 0 : -1}
+                    onClick={() => selectSlot(entry.slot)}
+                    onKeyDown={(e) =>
+                      handleRadioGroupKeyDown(e, idx, list.length, (nextIdx) =>
+                        selectSlot(list[nextIdx].slot),
+                      )
+                    }
+                    className={cx(
+                      'min-h-[38px] cursor-pointer rounded-xl text-xs font-semibold transition-colors',
+                      active
+                        ? entry.slot === 1
+                          ? 'bg-surface-2 text-brass ring-1 ring-brass/60'
+                          : 'bg-surface-2 text-warn ring-1 ring-warn/60'
+                        : 'text-muted hover:text-fg',
+                    )}
+                  >
+                    {entry.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
