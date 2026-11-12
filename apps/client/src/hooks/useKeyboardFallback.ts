@@ -29,7 +29,7 @@ export function useKeyboardFallback(): void {
     isSettingsOpen ||
     isEditorOpen ||
     isLeaderboardOpen ||
-    (gameStatus !== 'playing' && gameStatus !== 'waiting');
+    gameStatus !== 'playing';
 
   useEffect(() => {
     const pressedKeys = new Set<string>();
@@ -121,6 +121,9 @@ export function useKeyboardFallback(): void {
           'ArrowRight',
         ].includes(e.code)
       ) {
+        if (e.code.startsWith('Arrow')) {
+          e.preventDefault();
+        }
         pressedKeys.add(e.code);
         updateFromKeys();
       }

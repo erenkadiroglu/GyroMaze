@@ -42,6 +42,35 @@ function useDialogBehavior(
       if (e.key === 'Escape') {
         e.stopPropagation();
         onCloseRef.current();
+        return;
+      }
+
+      if (e.key === 'Tab' && containerRef.current) {
+        const focusables = Array.from(
+          containerRef.current.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+          ),
+        ).filter((el) => el.offsetParent !== null);
+
+        if (focusables.length === 0) {
+          e.preventDefault();
+          containerRef.current.focus({ preventScroll: true });
+          return;
+        }
+
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        const activeEl = document.activeElement as HTMLElement | null;
+
+        if (e.shiftKey) {
+          if (!activeEl || activeEl === first || !containerRef.current.contains(activeEl)) {
+            e.preventDefault();
+            last.focus({ preventScroll: true });
+          }
+        } else if (!activeEl || activeEl === last || !containerRef.current.contains(activeEl)) {
+          e.preventDefault();
+          first.focus({ preventScroll: true });
+        }
       }
     };
     window.addEventListener('keydown', onKeyDown);
@@ -350,7 +379,7 @@ export function Segmented<T extends string | number>({
       className="grid gap-1 rounded-xl border border-line bg-surface-2/70 p-1"
       style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
     >
-      {options.map((opt) => {
+      {options.map((opt, idx) => {
         const active = opt.value === value;
         return (
           <button
@@ -358,8 +387,26 @@ export function Segmented<T extends string | number>({
             type="button"
             role="radio"
             aria-checked={active}
+            tabIndex={active ? 0 : -1}
             title={opt.hint}
             onClick={() => onChange(opt.value)}
+            onKeyDown={(e) => {
+              if (options.length < 2) return;
+              let nextIdx = -1;
+              if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                nextIdx = (idx + 1) % options.length;
+              } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                nextIdx = (idx - 1 + options.length) % options.length;
+              }
+              if (nextIdx >= 0) {
+                e.preventDefault();
+                onChange(options[nextIdx].value);
+                const sibling = e.currentTarget.parentElement?.children.item(
+                  nextIdx,
+                ) as HTMLElement | null;
+                sibling?.focus({ preventScroll: true });
+              }
+            }}
             className={cx(
               'min-h-9 cursor-pointer rounded-lg px-2 text-sm font-medium transition-colors',
               active

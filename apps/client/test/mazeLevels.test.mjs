@@ -123,8 +123,8 @@ describe('MAZE_LEVELS — 3B Harita Geometrisi, Engel Konumları ve Fizik Doğru
     }
   });
 
-  it('sonsuz prosedürel bölüm motoru (Bölüm 06..25) deterministik ve engelsiz/çakışmasız haritalar üretmelidir', () => {
-    for (let id = 6; id <= 25; id++) {
+  it('sonsuz prosedürel bölüm motoru (Bölüm 06..50) deterministik ve engelsiz/çakışmasız haritalar üretmelidir', () => {
+    for (let id = 6; id <= 50; id++) {
       const lvlA = getMazeLevel(id);
       const lvlB = getMazeLevel(id);
 
@@ -161,7 +161,22 @@ describe('MAZE_LEVELS — 3B Harita Geometrisi, Engel Konumları ve Fizik Doğru
           );
         }
       }
+
+      for (const hole of lvlA.voidHoles) {
+        const [hx, hz] = hole.position;
+        assert.ok(
+          Math.hypot(sx - hx, sz - hz) > (hole.radius ?? 0.4) + BALL_RADIUS,
+          `Prosedürel Bölüm ${id}: Delik başlangıca çok yakın`,
+        );
+        assert.ok(
+          Math.hypot(gx - hx, gz - hz) > (hole.radius ?? 0.4) + BALL_RADIUS,
+          `Prosedürel Bölüm ${id}: Delik hedefe çok yakın`,
+        );
+      }
     }
+
+    assert.equal(getMazeLevel(0).id, 1);
+    assert.equal(getMazeLevel(99, null).id, 99);
   });
 });
 

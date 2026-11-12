@@ -134,6 +134,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Dinamik Başlangıçlı BFS & Katı JSON İçe Aktarma (`LevelEditorModal.tsx`):** `hasSolvableGridPath` sabit `[0, 0]` yerine ızgaradaki gerçek `'start'` konumunu bulur ve **"3B sahnede oyna"** öncesinde erişilebilirlik doğrulaması uygular; panodan içe aktarılan JSON dizileri öğe bazlı şema/tip doğrulamasından geçirilerek Rapier/Three.js çökme riskleri ortadan kaldırılır.
 - [x] **Gündüz Modu Kartela Kontrastı (`SettingsModal.tsx`):** Bilye kaplama kartelasında (`BALL_SKIN_SWATCHES`) açık gri `Krom` örneğinin Gündüz modunda kaybolmaması için halka kenarlığı tema belirtecine (`ring-line`) geçirildi.
 
+## ✅ Faz 19: Donanım Sensör Sinyali Algılama, Erişilebilir Odak Döngüsü ve Ses Motoru Optimizasyonu (Tamamlandı)
+
+- [x] **Mobil Donanım Sensör Sinyali İzleyicisi (`useDeviceOrientation.ts`, `controller/page.tsx`):** `event.beta` ve `event.gamma` değerleri `null` gelen boş tarayıcı olayları elendi; sensör izni sonrası 1.5 saniye içinde gerçek donanım verisi gelmezse kullanıcıya daireyi parmağıyla sürükleyebileceğini bildiren zarif uyarı (`hasSensorSignal` / `sensorSignalTimedOut`) eklendi.
+- [x] **Sıkı Klavye Aktiflik Koruması & Yön Tuşu Kaydırma Engeli (`useKeyboardFallback.ts`):** Klavye girişleri yalnızca aktif `gameStatus === 'playing'` durumunda işlenerek `AttitudeGauge` önizlemesinin oyun öncesi kayması önlendi ve ok tuşlarıyla oynarken sayfa kaydırma olayları (`e.preventDefault()`) engellendi.
+- [x] **WAI-ARIA Odak Döngüsü, Ses Düğümü Temizliği & Genişletilmiş Harita Testleri (`primitives.tsx`, `soundEngine.ts`, `mazeLevels.test.mjs`):** `Modal` ve `Drawer` içine `Tab` / `Shift+Tab` odak hapsi ve `Segmented` radyo gruplarına yön tuşu gezintisi eklendi; `SoundEngine` ortak `createVoice` yardımcısı üzerinden biten osilatör/kazanç düğümlerini (`onended`) anında serbest bırakır hale getirildi ve prosedürel harita doğrulama testleri `Bölüm 06..50` aralığına genişletildi.
+
 
 
 

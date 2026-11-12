@@ -30,6 +30,33 @@ class SoundEngine {
   }
 
   /**
+   * Tekrarlanan Web Audio düğüm kurulumunu merkezileştirir ve bitişte bağlantıları çözer.
+   */
+  private createVoice(
+    ctx: AudioContext,
+    type: OscillatorType,
+    startFreq: number,
+    peakGain: number,
+    startAt: number,
+    stopAt: number,
+  ): { osc: OscillatorNode; gain: GainNode } {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(startFreq, startAt);
+    gain.gain.setValueAtTime(peakGain * this.volume, startAt);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.onended = () => {
+      osc.disconnect();
+      gain.disconnect();
+    };
+    osc.start(startAt);
+    osc.stop(stopAt);
+    return { osc, gain };
+  }
+
+  /**
    * Küre duvara çarptığında hız şiddetine göre tok bir akustik tını üretir.
    */
   public playWallHit(intensity = 0.5): void {
@@ -37,21 +64,17 @@ class SoundEngine {
     if (!ctx) return;
 
     const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
     const clamped = Math.max(0.1, Math.min(1, intensity));
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(110 + clamped * 90, now);
+    const { osc, gain } = this.createVoice(
+      ctx,
+      'triangle',
+      110 + clamped * 90,
+      clamped * 0.18,
+      now,
+      now + 0.09,
+    );
     osc.frequency.exponentialRampToValueAtTime(45, now + 0.08);
-
-    gain.gain.setValueAtTime(clamped * 0.18 * this.volume, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.085);
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(now);
-    osc.stop(now + 0.09);
   }
 
   /**
@@ -64,20 +87,16 @@ class SoundEngine {
     const baseFreq = 660 + collectedIndex * 110;
     [baseFreq, baseFreq * 1.5].forEach((freq, idx) => {
       const now = ctx.currentTime + idx * 0.045;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, now);
+      const { osc, gain } = this.createVoice(
+        ctx,
+        'sine',
+        freq,
+        0.15,
+        now,
+        now + 0.21,
+      );
       osc.frequency.exponentialRampToValueAtTime(freq * 1.12, now + 0.18);
-
-      gain.gain.setValueAtTime(0.15 * this.volume, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(now);
-      osc.stop(now + 0.21);
     });
   }
 
@@ -89,20 +108,16 @@ class SoundEngine {
     if (!ctx) return;
 
     const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(240, now);
+    const { osc, gain } = this.createVoice(
+      ctx,
+      'sawtooth',
+      240,
+      0.18,
+      now,
+      now + 0.25,
+    );
     osc.frequency.linearRampToValueAtTime(85, now + 0.22);
-
-    gain.gain.setValueAtTime(0.18 * this.volume, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(now);
-    osc.stop(now + 0.25);
   }
 
   /**
@@ -113,20 +128,16 @@ class SoundEngine {
     if (!ctx) return;
 
     const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(320, now);
+    const { osc, gain } = this.createVoice(
+      ctx,
+      'sine',
+      320,
+      0.22,
+      now,
+      now + 0.38,
+    );
     osc.frequency.exponentialRampToValueAtTime(55, now + 0.35);
-
-    gain.gain.setValueAtTime(0.22 * this.volume, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.36);
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(now);
-    osc.stop(now + 0.38);
   }
 
   /**
@@ -139,19 +150,15 @@ class SoundEngine {
     const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
     notes.forEach((freq, idx) => {
       const now = ctx.currentTime + idx * 0.07;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, now);
-
-      gain.gain.setValueAtTime(0.16 * this.volume, now);
+      const { gain } = this.createVoice(
+        ctx,
+        'sine',
+        freq,
+        0.16,
+        now,
+        now + 0.46,
+      );
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(now);
-      osc.stop(now + 0.46);
     });
   }
 
@@ -163,20 +170,16 @@ class SoundEngine {
     if (!ctx) return;
 
     const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(587.33, now);
+    const { osc, gain } = this.createVoice(
+      ctx,
+      'sine',
+      587.33,
+      0.12,
+      now,
+      now + 0.11,
+    );
     osc.frequency.exponentialRampToValueAtTime(880, now + 0.09);
-
-    gain.gain.setValueAtTime(0.12 * this.volume, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(now);
-    osc.stop(now + 0.11);
   }
 
   /**
@@ -187,20 +190,16 @@ class SoundEngine {
     if (!ctx) return;
 
     const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(280, now);
+    const { osc, gain } = this.createVoice(
+      ctx,
+      'triangle',
+      280,
+      0.16,
+      now,
+      now + 0.19,
+    );
     osc.frequency.exponentialRampToValueAtTime(920, now + 0.16);
-
-    gain.gain.setValueAtTime(0.16 * this.volume, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(now);
-    osc.stop(now + 0.19);
   }
 
   /**
@@ -211,21 +210,17 @@ class SoundEngine {
     if (!ctx) return;
 
     const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(340, now);
+    const { osc, gain } = this.createVoice(
+      ctx,
+      'sine',
+      340,
+      0.18,
+      now,
+      now + 0.26,
+    );
     osc.frequency.exponentialRampToValueAtTime(1180, now + 0.14);
     osc.frequency.exponentialRampToValueAtTime(620, now + 0.24);
-
-    gain.gain.setValueAtTime(0.18 * this.volume, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(now);
-    osc.stop(now + 0.26);
   }
 
   /**
@@ -237,19 +232,15 @@ class SoundEngine {
 
     [220, 175].forEach((freq, idx) => {
       const now = ctx.currentTime + idx * 0.09;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(freq, now);
-
-      gain.gain.setValueAtTime(0.08 * this.volume, now);
+      const { gain } = this.createVoice(
+        ctx,
+        'square',
+        freq,
+        0.08,
+        now,
+        now + 0.085,
+      );
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(now);
-      osc.stop(now + 0.085);
     });
   }
 }

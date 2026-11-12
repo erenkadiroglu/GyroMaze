@@ -49,6 +49,7 @@ function MobileControllerContent() {
   const [isRoomEditorOpen, setIsRoomEditorOpen] = useState(!initialRoomParam);
   const [isTouchOverride, setIsTouchOverride] = useState(false);
   const [isInsecureContext, setIsInsecureContext] = useState(false);
+  const [sensorSignalTimedOut, setSensorSignalTimedOut] = useState(false);
   const [sensitivityMultiplier, setSensitivityMultiplier] = useState<
     0.75 | 1 | 1.35
   >(1);
@@ -138,11 +139,31 @@ function MobileControllerContent() {
     [pushGyroSample],
   );
 
-  const { permissionState, requestSensorPermission, calibrate } =
-    useDeviceOrientation({
-      onOrientationData: handleOrientationData,
-      enabled: !isTouchOverride && !isRoomEditorOpen,
-    });
+  const {
+    permissionState,
+    hasSensorSignal,
+    requestSensorPermission,
+    calibrate,
+  } = useDeviceOrientation({
+    onOrientationData: handleOrientationData,
+    enabled: !isTouchOverride && !isRoomEditorOpen,
+  });
+
+  useEffect(() => {
+    if (
+      isTouchOverride ||
+      isRoomEditorOpen ||
+      permissionState !== 'granted' ||
+      hasSensorSignal
+    ) {
+      setSensorSignalTimedOut(false);
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setSensorSignalTimedOut(true);
+    }, 1500);
+    return () => window.clearTimeout(timer);
+  }, [isTouchOverride, isRoomEditorOpen, permissionState, hasSensorSignal]);
 
   useEffect(() => {
     if (initialRoomParam) {
@@ -665,9 +686,17 @@ function MobileControllerContent() {
               </div>
             </div>
 
-            <p className="mt-2.5 text-xs text-muted">
+            <p className="mt-2.5 text-center text-xs text-muted">
               Telefonu eğ veya dairedeki küreyi parmağınla sürükle
             </p>
+            {sensorSignalTimedOut && !isTouchOverride && !hasSensorSignal && (
+              <p
+                role="status"
+                className="mt-1.5 rounded-xl border border-warn/30 bg-warn/10 px-3 py-1.5 text-center text-[11px] text-warn"
+              >
+                Donanım sensör sinyali alınamadı — daireyi parmağınla sürükleyebilirsin
+              </p>
+            )}
 
             {/* Sayısal Açı Göstergeleri (8Hz) */}
             <div className="mt-3 grid w-64 grid-cols-2 gap-2.5">

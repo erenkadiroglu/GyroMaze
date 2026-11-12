@@ -28,9 +28,11 @@ export function useDeviceOrientation({
   const [permissionState, setPermissionState] = useState<
     'prompt' | 'granted' | 'denied' | 'unsupported'
   >('prompt');
+  const [hasSensorSignal, setHasSensorSignal] = useState(false);
 
   const onOrientationDataRef = useRef(onOrientationData);
   onOrientationDataRef.current = onOrientationData;
+  const hasSignalRef = useRef(false);
 
   const rawAnglesRef = useRef<{ alpha: number; beta: number; gamma: number }>({
     alpha: 0,
@@ -97,12 +99,22 @@ export function useDeviceOrientation({
 
   useEffect(() => {
     if (!enabled || permissionState !== 'granted') {
+      hasSignalRef.current = false;
+      setHasSensorSignal(false);
       return;
     }
 
     const wrapDelta = (angle: number) => ((((angle + 540) % 360) - 180));
 
     const handleOrientation = (event: DeviceOrientationEvent) => {
+      if (event.beta === null && event.gamma === null) {
+        return;
+      }
+      if (!hasSignalRef.current) {
+        hasSignalRef.current = true;
+        setHasSensorSignal(true);
+      }
+
       const alpha = event.alpha ?? 0;
       const beta = event.beta ?? 0;
       const gamma = event.gamma ?? 0;
@@ -151,6 +163,7 @@ export function useDeviceOrientation({
 
   return {
     permissionState,
+    hasSensorSignal,
     requestSensorPermission,
     calibrate,
     calibratedRef,
