@@ -30,7 +30,6 @@ import {
   AlertTriangle,
   HelpCircle,
 } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/store/useGameStore';
 import { getMazeLevel } from '@/components/scene/mazeLevels';
@@ -40,6 +39,7 @@ import { LevelEditorModal } from './LevelEditorModal';
 import { SettingsModal } from './SettingsModal';
 import { HelpShortcutsModal } from './HelpShortcutsModal';
 import { LeaderboardModal } from './LeaderboardModal';
+import { PairingModal } from './PairingModal';
 import { AttitudeGauge } from './AttitudeGauge';
 import {
   Modal,
@@ -107,21 +107,11 @@ export function DesktopHUD() {
   const showMiniMap = useGameStore((s) => s.showMiniMap);
 
   const [isLevelMenuOpen, setIsLevelMenuOpen] = useState(false);
-  const [pairingSlot, setPairingSlot] = useState<1 | 2>(1);
-  const [copiedLink, setCopiedLink] = useState(false);
-  const [copiedRoomCode, setCopiedRoomCode] = useState(false);
-  const [browserLocation, setBrowserLocation] = useState({
-    origin: 'http://localhost:3000',
-    hostname: 'localhost',
-    port: '3000',
-  });
   const [playerName, setPlayerName] = useState('Oyuncu');
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
   const [isPageHidden, setIsPageHidden] = useState(false);
 
   const levelPopoverRef = useRef<HTMLDivElement | null>(null);
-  const copiedLinkTimerRef = useRef<number | null>(null);
-  const copiedRoomCodeTimerRef = useRef<number | null>(null);
 
   const currentLevelInfo = getMazeLevel(level, customLevel);
   const activeNumericLevel = level === 99 ? 1 : Math.max(1, level);
@@ -170,13 +160,10 @@ export function DesktopHUD() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setBrowserLocation({
-        origin: window.location.origin,
-        hostname: window.location.hostname,
-        port: window.location.port,
-      });
       try {
-        const savedName = window.localStorage.getItem('gyromaze_player_name_v1');
+        const savedName = window.localStorage.getItem(
+          'gyromaze_player_name_v1',
+        );
         if (savedName && savedName.trim()) {
           setPlayerName(savedName.trim().slice(0, 24));
         }
@@ -185,20 +172,6 @@ export function DesktopHUD() {
       }
     }
   }, []);
-
-  useEffect(() => {
-    if (!isPairingModalOpen) return;
-    if (isMultiplayer && isControllerPaired && !isSecondControllerPaired) {
-      setPairingSlot(2);
-    } else if (!isMultiplayer || !isControllerPaired) {
-      setPairingSlot(1);
-    }
-  }, [
-    isPairingModalOpen,
-    isMultiplayer,
-    isControllerPaired,
-    isSecondControllerPaired,
-  ]);
 
   // Bölüm menüsü dışına tıklanınca veya Esc basılınca kapat
   useEffect(() => {
@@ -231,17 +204,6 @@ export function DesktopHUD() {
     document.addEventListener('visibilitychange', syncVisibility);
     return () => {
       document.removeEventListener('visibilitychange', syncVisibility);
-    };
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (copiedLinkTimerRef.current !== null) {
-        window.clearTimeout(copiedLinkTimerRef.current);
-      }
-      if (copiedRoomCodeTimerRef.current !== null) {
-        window.clearTimeout(copiedRoomCodeTimerRef.current);
-      }
     };
   }, []);
 
@@ -352,71 +314,6 @@ export function DesktopHUD() {
     setLevel,
     showHudNotification,
   ]);
-
-  const isLocalLoopback =
-    browserLocation.hostname === 'localhost' ||
-    browserLocation.hostname === '127.0.0.1' ||
-    browserLocation.hostname === '::1' ||
-    browserLocation.hostname === '[::1]';
-  const lanFallbackUrl =
-    isLocalLoopback && lanIp
-      ? `http://${lanIp}${browserLocation.port ? `:${browserLocation.port}` : ''}`
-      : '';
-  const activeBaseUrl = tunnelUrl || lanFallbackUrl || browserLocation.origin;
-  const connectionRouteLabel = tunnelUrl
-    ? 'Güvenli HTTPS tüneli aktif (ngrok)'
-    : lanFallbackUrl
-      ? `Yerel Wi-Fi ağı (${lanIp}) • HTTP’de dokunmatik gimbal hazırdır`
-      : 'Geçerli tarayıcı adresi kullanılıyor';
-  const controllerUrl = roomId
-    ? `${activeBaseUrl}/controller?room=${roomId}${pairingSlot === 2 ? '&slot=2' : ''}`
-    : `${activeBaseUrl}/controller`;
-
-  const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(controllerUrl);
-      setCopiedLink(true);
-      if (copiedLinkTimerRef.current !== null) {
-        window.clearTimeout(copiedLinkTimerRef.current);
-      }
-      copiedLinkTimerRef.current = window.setTimeout(() => {
-        setCopiedLink(false);
-        copiedLinkTimerRef.current = null;
-      }, 2000);
-    } catch {
-      // Pano izni yoksa sessizce geç
-    }
-  };
-
-  const handleCopyRoomCode = async () => {
-    if (!roomId) return;
-    try {
-      await navigator.clipboard.writeText(roomId);
-      setCopiedRoomCode(true);
-      if (copiedRoomCodeTimerRef.current !== null) {
-        window.clearTimeout(copiedRoomCodeTimerRef.current);
-      }
-      copiedRoomCodeTimerRef.current = window.setTimeout(() => {
-        setCopiedRoomCode(false);
-        copiedRoomCodeTimerRef.current = null;
-      }, 2000);
-    } catch {
-      // Pano izni yoksa sessizce geç
-    }
-  };
-
-  const handleClosePairingModal = () => {
-    setPairingModalOpen(false);
-    const currentStatus = useGameStore.getState().gameStatus;
-    if (currentStatus === 'waiting' || currentStatus === 'paused') {
-      setGameStatus('playing');
-    }
-  };
-
-  const handleStartKeyboardMode = () => {
-    if (!isSoundMuted) soundEngine.playCalibrate();
-    handleClosePairingModal();
-  };
 
   const handleResetClick = () => {
     if (!isSoundMuted) soundEngine.playCalibrate();
@@ -922,115 +819,7 @@ export function DesktopHUD() {
       <HelpShortcutsModal />
 
       {/* TELEFON EŞLEŞTİRME MODALI */}
-      <Modal
-        open={isPairingModalOpen}
-        onClose={handleClosePairingModal}
-        size="md"
-        title="Telefonunu bağla"
-        description="QR kodu okut veya 6 haneli oda kodunu kontrolcüye gir."
-        icon={<Smartphone className="h-4 w-4" aria-hidden="true" />}
-        footer={
-          <>
-            <Button
-              variant="secondary"
-              icon={
-                copiedLink ? (
-                  <Check className="h-4 w-4 text-ok" aria-hidden="true" />
-                ) : (
-                  <Copy className="h-4 w-4" aria-hidden="true" />
-                )
-              }
-              onClick={handleCopyLink}
-            >
-              {copiedLink ? 'Bağlantı kopyalandı' : 'Bağlantıyı kopyala'}
-            </Button>
-            <Button
-              variant="primary"
-              icon={<ArrowRight className="h-4 w-4" aria-hidden="true" />}
-              onClick={handleStartKeyboardMode}
-            >
-              Sahneye geç
-            </Button>
-          </>
-        }
-      >
-        <div className="space-y-4">
-          {isMultiplayer && (
-            <div
-              role="radiogroup"
-              aria-label="Eşleştirilecek oyuncu"
-              className="grid grid-cols-2 gap-1 rounded-xl border border-line bg-surface-2 p-1"
-            >
-              {([1, 2] as const).map((slot, idx) => {
-                const active = pairingSlot === slot;
-                const paired =
-                  slot === 1 ? isControllerPaired : isSecondControllerPaired;
-                return (
-                  <button
-                    key={slot}
-                    type="button"
-                    role="radio"
-                    aria-checked={active}
-                    tabIndex={active ? 0 : -1}
-                    onClick={() => setPairingSlot(slot)}
-                    onKeyDown={(e) =>
-                      handleRadioGroupKeyDown(e, idx, 2, (nextIdx) =>
-                        setPairingSlot(nextIdx === 0 ? 1 : 2),
-                      )
-                    }
-                    className={cx(
-                      'h-9 cursor-pointer rounded-lg text-xs font-semibold transition-colors',
-                      active ? 'bg-surface text-fg shadow' : 'text-muted',
-                    )}
-                  >
-                    {slot}. Oyuncu QR ({paired ? 'Bağlı' : 'Bekliyor'})
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          <div className="flex flex-col items-center rounded-2xl border border-line bg-surface-2/60 p-5">
-            <div className="rounded-2xl bg-white p-3 shadow-sm">
-              <QRCodeSVG
-                value={controllerUrl}
-                size={164}
-                bgColor="#ffffff"
-                fgColor="#0f1a2b"
-                level="M"
-              />
-            </div>
-
-            <p className="mt-3 text-center text-[11px] font-medium text-muted">
-              {connectionRouteLabel}
-            </p>
-
-            <div className="mt-3 flex w-full items-center justify-between rounded-xl border border-line bg-surface px-4 py-2.5">
-              <div>
-                <span className="block text-xs text-muted">Oda kodu</span>
-                <span className="gm-num text-xl font-semibold tracking-[0.2em] text-brass">
-                  {roomId ?? '......'}
-                </span>
-              </div>
-
-              <Button
-                variant="secondary"
-                size="sm"
-                icon={
-                  copiedRoomCode ? (
-                    <Check className="h-3.5 w-3.5 text-ok" aria-hidden="true" />
-                  ) : (
-                    <Copy className="h-3.5 w-3.5" aria-hidden="true" />
-                  )
-                }
-                onClick={handleCopyRoomCode}
-              >
-                {copiedRoomCode ? 'Kopyalandı' : 'Kodu kopyala'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </Modal>
+      <PairingModal />
 
       {/* KÜRESEL SKOR TABLOSU MODALI */}
       <LeaderboardModal

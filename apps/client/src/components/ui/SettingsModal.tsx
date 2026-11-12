@@ -1,6 +1,6 @@
 'use client';
 
-import { Wrench, Medal } from 'lucide-react';
+import { Wrench, Medal, RotateCcw } from 'lucide-react';
 import {
   BallSkin,
   BoardTheme,
@@ -63,6 +63,9 @@ export function SettingsModal() {
   const updateSettings = useGameStore((s) => s.updateSettings);
   const setEditorOpen = useGameStore((s) => s.setEditorOpen);
   const setLeaderboardOpen = useGameStore((s) => s.setLeaderboardOpen);
+  const resetPreferencesToDefaults = useGameStore(
+    (s) => s.resetPreferencesToDefaults,
+  );
 
   const handleVolumeChange = (nextVol: number) => {
     if (nextVol === 0) {
@@ -83,28 +86,41 @@ export function SettingsModal() {
       onClose={() => setSettingsOpen(false)}
       title="Ayarlar"
       footer={
-        <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<Wrench className="h-3.5 w-3.5" aria-hidden="true" />}
+              onClick={() => {
+                setSettingsOpen(false);
+                setEditorOpen(true);
+              }}
+            >
+              Harita editörü
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<Medal className="h-3.5 w-3.5" aria-hidden="true" />}
+              onClick={() => {
+                setSettingsOpen(false);
+                setLeaderboardOpen(true);
+              }}
+            >
+              Skor tablosu
+            </Button>
+          </div>
           <Button
-            variant="secondary"
+            variant="ghost"
             size="sm"
-            icon={<Wrench className="h-3.5 w-3.5" aria-hidden="true" />}
+            className="w-full text-muted hover:text-fg"
+            icon={<RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />}
             onClick={() => {
-              setSettingsOpen(false);
-              setEditorOpen(true);
+              resetPreferencesToDefaults();
             }}
           >
-            Harita editörü
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            icon={<Medal className="h-3.5 w-3.5" aria-hidden="true" />}
-            onClick={() => {
-              setSettingsOpen(false);
-              setLeaderboardOpen(true);
-            }}
-          >
-            Skor tablosu
+            Varsayılanlara dön
           </Button>
         </div>
       }

@@ -59,6 +59,26 @@ const GHOST_PATHS_STORAGE_KEY = 'gyromaze_ghost_paths_v1';
 const CUSTOM_LEVEL_STORAGE_KEY = 'gyromaze_custom_level_v1';
 const SETTINGS_STORAGE_KEY = 'gyromaze_settings_v1';
 
+/**
+ * Kullanıcı tarafından özelleştirilebilen tüm oyun ve kontrolcü varsayılan tercihleri.
+ */
+export const DEFAULT_PREFERENCES = {
+  gravityScale: 36,
+  tiltResponsiveness: 32,
+  soundVolume: 1,
+  showTrail: true,
+  showGhost: true,
+  showMiniMap: true,
+  cameraMode: 'isometric' as CameraMode,
+  boardTheme: 'emerald' as BoardTheme,
+  colorScheme: 'dark' as ColorScheme,
+  ballSkin: 'chrome' as BallSkin,
+  gameMode: 'standard' as GameMode,
+  isHapticEnabled: true,
+  controllerSensitivity: 1 as 0.75 | 1 | 1.35,
+  controllerTouchOverride: false,
+};
+
 function loadBestTimes(): Record<number, number> {
   if (typeof window === 'undefined') return {};
   try {
@@ -278,6 +298,7 @@ interface GameStoreState {
   clearRecentRooms: () => void;
   setControllerSensitivity: (sensitivity: 0.75 | 1 | 1.35) => void;
   setControllerTouchOverride: (override: boolean) => void;
+  resetPreferencesToDefaults: () => void;
   setGameStatus: (status: GameStatus) => void;
   setLevel: (level: number) => void;
   setCustomLevel: (customLevel: MazeLevelDefinition) => void;
@@ -361,7 +382,7 @@ function resetRunFields(state: Pick<GameStoreState, 'resetCount'>) {
  */
 export const useGameStore = create<GameStoreState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       roomId: null,
       lanIp: null,
       tunnelUrl: null,
@@ -665,6 +686,13 @@ export const useGameStore = create<GameStoreState>()(
         set({ controllerSensitivity }),
       setControllerTouchOverride: (controllerTouchOverride) =>
         set({ controllerTouchOverride }),
+      resetPreferencesToDefaults: () => {
+        set({ ...DEFAULT_PREFERENCES });
+        get().showHudNotification(
+          'Tüm tercihler varsayılan ayarlara sıfırlandı.',
+          'info',
+        );
+      },
       triggerBallReset: () => set((state) => resetRunFields(state)),
       triggerHaptic: (type, playerSlot) =>
         set((state) => ({
