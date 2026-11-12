@@ -20,6 +20,11 @@ export const metadata: Metadata = {
   title: 'GyroMaze | Telefonunla Yönettiğin 3B Labirent',
   description:
     'Telefonunu eğerek masaüstü ekranındaki 3B labirent tablasını yönettiğin, gecikmesiz çok oyunculu beceri oyunu.',
+  appleWebApp: {
+    capable: true,
+    title: 'GyroMaze',
+    statusBarStyle: 'black-translucent',
+  },
 };
 
 export const viewport: Viewport = {

@@ -1,5 +1,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
 import { RoomEvents } from '@gyromaze/shared';
 import { RoomService, selectPreferredLanIp } from '../dist/gateway/room.service.js';
 import { GyroGateway } from '../dist/gateway/gyro.gateway.js';
@@ -667,6 +670,40 @@ describe('RoomService — Oda Yönetimi, 6 Haneli Kod Eşleşmesi ve Skor Tablos
       roomId: room.roomId,
       direction: 'next',
     });
+  });
+
+  it('RoomService liderlik tablosunu diske kalici olarak kaydeder, geri yukler ve bozuk dosyalarda guvenle varsayilana doner', async () => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'gyromaze-lb-'));
+    const storeFile = join(tempDir, 'leaderboard.json');
+
+    try {
+      const firstInstance = new RoomService(storeFile);
+      firstInstance.submitScore({
+        playerName: 'Kalici Test Oyuncusu',
+        levelId: 2,
+        timeSeconds: 7.3,
+      });
+      await firstInstance.flushPersistence();
+
+      const restartedInstance = new RoomService(storeFile);
+      const restoredEntry = restartedInstance
+        .getLeaderboard()
+        .find(
+          (entry) =>
+            entry.levelId === 2 &&
+            entry.playerName === 'Kalici Test Oyuncusu' &&
+            entry.timeSeconds === 7.3,
+        );
+      assert.ok(restoredEntry);
+
+      // Bozuk JSON iceriginde sunucu cokmeden baslangic tohum kayitlariyla acilmali
+      const corruptFile = join(tempDir, 'corrupt.json');
+      writeFileSync(corruptFile, '{not valid json', 'utf8');
+      const fallbackInstance = new RoomService(corruptFile);
+      assert.ok(fallbackInstance.getLeaderboard().length >= 5);
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
   });
 });
 

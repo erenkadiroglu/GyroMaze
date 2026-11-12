@@ -1,11 +1,94 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
+import { existsSync, readFileSync } from 'fs';
+import { mkdir, rename, writeFile } from 'fs/promises';
 import { networkInterfaces, type NetworkInterfaceInfo } from 'os';
+import { dirname, resolve } from 'path';
 import {
   RoomState,
   RoomErrorPayload,
   LeaderboardEntry,
   SubmitScorePayload,
 } from '@gyromaze/shared';
+
+export const LEADERBOARD_FILE_PATH_TOKEN = 'GYROMAZE_LEADERBOARD_FILE_PATH';
+
+function resolveLeaderboardStoragePath(
+  explicitPath?: string | null,
+): string | null {
+  if (explicitPath === null) {
+    return null;
+  }
+  if (typeof explicitPath === 'string') {
+    const trimmed = explicitPath.trim();
+    return trimmed ? resolve(trimmed) : null;
+  }
+
+  const envPath = process.env.GYROMAZE_LEADERBOARD_FILE;
+  if (typeof envPath === 'string') {
+    const trimmed = envPath.trim();
+    if (!trimmed || trimmed === 'off' || trimmed === 'memory') {
+      return null;
+    }
+    return resolve(trimmed);
+  }
+
+  const isTestRunner =
+    process.env.NODE_ENV === 'test' ||
+    Boolean(process.env.NODE_TEST_CONTEXT) ||
+    process.execArgv.includes('--test') ||
+    process.argv.some((arg) => arg.endsWith('.test.mjs'));
+  if (isTestRunner) {
+    return null;
+  }
+
+  return resolve(process.cwd(), '.data', 'leaderboard.json');
+}
+
+function normalizeLeaderboardEntries(rawEntries: unknown[]): LeaderboardEntry[] {
+  const validEntries: LeaderboardEntry[] = [];
+  for (const item of rawEntries) {
+    if (!item || typeof item !== 'object') continue;
+    const candidate = item as Partial<LeaderboardEntry>;
+    if (
+      typeof candidate.id !== 'string' ||
+      !candidate.id.trim() ||
+      typeof candidate.playerName !== 'string' ||
+      typeof candidate.levelId !== 'number' ||
+      !Number.isInteger(candidate.levelId) ||
+      candidate.levelId < 1 ||
+      candidate.levelId === 99 ||
+      typeof candidate.timeSeconds !== 'number' ||
+      !Number.isFinite(candidate.timeSeconds) ||
+      candidate.timeSeconds <= 0 ||
+      candidate.timeSeconds > 3600 ||
+      typeof candidate.createdAt !== 'number' ||
+      !Number.isFinite(candidate.createdAt)
+    ) {
+      continue;
+    }
+    validEntries.push({
+      id: candidate.id,
+      playerName: candidate.playerName.trim().slice(0, 24) || 'Anonim Oyuncu',
+      levelId: candidate.levelId,
+      timeSeconds: Number(Math.max(0.1, candidate.timeSeconds).toFixed(1)),
+      createdAt: candidate.createdAt,
+    });
+  }
+
+  const grouped = new Map<number, LeaderboardEntry[]>();
+  for (const item of validEntries) {
+    const list = grouped.get(item.levelId) ?? [];
+    list.push(item);
+    grouped.set(item.levelId, list);
+  }
+
+  const normalized: LeaderboardEntry[] = [];
+  for (const [, list] of grouped.entries()) {
+    list.sort((a, b) => a.timeSeconds - b.timeSeconds);
+    normalized.push(...list.slice(0, 10));
+  }
+  return normalized;
+}
 
 /**
  * Soket kimliğinin hangi odada ve hangi rolde bulunduğunu tutan hızlı arama kaydı.
@@ -87,6 +170,12 @@ export class RoomService {
   /** Karışıklığı önlemek için 0/O ve 1/I/L gibi benzer karakterleri içermeyen alfabe */
   private readonly ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 
+  /** Kalıcı liderlik tablosu JSON dosya yolu (testlerde null olabilir) */
+  private readonly leaderboardFilePath: string | null;
+
+  /** Eşzamanlı skor gönderimlerini sıralayan atomik yazım kuyruğu */
+  private writeChain: Promise<void> = Promise.resolve();
+
   /** Bölüm bazlı en hızlı tamamlama sürelerini tutan küresel skor listesi */
   private leaderboard: LeaderboardEntry[] = [
     {
@@ -125,6 +214,56 @@ export class RoomService {
       createdAt: Date.now() - 18000000,
     },
   ];
+
+  constructor(
+    @Optional()
+    @Inject(LEADERBOARD_FILE_PATH_TOKEN)
+    leaderboardFilePath?: string | null,
+  ) {
+    this.leaderboardFilePath = resolveLeaderboardStoragePath(leaderboardFilePath);
+    this.loadPersistedLeaderboard();
+  }
+
+  private loadPersistedLeaderboard(): void {
+    if (!this.leaderboardFilePath || !existsSync(this.leaderboardFilePath)) {
+      return;
+    }
+    try {
+      const raw = readFileSync(this.leaderboardFilePath, 'utf8');
+      const parsed: unknown = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return;
+      const restored = normalizeLeaderboardEntries(parsed);
+      if (restored.length > 0) {
+        this.leaderboard = restored;
+      }
+    } catch {
+      // Bozuk veya okunamayan JSON durumunda varsayılan başlangıç kayıtlarıyla devam et
+    }
+  }
+
+  private scheduleLeaderboardPersist(): void {
+    if (!this.leaderboardFilePath) return;
+    const targetPath = this.leaderboardFilePath;
+    const serialized = JSON.stringify(this.leaderboard, null, 2);
+
+    this.writeChain = this.writeChain.then(async () => {
+      try {
+        await mkdir(dirname(targetPath), { recursive: true });
+        const tmpPath = `${targetPath}.${process.pid}.${Date.now()}.tmp`;
+        await writeFile(tmpPath, serialized, 'utf8');
+        await rename(tmpPath, targetPath);
+      } catch {
+        // Disk yazım hatası oyun odası WebSocket döngüsünü durdurmamalı
+      }
+    });
+  }
+
+  /**
+   * Bekleyen tüm liderlik tablosu disk yazımlarının tamamlanmasını bekler.
+   */
+  public flushPersistence(): Promise<void> {
+    return this.writeChain;
+  }
 
   /**
    * Çakışmasız 6 karakterli benzersiz oda kodu üretir.
@@ -428,22 +567,8 @@ export class RoomService {
       createdAt: Date.now(),
     };
 
-    this.leaderboard.push(entry);
-
-    const grouped = new Map<number, LeaderboardEntry[]>();
-    for (const item of this.leaderboard) {
-      const list = grouped.get(item.levelId) ?? [];
-      list.push(item);
-      grouped.set(item.levelId, list);
-    }
-
-    const nextLeaderboard: LeaderboardEntry[] = [];
-    for (const [, list] of grouped.entries()) {
-      list.sort((a, b) => a.timeSeconds - b.timeSeconds);
-      nextLeaderboard.push(...list.slice(0, 10));
-    }
-
-    this.leaderboard = nextLeaderboard;
+    this.leaderboard = normalizeLeaderboardEntries([...this.leaderboard, entry]);
+    this.scheduleLeaderboardPersist();
     return this.leaderboard;
   }
 }

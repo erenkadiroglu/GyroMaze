@@ -17,159 +17,24 @@ import {
   Shuffle,
   Wrench,
   Upload,
+  Orbit,
 } from 'lucide-react';
 import { useGameStore } from '@/store/useGameStore';
 import {
   MazeLevelDefinition,
-  WallDefinition,
-  VoidHoleDefinition,
-  LaserGateDefinition,
-  BoostPadDefinition,
-  MovingObstacleDefinition,
+  EditorCellTool,
   parseCustomMazeLevel,
-  computeEditorBoostDirection,
-  computeEditorLaserAxis,
-  computeEditorMovingConfig,
   EDITOR_GRID_SIZE,
-  editorGridCellToWorld,
-  worldToEditorGridCell,
+  validateEditorGrid,
+  levelDefinitionToEditorGrid,
+  buildLevelFromEditorGrid,
 } from '@/components/scene/mazeLevels';
-import { Modal, Button, cx } from './primitives';
+import { Modal, Button, cx, handleRadioGroupKeyDown } from './primitives';
 
-type CellTool =
-  | 'wall'
-  | 'hole'
-  | 'crystal'
-  | 'laser'
-  | 'boost'
-  | 'moving'
-  | 'start'
-  | 'goal'
-  | 'erase';
+type CellTool = EditorCellTool;
 
 const GRID_SIZE = EDITOR_GRID_SIZE;
-
-function gridToWorld(row: number, col: number): [number, number] {
-  return editorGridCellToWorld(row, col, GRID_SIZE);
-}
-
-function levelDefinitionToGrid(levelDef: MazeLevelDefinition): CellTool[][] {
-  const next: CellTool[][] = Array.from({ length: GRID_SIZE }, () =>
-    Array.from({ length: GRID_SIZE }, () => 'erase'),
-  );
-  const toGrid = (x: number, z: number) =>
-    worldToEditorGridCell(x, z, levelDef.boardSize, GRID_SIZE);
-  for (const w of levelDef.innerWalls) {
-    const [r, c] = toGrid(w.position[0], w.position[2]);
-    next[r][c] = 'wall';
-  }
-  for (const h of levelDef.voidHoles) {
-    const [r, c] = toGrid(h.position[0], h.position[1]);
-    next[r][c] = 'hole';
-  }
-  for (const [cx, cz] of levelDef.crystals) {
-    const [r, c] = toGrid(cx, cz);
-    next[r][c] = 'crystal';
-  }
-  for (const l of levelDef.laserGates) {
-    const [r, c] = toGrid(l.position[0], l.position[1]);
-    next[r][c] = 'laser';
-  }
-  for (const b of levelDef.boostPads ?? []) {
-    const [r, c] = toGrid(b.position[0], b.position[1]);
-    next[r][c] = 'boost';
-  }
-  for (const m of levelDef.movingObstacles ?? []) {
-    const [r, c] = toGrid(m.center[0], m.center[1]);
-    next[r][c] = 'moving';
-  }
-  const [sr, sc] = toGrid(
-    levelDef.startPosition[0],
-    levelDef.startPosition[2],
-  );
-  let [gr, gc] = toGrid(levelDef.goalPosition[0], levelDef.goalPosition[2]);
-  if (gr === sr && gc === sc) {
-    const candidates: Array<[number, number]> = [
-      [gr, gc + 1],
-      [gr + 1, gc],
-      [gr, gc - 1],
-      [gr - 1, gc],
-      [GRID_SIZE - 1, GRID_SIZE - 1],
-      [0, 0],
-    ];
-    const validCandidates = candidates.filter(
-      ([r, c]) => r >= 0 && r < GRID_SIZE && c >= 0 && c < GRID_SIZE && (r !== sr || c !== sc),
-    );
-    const alt =
-      validCandidates.find(([r, c]) => next[r][c] === 'erase') ??
-      validCandidates[0];
-    if (alt) {
-      [gr, gc] = alt;
-    }
-  }
-  next[gr][gc] = 'goal';
-  next[sr][sc] = 'start';
-  return next;
-}
-
-/**
- * Editör ızgarasında başlangıç hücresinden ('start') tüm kristallere ve hedefe ('goal')
- * yürünür bir yol olup olmadığını BFS ile doğrular.
- */
-function hasSolvableGridPath(grid: CellTool[][]): boolean {
-  let startCell: [number, number] | null = null;
-  let totalCrystals = 0;
-
-  for (let r = 0; r < GRID_SIZE; r++) {
-    for (let c = 0; c < GRID_SIZE; c++) {
-      if (grid[r][c] === 'start') startCell = [r, c];
-      else if (grid[r][c] === 'crystal') totalCrystals += 1;
-    }
-  }
-
-  if (!startCell) return false;
-
-  const visited = Array.from({ length: GRID_SIZE }, () =>
-    Array.from({ length: GRID_SIZE }, () => false),
-  );
-  const queue: Array<[number, number]> = [startCell];
-  visited[startCell[0]][startCell[1]] = true;
-
-  let reachedGoal = false;
-  let reachedCrystals = 0;
-  const dirs: Array<[number, number]> = [
-    [1, 0],
-    [-1, 0],
-    [0, 1],
-    [0, -1],
-  ];
-
-  while (queue.length > 0) {
-    const [r, c] = queue.shift()!;
-    if (grid[r][c] === 'goal') reachedGoal = true;
-    if (grid[r][c] === 'crystal') reachedCrystals += 1;
-
-    for (const [dr, dc] of dirs) {
-      const nr = r + dr;
-      const nc = c + dc;
-      if (
-        nr < 0 ||
-        nr >= GRID_SIZE ||
-        nc < 0 ||
-        nc >= GRID_SIZE ||
-        visited[nr][nc]
-      ) {
-        continue;
-      }
-      const cell = grid[nr][nc];
-      if (cell === 'wall' || cell === 'hole') continue;
-      visited[nr][nc] = true;
-      queue.push([nr, nc]);
-    }
-  }
-
-  return reachedGoal && reachedCrystals >= totalCrystals;
-}
+const BOARD_SIZE_OPTIONS = [12, 14, 16] as const;
 
 const TOOLS: Array<{
   id: CellTool;
@@ -228,6 +93,14 @@ const TOOLS: Array<{
     icon: <Activity className="h-3.5 w-3.5" aria-hidden="true" />,
   },
   {
+    id: 'portal',
+    label: 'Portal (çift)',
+    activeClass: 'border-signal/50 bg-signal/15 text-signal',
+    cellClass: 'border-signal/60 bg-signal/20 text-signal font-bold',
+    symbol: '◎',
+    icon: <Orbit className="h-3.5 w-3.5" aria-hidden="true" />,
+  },
+  {
     id: 'start',
     label: 'Başlangıç',
     activeClass: 'border-signal/50 bg-signal/15 text-signal',
@@ -273,6 +146,7 @@ export function LevelEditorModal() {
   const copiedJsonTimerRef = useRef<number | null>(null);
   const [activeTool, setActiveTool] = useState<CellTool>('wall');
   const [customTitle, setCustomTitle] = useState('Özel Labirent — Tasarım 1');
+  const [boardSize, setBoardSize] = useState<number>(12);
   const [copiedJson, setCopiedJson] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
 
@@ -302,8 +176,9 @@ export function LevelEditorModal() {
     if (!isEditorOpen) return;
     setImportError(null);
     if (customLevel) {
-      setGrid(levelDefinitionToGrid(customLevel));
+      setGrid(levelDefinitionToEditorGrid(customLevel, GRID_SIZE));
       setCustomTitle(customLevel.title);
+      setBoardSize(customLevel.boardSize);
     }
   }, [isEditorOpen, customLevel]);
 
@@ -376,7 +251,7 @@ export function LevelEditorModal() {
           }
         }
 
-        if (hasSolvableGridPath(next)) {
+        if (validateEditorGrid(next).ok) {
           return next;
         }
       }
@@ -394,105 +269,16 @@ export function LevelEditorModal() {
     });
   };
 
-  const buildLevelDefinition = (): MazeLevelDefinition => {
-    let startPos: [number, number, number] = [-4.5, 0.34, -4.5];
-    let goalPos: [number, number, number] = [4.5, 0.35, 4.5];
-    let goalCell: [number, number] = [GRID_SIZE - 1, GRID_SIZE - 1];
-    for (let r = 0; r < GRID_SIZE; r++) {
-      for (let c = 0; c < GRID_SIZE; c++) {
-        if (grid[r][c] === 'goal') {
-          goalCell = [r, c];
-        }
-      }
-    }
-
-    const isOutOfBounds = (r: number, c: number) =>
-      r < 0 || r >= GRID_SIZE || c < 0 || c >= GRID_SIZE;
-    const isWallCell = (r: number, c: number) =>
-      isOutOfBounds(r, c) || grid[r][c] === 'wall';
-    const isBlockedCell = (r: number, c: number) =>
-      isOutOfBounds(r, c) || grid[r][c] === 'wall' || grid[r][c] === 'hole';
-
-    const innerWalls: WallDefinition[] = [];
-    const voidHoles: VoidHoleDefinition[] = [];
-    const crystals: [number, number][] = [];
-    const laserGates: LaserGateDefinition[] = [];
-    const boostPads: BoostPadDefinition[] = [];
-    const movingObstacles: MovingObstacleDefinition[] = [];
-
-    for (let r = 0; r < GRID_SIZE; r++) {
-      for (let c = 0; c < GRID_SIZE; c++) {
-        const cell = grid[r][c];
-        const [wx, wz] = gridToWorld(r, c);
-
-        if (cell === 'start') {
-          startPos = [wx, 0.34, wz];
-        } else if (cell === 'goal') {
-          goalPos = [wx, 0.35, wz];
-        } else if (cell === 'wall') {
-          innerWalls.push({
-            position: [wx, 0.375, wz],
-            size: [1.25, 0.75, 1.25],
-          });
-        } else if (cell === 'hole') {
-          voidHoles.push({
-            position: [wx, wz],
-            radius: 0.42,
-          });
-        } else if (cell === 'crystal') {
-          crystals.push([wx, wz]);
-        } else if (cell === 'laser') {
-          laserGates.push({
-            position: [wx, wz],
-            length: 1.3,
-            axis: computeEditorLaserAxis(r, c, isWallCell),
-            periodSeconds: 3.2,
-            phaseOffset: (r + c) * 0.4,
-          });
-        } else if (cell === 'boost') {
-          boostPads.push({
-            position: [wx, wz],
-            direction: computeEditorBoostDirection(
-              r,
-              c,
-              goalCell,
-              isBlockedCell,
-            ),
-          });
-        } else if (cell === 'moving') {
-          const movingConfig = computeEditorMovingConfig(r, c, isWallCell);
-          movingObstacles.push({
-            center: [wx, wz],
-            axis: movingConfig.axis,
-            amplitude: movingConfig.amplitude,
-            speed: 2.2,
-            phaseOffset: (r + c) * 0.5,
-          });
-        }
-      }
-    }
-
-    return {
-      id: 99,
-      title: customTitle.trim() || 'Özel Harita',
-      subtitle: 'Harita editörü ile oluşturuldu',
-      boardSize: 12,
-      startPosition: startPos,
-      goalPosition: goalPos,
-      innerWalls,
-      voidHoles,
-      crystals,
-      laserGates,
-      boostPads,
-      movingObstacles,
-    };
-  };
+  const buildLevelDefinition = (): MazeLevelDefinition =>
+    buildLevelFromEditorGrid(grid, {
+      title: customTitle,
+      boardSize,
+    });
 
   const handlePlayCustomLevel = () => {
-    if (!hasSolvableGridPath(grid)) {
-      setImportError(
-        'Başlangıç noktasından tüm kristallere ve hedefe ulaşılabilir bir yol bulunmalıdır.',
-      );
+    const validation = validateEditorGrid(grid);
+    if (!validation.ok) {
+      setImportError(validation.reason);
       return;
     }
     setImportError(null);
@@ -500,6 +286,13 @@ export function LevelEditorModal() {
   };
 
   const handleCopyJson = async () => {
+    const portalCount = grid.flat().filter((c) => c === 'portal').length;
+    if (portalCount % 2 !== 0) {
+      setImportError(
+        'JSON dışa aktarmadan önce açıkta kalan kuantum portal için bir eş daha yerleştirin.',
+      );
+      return;
+    }
     try {
       const levelDef = buildLevelDefinition();
       await navigator.clipboard.writeText(JSON.stringify(levelDef, null, 2));
@@ -628,6 +421,47 @@ export function LevelEditorModal() {
               className="w-full rounded-xl border border-line bg-surface-2 px-3 py-2 text-sm text-fg outline-none focus:border-brass"
             />
           </label>
+
+          <div>
+            <span className="mb-1.5 block text-xs font-medium text-muted">
+              Tahta boyutu
+            </span>
+            <div
+              role="radiogroup"
+              aria-label="Tahta boyutu"
+              className="grid grid-cols-3 gap-1 rounded-xl border border-line bg-surface-2/60 p-1"
+            >
+              {BOARD_SIZE_OPTIONS.map((sizeOption, idx) => {
+                const active = boardSize === sizeOption;
+                return (
+                  <button
+                    key={sizeOption}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    tabIndex={active ? 0 : -1}
+                    onClick={() => setBoardSize(sizeOption)}
+                    onKeyDown={(e) =>
+                      handleRadioGroupKeyDown(
+                        e,
+                        idx,
+                        BOARD_SIZE_OPTIONS.length,
+                        (nextIdx) => setBoardSize(BOARD_SIZE_OPTIONS[nextIdx]),
+                      )
+                    }
+                    className={cx(
+                      'cursor-pointer rounded-lg py-1.5 text-xs font-semibold transition-colors',
+                      active
+                        ? 'bg-surface text-brass ring-1 ring-brass/50'
+                        : 'text-muted hover:text-fg',
+                    )}
+                  >
+                    {sizeOption}×{sizeOption}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           <div>
             <span className="mb-2 block text-xs font-medium text-muted">

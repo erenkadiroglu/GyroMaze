@@ -293,3 +293,13 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 
 ### Faz 49: Özel Harita Editörü `boardSize` Ölçek Eşlemesi ve Çakışma İyileştirmesi (Tamamlandı)
 - [x] **Orantılı 8x8 Izgara Dönüşümü (`mazeLevels.ts`, `LevelEditorModal.tsx`, `mazeLevels.test.mjs`):** `worldToEditorGridCell` ve `editorGridCellToWorld` yardımcıları `mazeLevels.ts` içinde merkezileştirildi; `levelDefinitionToGrid` artık sabit 12x12 adımı yerine haritanın gerçek `boardSize` (`8..18`) ölçeğini kullanarak büyük/küçük içe aktarılan haritalarda öğelerin kenarlara yığılmasını veya merkeze sıkışmasını önlüyor ve başlangıç/hedef çakışmalarında boş hücrelere öncelik veriyor.
+
+### Faz 50: Harita Editöründe Kuantum Portal Aracı ve Tahta Boyutu Seçici (Tamamlandı)
+- [x] **Çift Yönlü Portal Yerleştirme & Portal-Farkındalıklı BFS (`mazeLevels.ts`, `LevelEditorModal.tsx`, `mazeLevels.test.mjs`):** Editör araç paletine `portal` (◎) aracı eklendi; `validateEditorGrid` açıkta kalan tekil portalları uyarıyor ve duvarla ayrılmış bölümleri portal çifti üzerinden geçen BFS ile çözülebilir doğruluyor.
+- [x] **Ölçekli Tahta Boyutu Seçici (`12×12 / 14×14 / 16×16`):** `buildLevelFromEditorGrid` ve `levelDefinitionToEditorGrid` ile tahta boyutu seçimi duvar/engel ölçeklerini ve kuantum portalları çift yönlü olarak koruyacak şekilde merkezileştirildi.
+
+### Faz 51: Kalıcı Liderlik Tablosu Altyapısı (Tamamlandı)
+- [x] **Atomik Disk JSON Kalıcılığı (`room.service.ts`, `room.service.test.mjs`, `.gitignore`):** `RoomService` liderlik tablosunu geçici dosya + `rename` atomik yazım kuyruğuyla `.data/leaderboard.json` (veya `GYROMAZE_LEADERBOARD_FILE`) üzerinde kalıcı saklıyor, sunucu başlangıcında doğrulayarak geri yüklüyor ve bozuk JSON durumunda başlangıç kayıtlarına güvenle düşüyor.
+
+### Faz 52: Mobil Kumanda İçin PWA Manifest ve Uygulama İkonu (Tamamlandı)
+- [x] **Standalone PWA Desteği (`manifest.ts`, `icon.svg`, `layout.tsx`):** Next.js 15 App Router için `manifest.ts`, vektörel `icon.svg` ve `appleWebApp` tam ekran meta ayarları eklenerek `/controller` mobil kumandasının ana ekrana kurulup tarayıcı çubuğu olmadan açılması sağlandı.

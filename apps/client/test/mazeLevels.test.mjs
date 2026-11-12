@@ -11,6 +11,9 @@ import {
   computeEditorMovingConfig,
   editorGridCellToWorld,
   worldToEditorGridCell,
+  validateEditorGrid,
+  levelDefinitionToEditorGrid,
+  buildLevelFromEditorGrid,
 } from '../src/components/scene/mazeLevels.ts';
 
 const BALL_RADIUS = 0.34;
@@ -416,6 +419,49 @@ describe('MAZE_LEVELS — 3B Harita Geometrisi, Engel Konumları ve Fizik Doğru
 
     // Geçersiz/NaN koordinatlar güvenli merkez hücresine düşmeli
     assert.deepEqual(worldToEditorGridCell(Number.NaN, Number.POSITIVE_INFINITY, 12), [4, 4]);
+  });
+
+  it('validateEditorGrid ve buildLevelFromEditorGrid kuantum portalları ile 16x16 tahta ölçeğini korur', () => {
+    const mkGrid = () =>
+      Array.from({ length: 8 }, () => Array.from({ length: 8 }, () => 'erase'));
+
+    // Tek/eşleşmemiş portal reddedilmeli
+    const oddPortalGrid = mkGrid();
+    oddPortalGrid[0][0] = 'start';
+    oddPortalGrid[7][7] = 'goal';
+    oddPortalGrid[1][1] = 'portal';
+    assert.equal(validateEditorGrid(oddPortalGrid).ok, false);
+
+    // Duvarla tamamen bölünmüş harita çift portal köprüsüyle çözülebilir kabul edilmeli
+    const portalBridgeGrid = mkGrid();
+    portalBridgeGrid[0][0] = 'start';
+    portalBridgeGrid[0][1] = 'portal';
+    for (let r = 0; r < 8; r++) {
+      portalBridgeGrid[r][3] = 'wall';
+    }
+    portalBridgeGrid[5][5] = 'portal';
+    portalBridgeGrid[6][6] = 'crystal';
+    portalBridgeGrid[7][7] = 'goal';
+    assert.deepEqual(validateEditorGrid(portalBridgeGrid), { ok: true });
+
+    const built = buildLevelFromEditorGrid(portalBridgeGrid, {
+      title: 'Portal Köprüsü',
+      boardSize: 16,
+    });
+    assert.equal(built.boardSize, 16);
+    assert.equal(built.teleporters?.length, 1);
+
+    const parsed = parseCustomMazeLevel(built);
+    assert.ok(parsed);
+    assert.equal(parsed.boardSize, 16);
+    assert.equal(parsed.teleporters?.length, 1);
+
+    // Geri yüklemede portallar 8x8 ızgarada eksiksiz korunmalı
+    const roundTrippedGrid = levelDefinitionToEditorGrid(parsed);
+    assert.equal(roundTrippedGrid[0][0], 'start');
+    assert.equal(roundTrippedGrid[7][7], 'goal');
+    assert.equal(roundTrippedGrid[0][1], 'portal');
+    assert.equal(roundTrippedGrid[5][5], 'portal');
   });
 });
 
