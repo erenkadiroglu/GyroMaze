@@ -9,8 +9,6 @@ import {
   Wifi,
   WifiOff,
   AlertCircle,
-  ShieldCheck,
-  Hand,
   KeyRound,
   ArrowRight,
   ChevronLeft,
@@ -19,7 +17,6 @@ import {
   Trophy,
   Sun,
   Moon,
-  X,
   Activity,
 } from 'lucide-react';
 import { GyroData } from '@gyromaze/shared';
@@ -27,7 +24,18 @@ import { useGameStore } from '@/store/useGameStore';
 import { useSocket } from '@/hooks/useSocket';
 import { useDeviceOrientation } from '@/hooks/useDeviceOrientation';
 import { useAppPreferences } from '@/hooks/useAppPreferences';
-import { cx, handleRadioGroupKeyDown } from '@/components/ui/primitives';
+import { cx } from '@/components/ui/primitives';
+import {
+  cleanRoomCode,
+  validateRoomCode,
+  calculateGimbalTouchAngles,
+  calculateGimbalDotOffset,
+  formatGimbalAngle,
+  scaleGyroAngles,
+} from '@/utils/controllerUtils';
+import { ControllerRoomCard } from './ControllerRoomCard';
+import { ControllerSensorCard } from './ControllerSensorCard';
+import { ControllerGimbalPad } from './ControllerGimbalPad';
 
 /**
  * Mobil cihazın HTML5 jiroskop sensörlerini ve dokunmatik (touch) sanal gimbal
@@ -38,10 +46,7 @@ function MobileControllerContent() {
   useAppPreferences();
 
   const searchParams = useSearchParams();
-  const initialRoomParam = (searchParams.get('room') ?? '')
-    .replace(/[^a-zA-Z0-9]/g, '')
-    .toUpperCase()
-    .slice(0, 6);
+  const initialRoomParam = cleanRoomCode(searchParams.get('room') ?? '');
   const initialSlotParam = searchParams.get('slot') === '2' ? 2 : 1;
 
   const [manualRoomInput, setManualRoomInput] = useState(initialRoomParam);
@@ -129,11 +134,12 @@ function MobileControllerContent() {
   const pushGyroSample = useCallback(
     (beta: number, gamma: number) => {
       const now = Date.now();
-      const mult = sensitivityRef.current;
-      const scaledBeta =
-        Math.round(Math.max(-35, Math.min(35, beta * mult)) * 10) / 10;
-      const scaledGamma =
-        Math.round(Math.max(-35, Math.min(35, gamma * mult)) * 10) / 10;
+      const { beta: scaledBeta, gamma: scaledGamma } = scaleGyroAngles(
+        beta,
+        gamma,
+        sensitivityRef.current,
+        35,
+      );
 
       liveGyroRef.current.beta = scaledBeta;
       liveGyroRef.current.gamma = scaledGamma;
@@ -304,9 +310,7 @@ function MobileControllerContent() {
       const gamma = liveGyroRef.current.gamma;
 
       if (gimbalDotRef.current) {
-        const maxOffsetPx = 68;
-        const offsetX = (gamma / 35) * maxOffsetPx;
-        const offsetY = (beta / 35) * maxOffsetPx;
+        const { offsetX, offsetY } = calculateGimbalDotOffset(beta, gamma, 68, 35);
 
         if (
           Math.abs(offsetX - lastRenderedX) >= 0.2 ||
@@ -320,8 +324,8 @@ function MobileControllerContent() {
 
       if (now - lastTextUpdateTime >= 120) {
         lastTextUpdateTime = now;
-        const nextPitchStr = `${beta >= 0 ? '+' : ''}${beta.toFixed(1)}°`;
-        const nextRollStr = `${gamma >= 0 ? '+' : ''}${gamma.toFixed(1)}°`;
+        const nextPitchStr = formatGimbalAngle(beta);
+        const nextRollStr = formatGimbalAngle(gamma);
 
         if (pitchValueRef.current && nextPitchStr !== lastPitchStr) {
           lastPitchStr = nextPitchStr;
@@ -358,19 +362,12 @@ function MobileControllerContent() {
   };
 
   const updatePointerSample = (clientX: number, clientY: number) => {
-    const { centerX, centerY, maxRadius } = gimbalBoundsRef.current;
-    let dx = clientX - centerX;
-    let dy = clientY - centerY;
-    const dist = Math.hypot(dx, dy);
-    if (dist > maxRadius && dist > 0) {
-      const scale = maxRadius / dist;
-      dx *= scale;
-      dy *= scale;
-    }
-
-    const gamma = Math.round((dx / maxRadius) * 280) / 10;
-    const beta = Math.round((dy / maxRadius) * 280) / 10;
-
+    const { beta, gamma } = calculateGimbalTouchAngles(
+      clientX,
+      clientY,
+      gimbalBoundsRef.current,
+      28,
+    );
     pushGyroSample(beta, gamma);
   };
 
@@ -422,11 +419,12 @@ function MobileControllerContent() {
 
   const handleManualConnect = (e: React.FormEvent) => {
     e.preventDefault();
-    const cleaned = manualRoomInput.trim().toUpperCase();
-    if (cleaned.length !== 6) {
-      setRoomFormError('Geçerli bir 6 haneli oda kodu girin.');
+    const validation = validateRoomCode(manualRoomInput);
+    if (!validation.valid) {
+      setRoomFormError(validation.error);
       return;
     }
+    const cleaned = validation.cleanCode;
     if (cleaned === activeRoomCode) {
       if (!isSocketConnected) {
         setRoomFormError(
@@ -672,371 +670,59 @@ function MobileControllerContent() {
       {/* ORTA ALAN: ODA KODU / İZİN / CANLI GİMBAL */}
       <section className="my-auto flex flex-col items-center justify-center py-3">
         {!activeRoomCode || isRoomEditorOpen ? (
-          <form
+          <ControllerRoomCard
+            manualRoomInput={manualRoomInput}
+            setManualRoomInput={setManualRoomInput}
+            roomFormError={roomFormError}
+            setRoomFormError={setRoomFormError}
+            recentRooms={recentRooms}
+            activeRoomCode={activeRoomCode}
+            onClose={activeRoomCode ? closeRoomEditor : undefined}
             onSubmit={handleManualConnect}
-            className="w-full max-w-sm space-y-4 rounded-3xl border border-line bg-surface p-6"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-brass/30 bg-brass/10 text-brass">
-                  <KeyRound className="h-4 w-4" aria-hidden="true" />
-                </div>
-                <div>
-                  <h2 className="text-base font-semibold">Oda kodu ile bağlan</h2>
-                  <p className="text-xs text-muted">
-                    Masaüstündeki 6 haneli kodu yaz
-                  </p>
-                </div>
-              </div>
-              {activeRoomCode && (
-                <button
-                  type="button"
-                  onClick={closeRoomEditor}
-                  aria-label="Oda kodu düzenlemeyi kapat"
-                  className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-line bg-surface-2 text-muted"
-                >
-                  <X className="h-4 w-4" aria-hidden="true" />
-                </button>
-              )}
-            </div>
-
-            <input
-              type="text"
-              inputMode="text"
-              autoCapitalize="characters"
-              autoComplete="off"
-              autoCorrect="off"
-              spellCheck={false}
-              aria-label="6 haneli oda kodu"
-              value={manualRoomInput}
-              onChange={(e) => {
-                setRoomFormError(null);
-                setManualRoomInput(
-                  e.target.value
-                    .replace(/[^a-zA-Z0-9]/g, '')
-                    .toUpperCase()
-                    .slice(0, 6),
-                );
-              }}
-              placeholder="ÖRN: 84K9X2"
-              className="gm-num w-full rounded-2xl border border-line bg-surface-2 px-4 py-3.5 text-center text-2xl font-semibold tracking-[0.25em] text-brass uppercase outline-none focus:border-brass"
-            />
-
-            {roomFormError && (
-              <p role="alert" className="text-xs font-medium text-danger">
-                {roomFormError}
-              </p>
-            )}
-
-            {recentRooms.length > 0 && (
-              <div className="space-y-1.5 pt-1 text-left">
-                <span className="text-[11px] font-medium text-muted">
-                  Son bağlandığın odalar:
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {recentRooms.map((roomCode) => (
-                    <button
-                      key={roomCode}
-                      type="button"
-                      onClick={() => {
-                        setManualRoomInput(roomCode);
-                        setRoomFormError(null);
-                      }}
-                      className="gm-num cursor-pointer rounded-lg border border-line bg-surface-2 px-2.5 py-1 text-xs font-mono font-semibold tracking-wider text-brass hover:border-brass/60 active:scale-95"
-                    >
-                      {roomCode}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              className="flex min-h-[48px] w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-brass text-sm font-semibold text-brass-fg active:scale-[0.98]"
-            >
-              <span>Odaya bağlan</span>
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </button>
-          </form>
+          />
         ) : !showGimbalSurface ? (
-          <div className="w-full max-w-sm space-y-4 rounded-3xl border border-line bg-surface p-6 text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-brass/30 bg-brass/10 text-brass">
-              <ShieldCheck className="h-6 w-6" aria-hidden="true" />
-            </div>
-            <div className="space-y-1.5">
-              <h2 className="text-lg font-semibold">
-                Jiroskop sensörlerini başlat
-              </h2>
-              <p className="text-xs leading-relaxed text-muted">
-                Telefonunu rahat bir açıyla tut ve sıfır gecikmeli hareket
-                kontrolünü etkinleştir.
-              </p>
-            </div>
-
-            {isInsecureContext && (
-              <p
-                role="note"
-                className="rounded-2xl border border-warn/30 bg-warn/10 px-3 py-2 text-left text-[11px] leading-relaxed text-warn"
-              >
-                Bu sayfa HTTP üzerinden açıldığı için mobil tarayıcı jiroskop
-                sensörlerini kısıtlayabilir. Sensör yanıt vermezse aşağıdaki{' '}
-                <strong className="font-semibold">
-                  Dokunmatik gimbal ile oyna
-                </strong>{' '}
-                seçeneğini kullan.
-              </p>
-            )}
-
-            <button
-              type="button"
-              onClick={handleActivateSensors}
-              className="min-h-[48px] w-full cursor-pointer rounded-2xl bg-brass text-sm font-semibold text-brass-fg active:scale-[0.98]"
-            >
-              Sensörleri başlat
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setControllerTouchOverride(true)}
-              className="flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-line bg-surface-2 text-xs font-medium text-fg active:scale-[0.98]"
-            >
-              <Hand className="h-4 w-4 text-signal" aria-hidden="true" />
-              <span>Dokunmatik gimbal ile oyna</span>
-            </button>
-          </div>
+          <ControllerSensorCard
+            isInsecureContext={isInsecureContext}
+            onActivateSensors={handleActivateSensors}
+            onEnableTouchMode={() => setControllerTouchOverride(true)}
+          />
         ) : (
-          <div className="flex flex-col items-center">
-            {/* Canlı 2B Ufuk Pad */}
-            <div
-              ref={gimbalPadRef}
-              role="application"
-              aria-label="Dokunmatik sanal eğim tablası; parmağını sürükleyerek bilyeyi yönlendirebilirsin"
-              onPointerDown={handlePointerDownOnGimbal}
-              onPointerMove={handlePointerMoveOnGimbal}
-              onPointerUp={handlePointerEndOnGimbal}
-              onPointerCancel={handlePointerEndOnGimbal}
-              onLostPointerCapture={handlePointerEndOnGimbal}
-              className="relative flex h-60 w-60 touch-none items-center justify-center rounded-full border-2 border-line bg-surface shadow-inner"
-            >
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute h-40 w-40 rounded-full border border-dashed border-line"
-              />
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute h-20 w-20 rounded-full border border-line"
-              />
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute h-px w-full bg-line/70"
-              />
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute h-full w-px bg-line/70"
-              />
-
-              <div
-                ref={gimbalDotRef}
-                className={cx(
-                  'pointer-events-none relative flex h-11 w-11 items-center justify-center rounded-full border will-change-transform',
-                  playerSlot === 2
-                    ? 'border-warn bg-warn/20'
-                    : 'border-brass bg-brass/20',
-                )}
-              >
-                <div
-                  className={cx(
-                    'h-3.5 w-3.5 rounded-full',
-                    playerSlot === 2 ? 'bg-warn' : 'bg-brass',
-                  )}
-                />
-              </div>
-            </div>
-
-            <p className="mt-2.5 text-center text-xs text-muted">
-              {controllerTouchOverride
-                ? 'Dairedeki küreyi parmağınla sürükleyerek yönlendir'
-                : 'Telefonu eğ veya dairedeki küreyi parmağınla sürükle'}
-            </p>
-            {!isControllerPaired && !errorMessage && (
-              <p
-                role="status"
-                className="mt-1.5 rounded-xl border border-brass/30 bg-brass/10 px-3 py-1.5 text-center text-[11px] text-brass"
-              >
-                Masaüstü eşleşmesi bekleniyor — oda kodunu kontrol et
-              </p>
-            )}
-            {sensorSignalTimedOut &&
-              !controllerTouchOverride &&
-              !hasSensorSignal && (
-                <p
-                  role="status"
-                  className="mt-1.5 rounded-xl border border-warn/30 bg-warn/10 px-3 py-1.5 text-center text-[11px] text-warn"
-                >
-                  Donanım sensör sinyali alınamadı — daireyi parmağınla sürükleyebilirsin
-                </p>
-              )}
-
-            {/* Sayısal Açı Göstergeleri (8Hz) */}
-            <div className="mt-3 grid w-64 grid-cols-2 gap-2.5">
-              <div className="rounded-2xl border border-line bg-surface p-2.5 text-center">
-                <span className="block text-xs text-muted">Eğim (Pitch)</span>
-                <span
-                  ref={pitchValueRef}
-                  className="gm-num mt-0.5 block text-lg font-semibold text-signal"
-                >
-                  +0.0°
-                </span>
-              </div>
-              <div className="rounded-2xl border border-line bg-surface p-2.5 text-center">
-                <span className="block text-xs text-muted">Yatış (Roll)</span>
-                <span
-                  ref={rollValueRef}
-                  className="gm-num mt-0.5 block text-lg font-semibold text-signal"
-                >
-                  +0.0°
-                </span>
-              </div>
-            </div>
-
-            {/* Kontrol Modu Seçici (Jiroskop / Dokunmatik) */}
-            <div
-              role="radiogroup"
-              aria-label="Kontrol modu"
-              className="mt-2.5 grid w-64 grid-cols-2 gap-1 rounded-2xl border border-line bg-surface p-1"
-            >
-              <button
-                type="button"
-                role="radio"
-                aria-checked={!controllerTouchOverride}
-                tabIndex={!controllerTouchOverride ? 0 : -1}
-                onClick={async () => {
-                  if (permissionState === 'granted') {
-                    setControllerTouchOverride(false);
-                    pushGyroSample(0, 0);
-                  } else {
-                    await handleActivateSensors();
-                  }
-                }}
-                className={cx(
-                  'flex min-h-[38px] cursor-pointer items-center justify-center gap-1.5 rounded-xl text-xs font-semibold transition-colors',
-                  !controllerTouchOverride
-                    ? 'bg-brass text-brass-fg'
-                    : 'text-muted hover:text-fg',
-                )}
-              >
-                <Smartphone className="h-3.5 w-3.5" aria-hidden="true" />
-                <span>Jiroskop</span>
-              </button>
-              <button
-                type="button"
-                role="radio"
-                aria-checked={controllerTouchOverride}
-                tabIndex={controllerTouchOverride ? 0 : -1}
-                onClick={() => {
-                  setControllerTouchOverride(true);
+          <ControllerGimbalPad
+            gimbalPadRef={gimbalPadRef}
+            gimbalDotRef={gimbalDotRef}
+            pitchValueRef={pitchValueRef}
+            rollValueRef={rollValueRef}
+            playerSlot={playerSlot}
+            onSelectSlot={(slot) => {
+              if (playerSlot !== slot) {
+                pushGyroSample(0, 0);
+                setPlayerSlot(slot);
+              }
+            }}
+            controllerTouchOverride={controllerTouchOverride}
+            onToggleTouchOverride={async (touch) => {
+              if (!touch) {
+                if (permissionState === 'granted') {
+                  setControllerTouchOverride(false);
                   pushGyroSample(0, 0);
-                }}
-                className={cx(
-                  'flex min-h-[38px] cursor-pointer items-center justify-center gap-1.5 rounded-xl text-xs font-semibold transition-colors',
-                  controllerTouchOverride
-                    ? 'bg-brass text-brass-fg'
-                    : 'text-muted hover:text-fg',
-                )}
-              >
-                <Hand className="h-3.5 w-3.5" aria-hidden="true" />
-                <span>Dokunmatik</span>
-              </button>
-            </div>
-
-            {/* Hassasiyet Seçici */}
-            <div
-              role="radiogroup"
-              aria-label="Jiroskop hassasiyeti"
-              className="mt-2 grid w-64 grid-cols-3 gap-1 rounded-2xl border border-line bg-surface p-1"
-            >
-              {(
-                [
-                  { mult: 0.75, label: 'Hassas' },
-                  { mult: 1, label: 'Standart' },
-                  { mult: 1.35, label: 'Hızlı' },
-                ] as const
-              ).map((item, idx, list) => {
-                const active = controllerSensitivity === item.mult;
-                return (
-                  <button
-                    key={item.mult}
-                    type="button"
-                    role="radio"
-                    aria-checked={active}
-                    tabIndex={active ? 0 : -1}
-                    onClick={() => setControllerSensitivity(item.mult)}
-                    onKeyDown={(e) =>
-                      handleRadioGroupKeyDown(e, idx, list.length, (nextIdx) =>
-                        setControllerSensitivity(list[nextIdx].mult),
-                      )
-                    }
-                    className={cx(
-                      'min-h-[38px] cursor-pointer rounded-xl text-xs font-semibold transition-colors',
-                      active
-                        ? 'bg-brass text-brass-fg'
-                        : 'text-muted hover:text-fg',
-                    )}
-                  >
-                    {item.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Çok Oyunculu Yuva Seçici */}
-            <div
-              role="radiogroup"
-              aria-label="Oyuncu yuvası"
-              className="mt-2 grid w-64 grid-cols-2 gap-1 rounded-2xl border border-line bg-surface p-1"
-            >
-              {(
-                [
-                  { slot: 1, label: '1. Oyuncu (Ana)' },
-                  { slot: 2, label: '2. Oyuncu (Altın)' },
-                ] as const
-              ).map((entry, idx, list) => {
-                const active = playerSlot === entry.slot;
-                const selectSlot = (targetSlot: 1 | 2) => {
-                  if (playerSlot !== targetSlot) {
-                    pushGyroSample(0, 0);
-                    setPlayerSlot(targetSlot);
-                  }
-                };
-                return (
-                  <button
-                    key={entry.slot}
-                    type="button"
-                    role="radio"
-                    aria-checked={active}
-                    tabIndex={active ? 0 : -1}
-                    onClick={() => selectSlot(entry.slot)}
-                    onKeyDown={(e) =>
-                      handleRadioGroupKeyDown(e, idx, list.length, (nextIdx) =>
-                        selectSlot(list[nextIdx].slot),
-                      )
-                    }
-                    className={cx(
-                      'min-h-[38px] cursor-pointer rounded-xl text-xs font-semibold transition-colors',
-                      active
-                        ? entry.slot === 1
-                          ? 'bg-surface-2 text-brass ring-1 ring-brass/60'
-                          : 'bg-surface-2 text-warn ring-1 ring-warn/60'
-                        : 'text-muted hover:text-fg',
-                    )}
-                  >
-                    {entry.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+                } else {
+                  await handleActivateSensors();
+                }
+              } else {
+                setControllerTouchOverride(true);
+                pushGyroSample(0, 0);
+              }
+            }}
+            controllerSensitivity={controllerSensitivity}
+            onSelectSensitivity={setControllerSensitivity}
+            isControllerPaired={isControllerPaired}
+            errorMessage={errorMessage}
+            sensorSignalTimedOut={sensorSignalTimedOut}
+            hasSensorSignal={hasSensorSignal}
+            onPointerDown={handlePointerDownOnGimbal}
+            onPointerMove={handlePointerMoveOnGimbal}
+            onPointerEnd={handlePointerEndOnGimbal}
+          />
         )}
       </section>
 
