@@ -31,7 +31,6 @@ import { calculateEarnedStars } from '@/utils/gameOutcomeUtils';
 import {
   isLaserGateActive,
   calculateMovingObstacleOffset,
-  calculateCameraTargetTransform,
   calculateGhostPlaybackCoord,
   calculateTrailScale,
 } from '@/utils/sceneUtils';
@@ -51,8 +50,6 @@ import {
   _targetQuat,
   _currentQuat,
   _currentEuler,
-  _cameraTargetPos,
-  _cameraLookAt,
   _boardMaterial,
   MAX_TILT_RADIANS,
   BALL_RADIUS,
@@ -61,12 +58,18 @@ import {
 } from './sceneMaterials';
 import { SceneErrorBoundary } from './SceneErrorBoundary';
 import { SceneLights } from './SceneLights';
+import { MazeCameraRig } from './MazeCameraRig';
 import { MazeStageWalls } from './MazeStageWalls';
 import { MazeStageHazards } from './MazeStageHazards';
 import { MazeStageCollectibles } from './MazeStageCollectibles';
 import { MazeStageActors } from './MazeStageActors';
 import { MazeStageColliders } from './MazeStageColliders';
 import { calculateSlerpAlpha } from '@/utils/sceneColliderUtils';
+import {
+  calculateBallRollingRotation,
+  stepTrailHistory,
+  shouldUpdateGhostSample,
+} from '@/utils/sceneCameraUtils';
 
 interface MazeStageProps {
   levelData: MazeLevelDefinition;
@@ -136,7 +139,6 @@ function MazeStage({
   const isSettingsOpen = useGameStore((s) => s.isSettingsOpen);
   const isEditorOpen = useGameStore((s) => s.isEditorOpen);
   const isLeaderboardOpen = useGameStore((s) => s.isLeaderboardOpen);
-  const cameraMode = useGameStore((s) => s.cameraMode);
   const boardTheme = useGameStore((s) => s.boardTheme);
   const colorScheme = useGameStore((s) => s.colorScheme);
   const ballSkin = useGameStore((s) => s.ballSkin);
@@ -484,23 +486,28 @@ function MazeStage({
 
       if (visualBallMeshRef.current) {
         visualBallMeshRef.current.position.set(pos.x, BALL_RADIUS, pos.z);
-        visualBallMeshRef.current.rotation.x +=
-          (vel.z / BALL_RADIUS) * safeDelta;
-        visualBallMeshRef.current.rotation.z -=
-          (vel.x / BALL_RADIUS) * safeDelta;
+        const rot = calculateBallRollingRotation(
+          visualBallMeshRef.current.rotation,
+          vel,
+          BALL_RADIUS,
+          safeDelta,
+        );
+        visualBallMeshRef.current.rotation.x = rot.x;
+        visualBallMeshRef.current.rotation.z = rot.z;
       }
 
       // 10Hz Hayalet Yarışçı (Ghost Replay) Kaydı ve Canlı Oynatımı
       let shouldSampleGhost = false;
       if (gameStatus === 'playing' && isInteractive) {
         runElapsedRef.current += safeDelta;
-        shouldSampleGhost =
-          runElapsedRef.current - lastSampleTimeRef.current >= 0.1;
+        const ghostSample = shouldUpdateGhostSample(
+          runElapsedRef.current,
+          lastSampleTimeRef.current,
+          0.1,
+        );
+        shouldSampleGhost = ghostSample.shouldSample;
         if (shouldSampleGhost) {
-          lastSampleTimeRef.current =
-            runElapsedRef.current - lastSampleTimeRef.current > 0.25
-              ? runElapsedRef.current
-              : lastSampleTimeRef.current + 0.1;
+          lastSampleTimeRef.current = ghostSample.nextSampleTime;
           if (runPathRef.current.length < 600) {
             runPathRef.current.push([
               Math.round(pos.x * 100) / 100,
@@ -532,19 +539,17 @@ function MazeStage({
       }
 
       // Neon Hareket İzi (Motion Trail) halkalarını güncelle (Sıfır GC)
-      const history = trailHistoryRef.current;
-      for (let i = TRAIL_COUNT - 1; i > 0; i--) {
-        history[i].x += (history[i - 1].x - history[i].x) * 0.42;
-        history[i].z += (history[i - 1].z - history[i].z) * 0.42;
-      }
-      history[0].x = pos.x;
-      history[0].z = pos.z;
+      stepTrailHistory(trailHistoryRef.current, pos);
 
       for (let i = 0; i < TRAIL_COUNT; i++) {
         const trailMesh = trailMeshesRef.current[i];
         if (trailMesh) {
           trailMesh.visible = showTrail;
-          trailMesh.position.set(history[i].x, 0.025, history[i].z);
+          trailMesh.position.set(
+            trailHistoryRef.current[i].x,
+            0.025,
+            trailHistoryRef.current[i].z,
+          );
           const scale = calculateTrailScale(i, TRAIL_COUNT);
           trailMesh.scale.set(scale, scale, 1);
         }
@@ -614,10 +619,14 @@ function MazeStage({
         if (visualBall2MeshRef.current) {
           visualBall2MeshRef.current.visible = true;
           visualBall2MeshRef.current.position.set(pos2.x, BALL_RADIUS, pos2.z);
-          visualBall2MeshRef.current.rotation.x +=
-            (vel2.z / BALL_RADIUS) * safeDelta;
-          visualBall2MeshRef.current.rotation.z -=
-            (vel2.x / BALL_RADIUS) * safeDelta;
+          const rot2 = calculateBallRollingRotation(
+            visualBall2MeshRef.current.rotation,
+            vel2,
+            BALL_RADIUS,
+            safeDelta,
+          );
+          visualBall2MeshRef.current.rotation.x = rot2.x;
+          visualBall2MeshRef.current.rotation.z = rot2.z;
         }
 
         // 2. Oyuncu için tüm kristal, rampa, portal, lazer ve hareketli engel kontrolleri
@@ -638,23 +647,7 @@ function MazeStage({
       } else if (visualBall2MeshRef.current) {
         visualBall2MeshRef.current.visible = false;
       }
-
-      // 3. Seçili Kamera Moduna Göre Dinamik Kamera Konumlandırma
-      const { targetPos, lookAt } = calculateCameraTargetTransform(
-        cameraMode,
-        pos,
-        clampedRoll,
-        clampedPitch,
-      );
-      _cameraTargetPos.set(...targetPos);
-      _cameraLookAt.set(...lookAt);
     }
-
-    state.camera.position.lerp(
-      _cameraTargetPos,
-      1 - Math.exp(-10 * safeDelta),
-    );
-    state.camera.lookAt(_cameraLookAt);
   });
 
   return (
@@ -1042,6 +1035,8 @@ export function MazeScene() {
           >
             <color attach="background" args={[sceneBgColor]} />
             <fog attach="fog" args={[sceneBgColor, 18, 38]} />
+
+            <MazeCameraRig />
 
             <SceneLights
               isLightScene={isLightScene}

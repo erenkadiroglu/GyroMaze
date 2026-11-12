@@ -42,39 +42,10 @@ export function calculateMovingObstacleOffset(
   return Math.sin(elapsed * speed + phaseOffset) * amplitude;
 }
 
-/**
- * Seçili kamera moduna göre 3B kameranın hedef konumunu ve odak (lookAt) noktasını hesaplar.
- */
-export function calculateCameraTargetTransform(
-  cameraMode: CameraMode,
-  ballPos: { x: number; z: number },
-  clampedRoll: number,
-  clampedPitch: number,
-): { targetPos: [number, number, number]; lookAt: [number, number, number] } {
-  if (cameraMode === 'topdown') {
-    return {
-      targetPos: [-clampedRoll * 1.2, 18.2, 0.6 + clampedPitch * 1.2],
-      lookAt: [0, 0, 0],
-    };
-  }
-
-  if (cameraMode === 'follow') {
-    return {
-      targetPos: [
-        ballPos.x * 0.62 - clampedRoll * 1.8,
-        10.8,
-        ballPos.z * 0.62 + 6.8 + clampedPitch * 1.5,
-      ],
-      lookAt: [ballPos.x * 0.52, 0, ballPos.z * 0.52],
-    };
-  }
-
-  // Varsayılan: İzometrik (isometric)
-  return {
-    targetPos: [-clampedRoll * 2.4, 14.5, 10.2 + clampedPitch * 2.0],
-    lookAt: [0, 0, 0],
-  };
-}
+export {
+  calculateCameraTargetTransform,
+  type CameraTransformTarget,
+} from './sceneCameraUtils.ts';
 
 /**
  * Hayalet yarışçı için zaman enterpolasyonlu koordinatı ve görünürlük durumunu döner.
