@@ -200,6 +200,10 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Windows Uyumlu Üretim Başlangıcı ve Temiz Proxy Kapanışı (`apps/client/package.json`, `apps/client/server.mjs`):** Yalnızca POSIX kabuklarında çalışan `NODE_ENV=production node server.mjs` komutu platform bağımsız `node server.mjs --prod` bayrağına geçirildi; kullanımdan kalkan `req.on('aborted')` yerine `req.on('error')` dinleyicisi eklendi ve açık WebSocket/keep-alive soketlerinin `SIGINT`/`SIGTERM` kapanışını askıda bırakmasını önlemek için `server.closeAllConnections()` ile zaman aşımı koruması eklendi.
 - [x] **Kısıtlı Tarayıcı Web Audio Koruması (`soundEngine.ts`):** Ses bağlamı oluşturulmasını yasaklayan tarayıcı veya gizlilik politikalarında `new AudioCtx()` çağrısının fizik olaylarını kesintiye uğratmaması için `try/catch` koruması eklendi.
 
+## ✅ Faz 30: Kontrolcü Kopması Sonrası Duraklatma Kurtarma Akışı (Tamamlandı)
+
+- [x] **Kilitlenen `'paused'` Durumundan Çıkış & Kurtarma Çubuğu (`DesktopHUD.tsx`):** Telefon bağlantısı koptuğunda oyunun `'paused'` durumuna geçip `Sahneye geç` düğmesiyle bile tekrar `'playing'` durumuna dönememesi sorunu giderildi (`handleClosePairingModal` içinde `'waiting'` ile birlikte `'paused'` durumu da sahneye dönünce devam edecek şekilde güncellendi); ayrıca üst sahnede tek tıkla klavyeyle sürdürme (`Devam et`) veya QR ile yeniden bağlama (`Bağla`) seçenekleri sunan duraklatma kurtarma çubuğu eklendi.
+
 
 
 

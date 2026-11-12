@@ -328,7 +328,8 @@ export function DesktopHUD() {
 
   const handleClosePairingModal = () => {
     setPairingModalOpen(false);
-    if (useGameStore.getState().gameStatus === 'waiting') {
+    const currentStatus = useGameStore.getState().gameStatus;
+    if (currentStatus === 'waiting' || currentStatus === 'paused') {
       setGameStatus('playing');
     }
   };
@@ -651,6 +652,37 @@ export function DesktopHUD() {
           </Button>
         </div>
       </header>
+
+      {/* DURAKLATMA / BAĞLANTI KOPTU KURTARMA ÇUBUĞU */}
+      {gameStatus === 'paused' && !isAnyOverlayOpen && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="pointer-events-auto fixed top-20 left-1/2 z-20 flex -translate-x-1/2 items-center gap-3 rounded-2xl border border-warn/45 bg-surface/95 px-4 py-2 text-sm shadow-xl backdrop-blur-md"
+        >
+          <span className="font-medium text-warn">
+            Kontrolcü bağlantısı koptu — oyun duraklatıldı
+          </span>
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<Smartphone className="h-3.5 w-3.5" aria-hidden="true" />}
+              onClick={() => setPairingModalOpen(true)}
+            >
+              Bağla
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              icon={<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />}
+              onClick={() => setGameStatus('playing')}
+            >
+              Devam et
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* SAHNE ÜSTÜ KISA BİLDİRİM */}
       <AnimatePresence>
