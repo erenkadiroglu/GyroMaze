@@ -772,7 +772,7 @@ export function getLevelRevisionKey(levelData: MazeLevelDefinition): string {
         `${m.center[0]},${m.center[1]},${m.axis},${m.amplitude},${m.speed},${m.phaseOffset}`,
     )
     .join(';');
-  return `99-${levelData.startPosition.join(',')}-${levelData.goalPosition.join(',')}-${wallsSig}|${holesSig}|${crystalsSig}|${lasersSig}|${boostsSig}|${teleportersSig}|${movingSig}`;
+  return `99-${levelData.boardSize}-${levelData.startPosition.join(',')}-${levelData.goalPosition.join(',')}-${wallsSig}|${holesSig}|${crystalsSig}|${lasersSig}|${boostsSig}|${teleportersSig}|${movingSig}`;
 }
 
 function isVec2(value: unknown): value is [number, number] {

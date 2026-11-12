@@ -576,11 +576,12 @@ function MazeStage({
           const minDist = BALL_RADIUS + 0.38;
           if (distSq < minDist * minDist) {
             lastMovingHitTimeRef.current[slot] = elapsed;
-            const dist = Math.max(0.05, Math.sqrt(distSq));
-            const nx = dx / dist;
-            const nz = dz / dist;
+            const dist = Math.sqrt(distSq);
+            const nx = dist > 1e-4 ? dx / dist : obs.axis === 'x' ? 0 : 1;
+            const nz = dist > 1e-4 ? dz / dist : obs.axis === 'x' ? 1 : 0;
             body.setLinvel({ x: nx * 6.8, y: 0, z: nz * 6.8 }, true);
             onWallHit(5.5, slot);
+            break;
           }
         }
       }
