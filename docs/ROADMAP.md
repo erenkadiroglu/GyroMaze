@@ -303,3 +303,7 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 
 ### Faz 52: Mobil Kumanda İçin PWA Manifest ve Uygulama İkonu (Tamamlandı)
 - [x] **Standalone PWA Desteği (`manifest.ts`, `icon.svg`, `layout.tsx`):** Next.js 15 App Router için `manifest.ts`, vektörel `icon.svg` ve `appleWebApp` tam ekran meta ayarları eklenerek `/controller` mobil kumandasının ana ekrana kurulup tarayıcı çubuğu olmadan açılması sağlandı.
+
+### Faz 53: Canlı NestJS WebSocket Entegrasyon Testi ve Editör Portal Eşleşme Göstergesi (Tamamlandı)
+- [x] **Gerçek TCP/WebSocket E2E Süiti (`socket.e2e.test.mjs`, `apps/server/package.json`):** `NestFactory.create(AppModule)` ve `socket.io-client` ile canlı port üzerinden oda oluşturma, 1P/2P eşleşme, yuva yetkisi sabitleme, hedefli haptik, `ROOM_PING` RTT, `SESSION_REPLACED` ve `ROOM_HOST_DISCONNECTED` akışları uçtan uca doğrulandı.
+- [x] **Editör Portal Çift Numaralandırma (`LevelEditorModal.tsx`):** 8×8 ızgara hücrelerinde `◎1`, `◎2` çift indeksleri ve eşleştirme durumu uyarısı gösterilerek çoklu portal tasarımı netleştirildi.

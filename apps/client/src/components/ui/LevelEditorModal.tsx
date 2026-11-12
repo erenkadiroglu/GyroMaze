@@ -500,40 +500,83 @@ export function LevelEditorModal() {
 
         {/* Sağ 8×8 Etkileşimli Harita Izgarası */}
         <div className="flex flex-col items-center justify-center md:col-span-7">
-          <div
-            role="grid"
-            aria-label="8 çarpı 8 labirent ızgarası"
-            className="grid aspect-square w-full max-w-[332px] grid-cols-8 gap-1.5 rounded-2xl border border-line bg-base/70 p-3"
-          >
-            {grid.map((row, rIdx) =>
-              row.map((cell, cIdx) => {
-                const meta = TOOL_BY_ID[cell];
-                return (
-                  <button
-                    key={`${rIdx}-${cIdx}`}
-                    ref={(el) => {
-                      cellRefs.current[rIdx * GRID_SIZE + cIdx] = el;
-                    }}
-                    type="button"
-                    aria-label={`Satır ${rIdx + 1} Sütun ${cIdx + 1}: ${cell === 'erase' ? 'Boş' : meta.label}`}
-                    onClick={() => handleCellClick(rIdx, cIdx)}
-                    onKeyDown={(e) => handleGridKeyDown(e, rIdx, cIdx)}
-                    className={cx(
-                      'flex aspect-square cursor-pointer items-center justify-center rounded-lg border text-xs transition active:scale-90',
-                      cell === 'erase'
-                        ? 'border-line/70 bg-surface-2/50 hover:bg-surface-2'
-                        : meta.cellClass,
-                    )}
-                  >
-                    {meta.symbol}
-                  </button>
-                );
-              }),
-            )}
-          </div>
-          <p className="mt-2.5 text-center text-xs text-muted">
-            Hücrelere tıklayarak öğe yerleştirin veya mevcut öğeyi kaldırın.
-          </p>
+          {(() => {
+            const portalOrderMap = new Map<string, number>();
+            let portalCounter = 0;
+            for (let r = 0; r < GRID_SIZE; r++) {
+              for (let c = 0; c < GRID_SIZE; c++) {
+                if (grid[r][c] === 'portal') {
+                  portalOrderMap.set(`${r},${c}`, portalCounter++);
+                }
+              }
+            }
+            const portalCount = portalCounter;
+            const hasOddPortal = portalCount % 2 !== 0;
+
+            return (
+              <>
+                <div
+                  role="grid"
+                  aria-label="8 çarpı 8 labirent ızgarası"
+                  className="grid aspect-square w-full max-w-[332px] grid-cols-8 gap-1.5 rounded-2xl border border-line bg-base/70 p-3"
+                >
+                  {grid.map((row, rIdx) =>
+                    row.map((cell, cIdx) => {
+                      const meta = TOOL_BY_ID[cell];
+                      const portalIdx = portalOrderMap.get(`${rIdx},${cIdx}`);
+                      const pairNumber =
+                        portalIdx !== undefined
+                          ? Math.floor(portalIdx / 2) + 1
+                          : null;
+                      const cellText =
+                        cell === 'portal' && pairNumber !== null
+                          ? `◎${pairNumber}`
+                          : meta.symbol;
+                      const cellLabel =
+                        cell === 'portal' && pairNumber !== null
+                          ? `Kuantum Portal Çifti #${pairNumber}`
+                          : cell === 'erase'
+                            ? 'Boş'
+                            : meta.label;
+
+                      return (
+                        <button
+                          key={`${rIdx}-${cIdx}`}
+                          ref={(el) => {
+                            cellRefs.current[rIdx * GRID_SIZE + cIdx] = el;
+                          }}
+                          type="button"
+                          aria-label={`Satır ${rIdx + 1} Sütun ${cIdx + 1}: ${cellLabel}`}
+                          onClick={() => handleCellClick(rIdx, cIdx)}
+                          onKeyDown={(e) => handleGridKeyDown(e, rIdx, cIdx)}
+                          className={cx(
+                            'flex aspect-square cursor-pointer items-center justify-center rounded-lg border text-xs transition active:scale-90',
+                            cell === 'erase'
+                              ? 'border-line/70 bg-surface-2/50 hover:bg-surface-2'
+                              : meta.cellClass,
+                          )}
+                        >
+                          {cellText}
+                        </button>
+                      );
+                    }),
+                  )}
+                </div>
+                <p
+                  className={cx(
+                    'mt-2.5 text-center text-xs',
+                    hasOddPortal ? 'font-medium text-warn' : 'text-muted',
+                  )}
+                >
+                  {hasOddPortal
+                    ? `Portal #${Math.floor(portalCount / 2) + 1} için bir çıkış portalı daha yerleştirin.`
+                    : portalCount > 0
+                      ? `${portalCount / 2} kuantum portal çifti eşleşti. Hücrelere tıklayarak öğe yerleştirin veya kaldırın.`
+                      : 'Hücrelere tıklayarak öğe yerleştirin veya mevcut öğeyi kaldırın.'}
+                </p>
+              </>
+            );
+          })()}
         </div>
       </div>
     </Modal>
