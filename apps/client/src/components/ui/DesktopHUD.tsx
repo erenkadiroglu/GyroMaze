@@ -425,7 +425,8 @@ export function DesktopHUD() {
     .filter((entry) => entry.levelId === selectedLeaderboardLevel)
     .sort((a, b) => a.timeSeconds - b.timeSeconds);
 
-  const isAnyControllerPaired = isControllerPaired || isSecondControllerPaired;
+  const isAnyControllerPaired =
+    isSocketConnected && (isControllerPaired || isSecondControllerPaired);
   const connectionDotColor = isAnyControllerPaired
     ? 'bg-ok'
     : isSocketConnected

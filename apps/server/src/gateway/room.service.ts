@@ -154,13 +154,12 @@ export class RoomService {
    * genel HTTPS adresini otomatik olarak tespit eder.
    */
   private async detectActiveTunnelUrl(): Promise<string | undefined> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 350);
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 350);
       const response = await fetch('http://127.0.0.1:4040/api/tunnels', {
         signal: controller.signal,
       });
-      clearTimeout(timeout);
 
       if (!response.ok) return undefined;
       const data = (await response.json()) as NgrokTunnelResponse;
@@ -170,6 +169,8 @@ export class RoomService {
       return httpsTunnel?.public_url;
     } catch {
       return undefined;
+    } finally {
+      clearTimeout(timeout);
     }
   }
 

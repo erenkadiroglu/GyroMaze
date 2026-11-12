@@ -87,6 +87,7 @@ export function useSocket({
   const lastEmitTimeRef = useRef<number>(0);
   const lastSentBetaRef = useRef<number>(999);
   const lastSentGammaRef = useRef<number>(999);
+  const sessionReplacedRef = useRef<boolean>(false);
 
   const roomId = useGameStore((s) => s.roomId);
   const gameStatus = useGameStore((s) => s.gameStatus);
@@ -142,7 +143,11 @@ export function useSocket({
 
       if (role === 'host') {
         socket.emit(RoomEvents.ROOM_CREATE);
-      } else if (role === 'controller' && targetRoomIdRef.current) {
+      } else if (
+        role === 'controller' &&
+        targetRoomIdRef.current &&
+        !sessionReplacedRef.current
+      ) {
         socket.emit(RoomEvents.ROOM_JOIN, {
           roomId: targetRoomIdRef.current,
           playerSlot: playerSlotRef.current,
@@ -152,9 +157,10 @@ export function useSocket({
 
     socket.on('disconnect', () => {
       setSocketConnected(false);
-      if (role === 'controller') {
-        setControllerPaired(false);
-      }
+      setControllerPaired(false);
+      setSecondControllerPaired(false);
+      resetTransientGyro();
+      setLatencyMs(0);
     });
 
     socket.on(RoomEvents.ROOM_CREATED, (room: RoomState) => {
@@ -189,6 +195,7 @@ export function useSocket({
           crystalsTotal: currentLvl.crystals.length,
         });
       } else {
+        sessionReplacedRef.current = false;
         setControllerPaired(true);
         lastEmitTimeRef.current = 0;
         lastSentBetaRef.current = 999;
@@ -238,6 +245,9 @@ export function useSocket({
     socket.on(RoomEvents.ROOM_ERROR, (error: RoomErrorPayload) => {
       setErrorMessage(error.message);
       if (role === 'controller') {
+        if (error.code === 'SESSION_REPLACED') {
+          sessionReplacedRef.current = true;
+        }
         setControllerPaired(false);
       }
     });
@@ -311,6 +321,7 @@ export function useSocket({
     setSocketConnected,
     setControllerPaired,
     setSecondControllerPaired,
+    setLatencyMs,
     setErrorMessage,
     setLeaderboard,
     updateTransientGyro,
@@ -374,6 +385,7 @@ export function useSocket({
   // Mobil kontrolcüde hedef oda kodu veya oyuncu yuvası değiştiğinde mevcut soketi koparmadan anında katıl
   useEffect(() => {
     if (role !== 'controller' || !targetRoomId) return;
+    sessionReplacedRef.current = false;
     if (socketRef.current?.connected) {
       lastEmitTimeRef.current = 0;
       lastSentBetaRef.current = 999;
@@ -453,6 +465,7 @@ export function useSocket({
     (code: string, slot: 1 | 2 = playerSlotRef.current) => {
       const normalized = code.trim().toUpperCase();
       if (!normalized || !socketRef.current?.connected) return;
+      sessionReplacedRef.current = false;
       setErrorMessage(null);
       socketRef.current.emit(RoomEvents.ROOM_JOIN, {
         roomId: normalized,

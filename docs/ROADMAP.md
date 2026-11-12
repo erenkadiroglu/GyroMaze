@@ -232,3 +232,7 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 
 
 
+### Faz 35: Soket Kopma Senkronizasyonu, Devralınan Sekme Koruması ve Tünel Zamanlayıcı Temizliği (Tamamlandı)
+- [x] **Masaüstü Soket Kopma Temizliği (`useSocket.ts`, `DesktopHUD.tsx`):** Masaüstü (host) WebSocket bağlantısı kesildiğinde `isControllerPaired`, `isSecondControllerPaired`, geçici jiroskop eksenleri ve `latencyMs` sıfırlandı; `isAnyControllerPaired` bayrağı `isSocketConnected` ile bağlanarak çevrimdışı durumda sahte yeşil/gecikme göstergesi görünmesi önlendi.
+- [x] **Devralınan Oturum Re-Hijack Koruması (`useSocket.ts`):** `SESSION_REPLACED` hatası alan eski kontrolcü sekmesinin arka planda otomatik Socket.IO yeniden bağlanmalarında aktif oyuncunun yuvasını geri devralması `sessionReplacedRef` bayrağıyla engellendi.
+- [x] **Tünel Denetim Zamanlayıcı Temizliği (`room.service.ts`):** `detectActiveTunnelUrl` içinde `clearTimeout(timeout)` çağrısı `finally` bloğuna alınarak başarısız ngrok yerel sorgularında zamanlayıcı sızıntısı önlendi.
