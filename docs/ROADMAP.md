@@ -195,6 +195,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Duvar ve Boşluktan Kaçınan Prosedürel Boost Rampaları (`mazeLevels.ts`, `mazeLevels.test.mjs`):** `generateProceduralLevel` içindeki kör yön seçimi yerine `hWalls`/`vWalls` kenar duvarlarını ve komşu tuzak deliklerini denetleyerek açık koridora/hedefe yönelen `pickBestOpenDirection` ortak yardımcısı devreye alındı (`computeEditorBoostDirection` ile paylaşıldı) ve `06..50` arası tüm prosedürel bölümlerde doğrulandı.
 - [x] **2B Radar Nokta Konumlandırma Hassasiyeti (`AttitudeGauge.tsx`):** 1. ve 2. oyuncu bilyelerinin tekrarlanan piksel hesabı `updateRadarDot` yardımcısında birleştirildi ve 42 px iç alan sınırlarında kenar taşması önlendi.
 
+## ✅ Faz 29: Çapraz Platform Üretim Başlangıcı, Kesintisiz Proxy Kapanışı ve Web Audio Koruması (Tamamlandı)
+
+- [x] **Windows Uyumlu Üretim Başlangıcı ve Temiz Proxy Kapanışı (`apps/client/package.json`, `apps/client/server.mjs`):** Yalnızca POSIX kabuklarında çalışan `NODE_ENV=production node server.mjs` komutu platform bağımsız `node server.mjs --prod` bayrağına geçirildi; kullanımdan kalkan `req.on('aborted')` yerine `req.on('error')` dinleyicisi eklendi ve açık WebSocket/keep-alive soketlerinin `SIGINT`/`SIGTERM` kapanışını askıda bırakmasını önlemek için `server.closeAllConnections()` ile zaman aşımı koruması eklendi.
+- [x] **Kısıtlı Tarayıcı Web Audio Koruması (`soundEngine.ts`):** Ses bağlamı oluşturulmasını yasaklayan tarayıcı veya gizlilik politikalarında `new AudioCtx()` çağrısının fizik olaylarını kesintiye uğratmaması için `try/catch` koruması eklendi.
+
 
 
 

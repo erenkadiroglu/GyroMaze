@@ -2,6 +2,10 @@ import { createServer, request as httpRequest } from 'node:http';
 import net from 'node:net';
 import next from 'next';
 
+if (process.argv.includes('--prod') && !process.env.NODE_ENV) {
+  process.env.NODE_ENV = 'production';
+}
+
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = '0.0.0.0';
 const port = parseInt(process.env.PORT || '3000', 10);
@@ -54,7 +58,7 @@ const server = createServer((req, res) => {
       }
     });
 
-    req.on('aborted', () => proxyReq.destroy());
+    req.on('error', () => proxyReq.destroy());
     res.on('close', () => {
       if (!res.writableEnded) {
         proxyReq.destroy();
@@ -112,7 +116,13 @@ server.listen(port, hostname, () => {
 });
 
 function closeServer() {
-  server.close(() => process.exit(0));
+  const forceTimer = setTimeout(() => process.exit(0), 1500);
+  forceTimer.unref();
+  server.closeAllConnections?.();
+  server.close(() => {
+    clearTimeout(forceTimer);
+    process.exit(0);
+  });
 }
 
 process.on('SIGINT', closeServer);

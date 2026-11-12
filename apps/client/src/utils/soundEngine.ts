@@ -20,7 +20,11 @@ class SoundEngine {
         (window as unknown as { webkitAudioContext?: typeof AudioContext })
           .webkitAudioContext;
       if (AudioCtx) {
-        this.ctx = new AudioCtx();
+        try {
+          this.ctx = new AudioCtx();
+        } catch {
+          return null;
+        }
       }
     }
     if (this.ctx && this.ctx.state === 'suspended') {
