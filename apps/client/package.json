@@ -10,7 +10,7 @@
     "build": "next build",
     "start": "node server.mjs --prod",
     "lint": "node ../../scripts/lint.mjs --client",
-    "test": "node --test test/mazeLevels.test.mjs test/proxy.test.mjs test/shortcuts.test.mjs test/controllerPreferences.test.mjs test/leaderboard.test.mjs test/pairing.test.mjs test/gameOutcome.test.mjs test/soundEngine.test.mjs test/controllerUtils.test.mjs test/levelProgress.test.mjs test/editorTemplates.test.mjs test/hudUtils.test.mjs test/celebrationParticles.test.mjs test/radarUtils.test.mjs test/settingsUtils.test.mjs test/editorUtils.test.mjs test/sceneUtils.test.mjs test/customMapCodec.test.mjs test/editorCompiler.test.mjs test/sceneMaterials.test.mjs",
+    "test": "node --test test/mazeLevels.test.mjs test/proxy.test.mjs test/shortcuts.test.mjs test/controllerPreferences.test.mjs test/leaderboard.test.mjs test/pairing.test.mjs test/gameOutcome.test.mjs test/soundEngine.test.mjs test/controllerUtils.test.mjs test/levelProgress.test.mjs test/editorTemplates.test.mjs test/hudUtils.test.mjs test/celebrationParticles.test.mjs test/radarUtils.test.mjs test/settingsUtils.test.mjs test/editorUtils.test.mjs test/sceneUtils.test.mjs test/customMapCodec.test.mjs test/editorCompiler.test.mjs test/sceneMaterials.test.mjs test/sceneGeometry.test.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

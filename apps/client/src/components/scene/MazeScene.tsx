@@ -37,6 +37,7 @@ import {
   calculateGhostPlaybackCoord,
   calculateTrailScale,
 } from '@/utils/sceneUtils';
+import { calculateOuterWallConfigs } from '@/utils/sceneGeometry';
 import {
   _targetEuler,
   _targetQuat,
@@ -45,27 +46,6 @@ import {
   _cameraTargetPos,
   _cameraLookAt,
   _boardMaterial,
-  _outerWallMaterial,
-  _innerWallMaterial,
-  _ballMaterial,
-  _ball2Material,
-  _holeCoreMaterial,
-  _holeRingMaterial,
-  _goalUnlockedRingMaterial,
-  _goalLockedRingMaterial,
-  _goalUnlockedCoreMaterial,
-  _goalLockedCoreMaterial,
-  _startRingMaterial,
-  _crystalMaterial,
-  _laserBeamMaterial,
-  _laserPillarMaterial,
-  _trailMaterial,
-  _boostBaseMaterial,
-  _boostArrowMaterial,
-  _teleporterRingMaterial,
-  _teleporterCoreMaterial,
-  _ghostBallMaterial,
-  _movingObstacleMaterial,
   MAX_TILT_RADIANS,
   BALL_RADIUS,
   TRAIL_COUNT,
@@ -73,6 +53,10 @@ import {
 } from './sceneMaterials';
 import { SceneErrorBoundary } from './SceneErrorBoundary';
 import { SceneLights } from './SceneLights';
+import { MazeStageWalls } from './MazeStageWalls';
+import { MazeStageHazards } from './MazeStageHazards';
+import { MazeStageCollectibles } from './MazeStageCollectibles';
+import { MazeStageActors } from './MazeStageActors';
 
 interface MazeStageProps {
   levelData: MazeLevelDefinition;
@@ -158,46 +142,9 @@ function MazeStage({
     applySceneThemeMaterials(boardTheme, colorScheme, isLightBoard, ballSkin);
   }, [boardTheme, colorScheme, isLightBoard, ballSkin]);
 
-  const halfBoard = levelData.boardSize / 2;
-  const wallHeight = 0.85;
-  const wallThickness = 0.4;
-
   const outerWalls = useMemo(
-    () => [
-      {
-        position: [0, wallHeight / 2, -halfBoard] as [number, number, number],
-        size: [
-          levelData.boardSize + wallThickness,
-          wallHeight,
-          wallThickness,
-        ] as [number, number, number],
-      },
-      {
-        position: [0, wallHeight / 2, halfBoard] as [number, number, number],
-        size: [
-          levelData.boardSize + wallThickness,
-          wallHeight,
-          wallThickness,
-        ] as [number, number, number],
-      },
-      {
-        position: [-halfBoard, wallHeight / 2, 0] as [number, number, number],
-        size: [wallThickness, wallHeight, levelData.boardSize] as [
-          number,
-          number,
-          number,
-        ],
-      },
-      {
-        position: [halfBoard, wallHeight / 2, 0] as [number, number, number],
-        size: [wallThickness, wallHeight, levelData.boardSize] as [
-          number,
-          number,
-          number,
-        ],
-      },
-    ],
-    [halfBoard, levelData.boardSize],
+    () => calculateOuterWallConfigs(levelData.boardSize),
+    [levelData.boardSize],
   );
 
   const levelRevisionKey = useMemo(
@@ -888,286 +835,47 @@ function MazeStage({
           position={[0, 0.01, 0]}
         />
 
-        {outerWalls.map((wall, idx) => (
-          <mesh
-            key={`vis-outer-${idx}`}
-            position={wall.position}
-            material={_outerWallMaterial}
-            castShadow
-            receiveShadow
-          >
-            <boxGeometry args={wall.size} />
-          </mesh>
-        ))}
+        {/* İç ve Dış Duvarlar */}
+        <MazeStageWalls
+          levelRevisionKey={levelRevisionKey}
+          outerWalls={outerWalls}
+          innerWalls={levelData.innerWalls}
+        />
 
-        {levelData.innerWalls.map((wall, idx) => (
-          <mesh
-            key={`vis-inner-${levelRevisionKey}-${idx}`}
-            position={wall.position}
-            material={_innerWallMaterial}
-            castShadow
-            receiveShadow
-          >
-            <boxGeometry args={wall.size} />
-          </mesh>
-        ))}
+        {/* Tehlikeler ve Kinetik Engeller */}
+        <MazeStageHazards
+          levelRevisionKey={levelRevisionKey}
+          voidHoles={levelData.voidHoles}
+          boostPads={levelData.boostPads}
+          teleporters={levelData.teleporters}
+          laserGates={levelData.laserGates}
+          movingObstacles={levelData.movingObstacles}
+          laserBeamMeshesRef={laserBeamMeshesRef}
+          movingObstacleMeshesRef={movingObstacleMeshesRef}
+        />
 
-        {/* Başlangıç Noktası İşaretçisi */}
-        <mesh
-          position={[
-            levelData.startPosition[0],
-            0.02,
-            levelData.startPosition[2],
-          ]}
-          rotation={[-Math.PI / 2, 0, 0]}
-          material={_startRingMaterial}
-        >
-          <ringGeometry args={[0.35, 0.52, 24]} />
-        </mesh>
+        {/* Toplanabilirler, Başlangıç Halkası ve Hedef Portalı */}
+        <MazeStageCollectibles
+          levelRevisionKey={levelRevisionKey}
+          startPosition={levelData.startPosition}
+          goalPosition={levelData.goalPosition}
+          crystals={levelData.crystals}
+          collectedCrystals={collectedCrystals}
+          isGoalUnlocked={isGoalUnlocked}
+          crystalMeshesRef={crystalMeshesRef}
+          goalRingRef={goalRingRef}
+        />
 
-        {/* Tuzak Delikleri */}
-        {levelData.voidHoles.map((hole, idx) => {
-          const r = hole.radius ?? 0.42;
-          return (
-            <group
-              key={`vis-hole-${levelRevisionKey}-${idx}`}
-              position={[hole.position[0], 0.02, hole.position[1]]}
-            >
-              <mesh
-                rotation={[-Math.PI / 2, 0, 0]}
-                material={_holeCoreMaterial}
-              >
-                <circleGeometry args={[r, 24]} />
-              </mesh>
-              <mesh
-                rotation={[-Math.PI / 2, 0, 0]}
-                position={[0, 0.005, 0]}
-                material={_holeRingMaterial}
-              >
-                <ringGeometry args={[r * 0.82, r * 1.08, 24]} />
-              </mesh>
-            </group>
-          );
-        })}
-
-        {/* Toplanabilir Enerji Kristalleri */}
-        {levelData.crystals.map(([cx, cz], idx) => {
-          const isCollected = collectedCrystals.includes(idx);
-          return (
-            <mesh
-              key={`crystal-${levelRevisionKey}-${idx}`}
-              ref={(el) => {
-                crystalMeshesRef.current[idx] = el;
-              }}
-              position={[cx, 0.42, cz]}
-              visible={!isCollected}
-              material={_crystalMaterial}
-              castShadow
-            >
-              <octahedronGeometry args={[0.28, 0]} />
-            </mesh>
-          );
-        })}
-
-        {/* Kinetik Hızlandırma Rampaları (Boost Pads) */}
-        {(levelData.boostPads ?? []).map((pad, idx) => {
-          const [bx, bz] = pad.position;
-          const [dx, dz] = pad.direction;
-          const yawAngle = Math.atan2(dx, dz);
-          return (
-            <group
-              key={`boost-${levelRevisionKey}-${idx}`}
-              position={[bx, 0.02, bz]}
-              rotation={[0, yawAngle, 0]}
-            >
-              <mesh
-                rotation={[-Math.PI / 2, 0, 0]}
-                material={_boostBaseMaterial}
-              >
-                <planeGeometry args={[0.85, 1.1]} />
-              </mesh>
-              <mesh
-                position={[0, 0.02, 0.12]}
-                rotation={[Math.PI / 2, 0, 0]}
-                material={_boostArrowMaterial}
-              >
-                <coneGeometry args={[0.24, 0.48, 3]} />
-              </mesh>
-            </group>
-          );
-        })}
-
-        {/* Çift Yönlü Kuantum Işınlanma Portalları (Teleporters) */}
-        {(levelData.teleporters ?? []).map((pair, idx) =>
-          [pair.entry, pair.exit].map(([tx, tz], subIdx) => (
-            <group
-              key={`teleporter-${levelRevisionKey}-${idx}-${subIdx}`}
-              position={[tx, 0.025, tz]}
-            >
-              <mesh
-                rotation={[-Math.PI / 2, 0, 0]}
-                material={_teleporterRingMaterial}
-              >
-                <ringGeometry args={[0.28, 0.44, 24]} />
-              </mesh>
-              <mesh
-                rotation={[-Math.PI / 2, 0, 0]}
-                position={[0, -0.005, 0]}
-                material={_teleporterCoreMaterial}
-              >
-                <circleGeometry args={[0.28, 20]} />
-              </mesh>
-            </group>
-          )),
-        )}
-
-        {/* Periyodik Lazer Kapılar */}
-        {levelData.laserGates.map((gate, idx) => {
-          const [gx, gz] = gate.position;
-          const halfLen = gate.length / 2;
-          const p1: [number, number, number] =
-            gate.axis === 'x'
-              ? [gx - halfLen, 0.35, gz]
-              : [gx, 0.35, gz - halfLen];
-          const p2: [number, number, number] =
-            gate.axis === 'x'
-              ? [gx + halfLen, 0.35, gz]
-              : [gx, 0.35, gz + halfLen];
-          const beamSize: [number, number, number] =
-            gate.axis === 'x'
-              ? [gate.length, 0.14, 0.08]
-              : [0.08, 0.14, gate.length];
-
-          return (
-            <group key={`laser-${levelRevisionKey}-${idx}`}>
-              <mesh position={p1} material={_laserPillarMaterial}>
-                <cylinderGeometry args={[0.1, 0.12, 0.7, 12]} />
-              </mesh>
-              <mesh position={p2} material={_laserPillarMaterial}>
-                <cylinderGeometry args={[0.1, 0.12, 0.7, 12]} />
-              </mesh>
-              <mesh
-                ref={(el) => {
-                  laserBeamMeshesRef.current[idx] = el;
-                }}
-                position={[gx, 0.35, gz]}
-                material={_laserBeamMaterial}
-              >
-                <boxGeometry args={beamSize} />
-              </mesh>
-            </group>
-          );
-        })}
-
-        {/* Hareketli Kinetik Devriye Engelleri (Moving Obstacles) */}
-        {(levelData.movingObstacles ?? []).map((obs, idx) => (
-          <mesh
-            key={`moving-obs-${levelRevisionKey}-${idx}`}
-            ref={(el) => {
-              movingObstacleMeshesRef.current[idx] = el;
-            }}
-            position={[obs.center[0], 0.36, obs.center[1]]}
-            material={_movingObstacleMaterial}
-            castShadow
-          >
-            <cylinderGeometry args={[0.36, 0.38, 0.72, 16]} />
-          </mesh>
-        ))}
-
-        {/* Hedef Portalı (Kristaller Toplandığında Kehribardan Zümrüt Yeşiline Dönüşür) */}
-        <group position={levelData.goalPosition}>
-          <mesh
-            ref={goalRingRef}
-            position={[0, -0.32, 0]}
-            rotation={[-Math.PI / 2, 0, 0]}
-            material={
-              isGoalUnlocked
-                ? _goalUnlockedRingMaterial
-                : _goalLockedRingMaterial
-            }
-          >
-            <ringGeometry args={[0.35, 0.68, 6]} />
-          </mesh>
-          <mesh
-            position={[0, -0.33, 0]}
-            rotation={[-Math.PI / 2, 0, 0]}
-            material={
-              isGoalUnlocked
-                ? _goalUnlockedCoreMaterial
-                : _goalLockedCoreMaterial
-            }
-          >
-            <circleGeometry args={[0.35, 24]} />
-          </mesh>
-          <pointLight
-            color={isGoalUnlocked ? '#10b981' : '#f59e0b'}
-            intensity={3.0}
-            distance={4.2}
-            position={[0, 0.5, 0]}
-          />
-        </group>
-
-        {/* Bilye Neon Hareket İzi (Motion Trail) */}
-        {Array.from({ length: TRAIL_COUNT }).map((_, idx) => (
-          <mesh
-            key={`trail-${idx}`}
-            ref={(el) => {
-              trailMeshesRef.current[idx] = el;
-            }}
-            position={[
-              levelData.startPosition[0],
-              0.025,
-              levelData.startPosition[2],
-            ]}
-            rotation={[-Math.PI / 2, 0, 0]}
-            material={_trailMaterial}
-          >
-            <circleGeometry args={[BALL_RADIUS * 0.68, 16]} />
-          </mesh>
-        ))}
-
-        {/* Hayalet Yarışçı Küresi (Kendi En İyi Rekorunun Canlı Hologramı) */}
-        <mesh
-          ref={ghostBallMeshRef}
-          visible={false}
-          position={[
-            levelData.startPosition[0],
-            BALL_RADIUS,
-            levelData.startPosition[2],
-          ]}
-          material={_ghostBallMaterial}
-        >
-          <sphereGeometry args={[BALL_RADIUS * 0.92, 20, 20]} />
-        </mesh>
-
-        {/* 1. Oyuncu Görsel Metal Bilye */}
-        <mesh
-          ref={visualBallMeshRef}
-          position={[
-            levelData.startPosition[0],
-            BALL_RADIUS,
-            levelData.startPosition[2],
-          ]}
-          material={_ballMaterial}
-          castShadow
-        >
-          <sphereGeometry args={[BALL_RADIUS, 32, 32]} />
-        </mesh>
-
-        {/* Çok Oyunculu 2. Oyuncu Görsel Altın Bilye */}
-        <mesh
-          ref={visualBall2MeshRef}
-          visible={false}
-          position={[
-            levelData.startPosition[0] + p2SpawnOffsetX,
-            BALL_RADIUS,
-            levelData.startPosition[2] + p2SpawnOffsetZ,
-          ]}
-          material={_ball2Material}
-          castShadow
-        >
-          <sphereGeometry args={[BALL_RADIUS, 32, 32]} />
-        </mesh>
+        {/* Bilyeler, Hayalet Yarışçı ve Hareket İzi */}
+        <MazeStageActors
+          startPosition={levelData.startPosition}
+          p2SpawnOffsetX={p2SpawnOffsetX}
+          p2SpawnOffsetZ={p2SpawnOffsetZ}
+          trailMeshesRef={trailMeshesRef}
+          ghostBallMeshRef={ghostBallMeshRef}
+          visualBallMeshRef={visualBallMeshRef}
+          visualBall2MeshRef={visualBall2MeshRef}
+        />
       </group>
     </>
   );
