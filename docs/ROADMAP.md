@@ -393,6 +393,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Gimbal Sınır ve Yaşam Döngüsü Motoru (`controllerUtils.ts`, `controllerUtils.test.mjs`):** Dokunmatik gimbal alanı merkez ve yarıçap sınır hesaplayıcısı `calculateGimbalBounds`, sensör/dokunmatik yüzey görünürlük çözümleyicisi `resolveGimbalSurfaceVisibility` ve 0.2px delta eşikli GPU reflow filtresi `shouldUpdateGimbalDotOffset` geliştirildi; 3 yeni birim test ile doğrulandı (toplam 99 istemci testi, 127 monorepo testi).
 - [x] **Bağımsız Screen Wake Lock Kancası ve Sayfa Sadeleştirmesi (`useWakeLock.ts`, `controller/page.tsx`):** Telefon ekranının oyun esnasında uykuya geçmesini önleyen `useWakeLock` kancası ayrıştırıldı; `controller/page.tsx` içindeki gömülü yaşam döngüsü kodları temizlenerek mimari saflaştırıldı.
 
+### Faz 75: Özel Harita URL Kodlayıcı, Base64url Güvenlik Katmanı ve JSON Şema Ayrıştırıcı Motoru (Tamamlandı)
+- [x] **Özel Harita URL ve Şema Ayrıştırma Motoru (`customMapCodec.ts`, `customMapCodec.test.mjs`):** Sıkı JSON şema doğrulayıcısı `parseCustomMazeLevel`, URL-safe Base64url serileştiricisi `encodeCustomMazeLevelForUrl`, UTF-8 Base64url çözücüsü `decodeCustomMazeLevelFromUrl`, sorgu parametresi sabiti `CUSTOM_MAP_URL_PARAM` ve uzunluk sınırı `MAX_ENCODED_MAP_LENGTH` geliştirildi; 6 yeni birim test ile doğrulandı (toplam 105 istemci testi, 133 monorepo testi).
+- [x] **Harita Tanım Modülü Sadeleştirmesi (`mazeLevels.ts`):** `mazeLevels.ts` dosyasından 270+ satırlık JSON ayrıştırma ve Base64url dönüşüm kodu bağımsız `customMapCodec` motoruna devredildi ve re-export ile geriye dönük tam uyumluluk korundu.
+
+
 
 
 
