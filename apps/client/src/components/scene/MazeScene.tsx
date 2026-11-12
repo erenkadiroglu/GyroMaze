@@ -1,9 +1,6 @@
 'use client';
 
 import {
-  Component,
-  ErrorInfo,
-  ReactNode,
   useRef,
   useEffect,
   useMemo,
@@ -39,139 +36,43 @@ import {
   calculateCameraTargetTransform,
   calculateGhostPlaybackCoord,
   calculateTrailScale,
-  resolveThemePalette,
-  resolveBallSkinColors,
 } from '@/utils/sceneUtils';
-
-// Garbage Collection (GC) duraksamalarını önlemek için modül seviyesinde önceden ayrılmış nesneler
-const _targetEuler = new THREE.Euler(0, 0, 0, 'XYZ');
-const _targetQuat = new THREE.Quaternion();
-const _currentQuat = new THREE.Quaternion();
-const _currentEuler = new THREE.Euler(0, 0, 0, 'XYZ');
-const _cameraTargetPos = new THREE.Vector3(0, 14.5, 10.2);
-const _cameraLookAt = new THREE.Vector3(0, 0, 0);
-
-// GPU Shader ve bellek optimizasyonu için paylaşılan (singleton) materyaller
-const _boardMaterial = new THREE.MeshStandardMaterial({
-  color: '#18181b',
-  roughness: 0.55,
-  metalness: 0.25,
-});
-const _outerWallMaterial = new THREE.MeshStandardMaterial({
-  color: '#27272a',
-  roughness: 0.35,
-  metalness: 0.45,
-});
-const _innerWallMaterial = new THREE.MeshStandardMaterial({
-  color: '#3f3f46',
-  roughness: 0.3,
-  metalness: 0.5,
-});
-const _ballMaterial = new THREE.MeshStandardMaterial({
-  color: '#f4f4f5',
-  metalness: 0.88,
-  roughness: 0.14,
-});
-const _holeCoreMaterial = new THREE.MeshBasicMaterial({ color: '#050507' });
-const _holeRingMaterial = new THREE.MeshStandardMaterial({
-  color: '#f43f5e',
-  emissive: '#e11d48',
-  emissiveIntensity: 1.4,
-});
-const _goalUnlockedRingMaterial = new THREE.MeshStandardMaterial({
-  color: '#10b981',
-  emissive: '#10b981',
-  emissiveIntensity: 1.7,
-  roughness: 0.2,
-});
-const _goalLockedRingMaterial = new THREE.MeshStandardMaterial({
-  color: '#f59e0b',
-  emissive: '#d97706',
-  emissiveIntensity: 1.1,
-  roughness: 0.3,
-});
-const _goalUnlockedCoreMaterial = new THREE.MeshBasicMaterial({
-  color: '#34d399',
-  transparent: true,
-  opacity: 0.38,
-});
-const _goalLockedCoreMaterial = new THREE.MeshBasicMaterial({
-  color: '#fbbf24',
-  transparent: true,
-  opacity: 0.22,
-});
-const _startRingMaterial = new THREE.MeshBasicMaterial({
-  color: '#38bdf8',
-  transparent: true,
-  opacity: 0.65,
-});
-const _crystalMaterial = new THREE.MeshStandardMaterial({
-  color: '#38bdf8',
-  emissive: '#0284c7',
-  emissiveIntensity: 1.6,
-  roughness: 0.15,
-  metalness: 0.8,
-});
-const _laserBeamMaterial = new THREE.MeshBasicMaterial({
-  color: '#fb7185',
-  transparent: true,
-  opacity: 0.88,
-});
-const _laserPillarMaterial = new THREE.MeshStandardMaterial({
-  color: '#52525b',
-  metalness: 0.7,
-  roughness: 0.25,
-});
-const _trailMaterial = new THREE.MeshBasicMaterial({
-  color: '#38bdf8',
-  transparent: true,
-  opacity: 0.28,
-});
-const _boostBaseMaterial = new THREE.MeshBasicMaterial({
-  color: '#a855f7',
-  transparent: true,
-  opacity: 0.25,
-});
-const _boostArrowMaterial = new THREE.MeshStandardMaterial({
-  color: '#c084fc',
-  emissive: '#9333ea',
-  emissiveIntensity: 1.8,
-});
-const _teleporterRingMaterial = new THREE.MeshStandardMaterial({
-  color: '#22d3ee',
-  emissive: '#06b6d4',
-  emissiveIntensity: 1.9,
-});
-const _teleporterCoreMaterial = new THREE.MeshBasicMaterial({
-  color: '#67e8f9',
-  transparent: true,
-  opacity: 0.32,
-});
-const _ghostBallMaterial = new THREE.MeshStandardMaterial({
-  color: '#34d399',
-  emissive: '#10b981',
-  emissiveIntensity: 1.4,
-  transparent: true,
-  opacity: 0.36,
-});
-const _movingObstacleMaterial = new THREE.MeshStandardMaterial({
-  color: '#f97316',
-  emissive: '#ea580c',
-  emissiveIntensity: 1.35,
-  roughness: 0.25,
-  metalness: 0.65,
-});
-const _ball2Material = new THREE.MeshStandardMaterial({
-  color: '#f59e0b',
-  emissive: '#d97706',
-  emissiveIntensity: 0.45,
-  metalness: 0.88,
-  roughness: 0.16,
-});
-
-const MAX_TILT_RADIANS = THREE.MathUtils.degToRad(24);
-const BALL_RADIUS = 0.34;
-const TRAIL_COUNT = 7;
+import {
+  _targetEuler,
+  _targetQuat,
+  _currentQuat,
+  _currentEuler,
+  _cameraTargetPos,
+  _cameraLookAt,
+  _boardMaterial,
+  _outerWallMaterial,
+  _innerWallMaterial,
+  _ballMaterial,
+  _ball2Material,
+  _holeCoreMaterial,
+  _holeRingMaterial,
+  _goalUnlockedRingMaterial,
+  _goalLockedRingMaterial,
+  _goalUnlockedCoreMaterial,
+  _goalLockedCoreMaterial,
+  _startRingMaterial,
+  _crystalMaterial,
+  _laserBeamMaterial,
+  _laserPillarMaterial,
+  _trailMaterial,
+  _boostBaseMaterial,
+  _boostArrowMaterial,
+  _teleporterRingMaterial,
+  _teleporterCoreMaterial,
+  _ghostBallMaterial,
+  _movingObstacleMaterial,
+  MAX_TILT_RADIANS,
+  BALL_RADIUS,
+  TRAIL_COUNT,
+  applySceneThemeMaterials,
+} from './sceneMaterials';
+import { SceneErrorBoundary } from './SceneErrorBoundary';
+import { SceneLights } from './SceneLights';
 
 interface MazeStageProps {
   levelData: MazeLevelDefinition;
@@ -254,21 +155,7 @@ function MazeStage({
 
   // Seçilen 3B görsel temaya, Aydınlık/Karanlık moda ve Bilye Kaplamasına (Skin) göre paylaşılan materyal renklerini güncelle
   useEffect(() => {
-    const themePalette = resolveThemePalette(boardTheme, colorScheme);
-    _boardMaterial.color.set(themePalette.boardColor);
-    _boardMaterial.roughness = themePalette.boardRoughness;
-    _boardMaterial.metalness = themePalette.boardMetalness;
-    _outerWallMaterial.color.set(themePalette.outerWallColor);
-    _innerWallMaterial.color.set(themePalette.innerWallColor);
-    _trailMaterial.color.set(themePalette.trailColor);
-
-    const skinColors = resolveBallSkinColors(ballSkin, isLightBoard);
-    _ballMaterial.color.set(skinColors.color);
-    _ballMaterial.emissive.set(skinColors.emissive);
-    _ballMaterial.emissiveIntensity = skinColors.emissiveIntensity;
-    if (skinColors.trailColor) {
-      _trailMaterial.color.set(skinColors.trailColor);
-    }
+    applySceneThemeMaterials(boardTheme, colorScheme, isLightBoard, ballSkin);
   }, [boardTheme, colorScheme, isLightBoard, ballSkin]);
 
   const halfBoard = levelData.boardSize / 2;
@@ -1287,53 +1174,6 @@ function MazeStage({
 }
 
 /**
- * WebGL / Rapier WASM başlatma hatalarında uygulamanın çökmesini önleyen sınır bileşeni.
- */
-class SceneErrorBoundary extends Component<
-  { children: ReactNode; onRetry: () => void },
-  { hasError: boolean }
-> {
-  public constructor(props: { children: ReactNode; onRetry: () => void }) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  public static getDerivedStateFromError(): { hasError: boolean } {
-    return { hasError: true };
-  }
-
-  public override componentDidCatch(_err: Error, _info: ErrorInfo): void {
-    // WebGL veya fizik başlatma hatası kurtarma ekranına yönlendirildi.
-  }
-
-  public override render() {
-    if (this.state.hasError) {
-      return (
-        <div className="flex h-full w-full flex-col items-center justify-center bg-base p-6 text-center text-fg">
-          <div className="max-w-sm rounded-2xl border border-line bg-surface p-6 shadow-xl">
-            <h2 className="text-base font-semibold">3B sahne başlatılamadı</h2>
-            <p className="mt-2 text-xs leading-relaxed text-muted">
-              Tarayıcı WebGL grafik bağlamı kullanılamıyor veya sıfırlandı.
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                this.setState({ hasError: false });
-                this.props.onRetry();
-              }}
-              className="mt-4 min-h-10 cursor-pointer rounded-xl bg-brass px-4 text-xs font-semibold text-brass-fg"
-            >
-              Sahneyi yeniden başlat
-            </button>
-          </div>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-
-/**
  * Masaüstü ekranında tam ekran çalışan 3B WebGL sahnesi.
  */
 export function MazeScene() {
@@ -1589,21 +1429,9 @@ export function MazeScene() {
             <color attach="background" args={[sceneBgColor]} />
             <fog attach="fog" args={[sceneBgColor, 18, 38]} />
 
-            <ambientLight intensity={isLightScene ? 1.25 : 0.7} />
-            <directionalLight
-              position={[8, 16, 10]}
-              intensity={isLightScene ? 2.1 : 1.75}
-              castShadow
-              shadow-mapSize={[1024, 1024]}
-              shadow-camera-left={-shadowMargin}
-              shadow-camera-right={shadowMargin}
-              shadow-camera-top={shadowMargin}
-              shadow-camera-bottom={-shadowMargin}
-            />
-            <pointLight
-              position={[-8, 6, -8]}
-              intensity={isLightScene ? 0.65 : 1.1}
-              color="#38bdf8"
+            <SceneLights
+              isLightScene={isLightScene}
+              shadowMargin={shadowMargin}
             />
 
             <Physics gravity={[0, 0, 0]}>
