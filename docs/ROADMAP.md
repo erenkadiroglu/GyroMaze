@@ -290,3 +290,6 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 
 ### Faz 48: Çakışan Kuantum Portal Çifti Koruması (Tamamlandı)
 - [x] **Kendi Kendine Işınlanma Portal Döngüsü Koruması (`mazeLevels.ts`, `mazeLevels.test.mjs`):** `parseCustomMazeLevel` içinde tahta sınırlarına kırpıldıktan sonra giriş ve çıkışı üst üste veya birbirinin tetikleme yarıçapına (`< 0.75` birim) düşen dejenere portal çiftleri elenerek içe aktarılan özel haritalarda bilyenin sonsuz ışınlanma döngüsüne girmesi önlendi ve birim testiyle doğrulandı.
+
+### Faz 49: Özel Harita Editörü `boardSize` Ölçek Eşlemesi ve Çakışma İyileştirmesi (Tamamlandı)
+- [x] **Orantılı 8x8 Izgara Dönüşümü (`mazeLevels.ts`, `LevelEditorModal.tsx`, `mazeLevels.test.mjs`):** `worldToEditorGridCell` ve `editorGridCellToWorld` yardımcıları `mazeLevels.ts` içinde merkezileştirildi; `levelDefinitionToGrid` artık sabit 12x12 adımı yerine haritanın gerçek `boardSize` (`8..18`) ölçeğini kullanarak büyük/küçük içe aktarılan haritalarda öğelerin kenarlara yığılmasını veya merkeze sıkışmasını önlüyor ve başlangıç/hedef çakışmalarında boş hücrelere öncelik veriyor.

@@ -9,6 +9,8 @@ import {
   computeEditorBoostDirection,
   computeEditorLaserAxis,
   computeEditorMovingConfig,
+  editorGridCellToWorld,
+  worldToEditorGridCell,
 } from '../src/components/scene/mazeLevels.ts';
 
 const BALL_RADIUS = 0.34;
@@ -396,6 +398,24 @@ describe('MAZE_LEVELS — 3B Harita Geometrisi, Engel Konumları ve Fizik Doğru
       computeEditorLaserAxis(3, 3, (_r, c) => c === 2 || c === 4),
       'x',
     );
+  });
+
+  it('worldToEditorGridCell farklı boardSize ölçeklerini 8x8 ızgaraya sıkıştırmadan eşler', () => {
+    // Standart 12x12 tahtada gidiş-dönüş 1:1 korunmalı
+    const [wx12, wz12] = editorGridCellToWorld(2, 6);
+    assert.deepEqual(worldToEditorGridCell(wx12, wz12, 12), [2, 6]);
+
+    // 18x18 büyük tahtada dış ve iç öğeler kenara yığılmadan ayrık hücrelere yerleşmeli
+    assert.deepEqual(worldToEditorGridCell(-7.1, -7.1, 18), [0, 0]);
+    assert.deepEqual(worldToEditorGridCell(-5.1, 5.1, 18), [6, 1]);
+    assert.deepEqual(worldToEditorGridCell(7.1, 7.1, 18), [7, 7]);
+
+    // 8x8 küçük tahtada köşe koordinatları merkeze sıkışmadan [0,0] ve [7,7] olmalı
+    assert.deepEqual(worldToEditorGridCell(-3.15, -3.15, 8), [0, 0]);
+    assert.deepEqual(worldToEditorGridCell(3.15, 3.15, 8), [7, 7]);
+
+    // Geçersiz/NaN koordinatlar güvenli merkez hücresine düşmeli
+    assert.deepEqual(worldToEditorGridCell(Number.NaN, Number.POSITIVE_INFINITY, 12), [4, 4]);
   });
 });
 

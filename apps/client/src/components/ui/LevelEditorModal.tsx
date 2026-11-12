@@ -30,6 +30,9 @@ import {
   computeEditorBoostDirection,
   computeEditorLaserAxis,
   computeEditorMovingConfig,
+  EDITOR_GRID_SIZE,
+  editorGridCellToWorld,
+  worldToEditorGridCell,
 } from '@/components/scene/mazeLevels';
 import { Modal, Button, cx } from './primitives';
 
@@ -44,62 +47,47 @@ type CellTool =
   | 'goal'
   | 'erase';
 
-const GRID_SIZE = 8;
-const CELL_WORLD_SIZE = 1.35;
+const GRID_SIZE = EDITOR_GRID_SIZE;
 
 function gridToWorld(row: number, col: number): [number, number] {
-  const offset = (GRID_SIZE - 1) / 2;
-  const x = Number(((col - offset) * CELL_WORLD_SIZE).toFixed(2));
-  const z = Number(((row - offset) * CELL_WORLD_SIZE).toFixed(2));
-  return [x, z];
-}
-
-function worldToGrid(x: number, z: number): [number, number] {
-  const offset = (GRID_SIZE - 1) / 2;
-  const col = Math.max(
-    0,
-    Math.min(GRID_SIZE - 1, Math.round(x / CELL_WORLD_SIZE + offset)),
-  );
-  const row = Math.max(
-    0,
-    Math.min(GRID_SIZE - 1, Math.round(z / CELL_WORLD_SIZE + offset)),
-  );
-  return [row, col];
+  return editorGridCellToWorld(row, col, GRID_SIZE);
 }
 
 function levelDefinitionToGrid(levelDef: MazeLevelDefinition): CellTool[][] {
   const next: CellTool[][] = Array.from({ length: GRID_SIZE }, () =>
     Array.from({ length: GRID_SIZE }, () => 'erase'),
   );
+  const toGrid = (x: number, z: number) =>
+    worldToEditorGridCell(x, z, levelDef.boardSize, GRID_SIZE);
   for (const w of levelDef.innerWalls) {
-    const [r, c] = worldToGrid(w.position[0], w.position[2]);
+    const [r, c] = toGrid(w.position[0], w.position[2]);
     next[r][c] = 'wall';
   }
   for (const h of levelDef.voidHoles) {
-    const [r, c] = worldToGrid(h.position[0], h.position[1]);
+    const [r, c] = toGrid(h.position[0], h.position[1]);
     next[r][c] = 'hole';
   }
   for (const [cx, cz] of levelDef.crystals) {
-    const [r, c] = worldToGrid(cx, cz);
+    const [r, c] = toGrid(cx, cz);
     next[r][c] = 'crystal';
   }
   for (const l of levelDef.laserGates) {
-    const [r, c] = worldToGrid(l.position[0], l.position[1]);
+    const [r, c] = toGrid(l.position[0], l.position[1]);
     next[r][c] = 'laser';
   }
   for (const b of levelDef.boostPads ?? []) {
-    const [r, c] = worldToGrid(b.position[0], b.position[1]);
+    const [r, c] = toGrid(b.position[0], b.position[1]);
     next[r][c] = 'boost';
   }
   for (const m of levelDef.movingObstacles ?? []) {
-    const [r, c] = worldToGrid(m.center[0], m.center[1]);
+    const [r, c] = toGrid(m.center[0], m.center[1]);
     next[r][c] = 'moving';
   }
-  const [sr, sc] = worldToGrid(
+  const [sr, sc] = toGrid(
     levelDef.startPosition[0],
     levelDef.startPosition[2],
   );
-  let [gr, gc] = worldToGrid(levelDef.goalPosition[0], levelDef.goalPosition[2]);
+  let [gr, gc] = toGrid(levelDef.goalPosition[0], levelDef.goalPosition[2]);
   if (gr === sr && gc === sc) {
     const candidates: Array<[number, number]> = [
       [gr, gc + 1],
@@ -109,9 +97,12 @@ function levelDefinitionToGrid(levelDef: MazeLevelDefinition): CellTool[][] {
       [GRID_SIZE - 1, GRID_SIZE - 1],
       [0, 0],
     ];
-    const alt = candidates.find(
+    const validCandidates = candidates.filter(
       ([r, c]) => r >= 0 && r < GRID_SIZE && c >= 0 && c < GRID_SIZE && (r !== sr || c !== sc),
     );
+    const alt =
+      validCandidates.find(([r, c]) => next[r][c] === 'erase') ??
+      validCandidates[0];
     if (alt) {
       [gr, gc] = alt;
     }

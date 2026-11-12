@@ -1126,3 +1126,52 @@ export function computeEditorMovingConfig(
   }
   return { axis: preferredAxis, amplitude: 0.34 };
 }
+
+export const EDITOR_GRID_SIZE = 8;
+export const EDITOR_CELL_WORLD_SIZE = 1.35;
+
+/**
+ * 8x8 düzenleyici ızgara koordinatını standart 12x12 dünya koordinatına [x, z] dönüştürür.
+ */
+export function editorGridCellToWorld(
+  row: number,
+  col: number,
+  gridSize = EDITOR_GRID_SIZE,
+  cellWorldSize = EDITOR_CELL_WORLD_SIZE,
+): [number, number] {
+  const offset = (gridSize - 1) / 2;
+  const x = Number(((col - offset) * cellWorldSize).toFixed(2));
+  const z = Number(((row - offset) * cellWorldSize).toFixed(2));
+  return [x, z];
+}
+
+/**
+ * Özel haritanın gerçek `boardSize` değerine göre dünya [x, z] konumunu
+ * 8x8 düzenleyici ızgarasına orantılı biçimde eşler.
+ */
+export function worldToEditorGridCell(
+  x: number,
+  z: number,
+  boardSize = 12,
+  gridSize = EDITOR_GRID_SIZE,
+  cellWorldSize = EDITOR_CELL_WORLD_SIZE,
+): [number, number] {
+  const safeBoardSize =
+    typeof boardSize === 'number' && Number.isFinite(boardSize)
+      ? Math.max(8, Math.min(18, boardSize))
+      : 12;
+  const scaledCellSize = cellWorldSize * (safeBoardSize / 12);
+  const offset = (gridSize - 1) / 2;
+  const safeX = Number.isFinite(x) ? x : 0;
+  const safeZ = Number.isFinite(z) ? z : 0;
+
+  const col = Math.max(
+    0,
+    Math.min(gridSize - 1, Math.round(safeX / scaledCellSize + offset)),
+  );
+  const row = Math.max(
+    0,
+    Math.min(gridSize - 1, Math.round(safeZ / scaledCellSize + offset)),
+  );
+  return [row, col];
+}
