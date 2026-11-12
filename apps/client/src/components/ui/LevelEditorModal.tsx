@@ -27,6 +27,8 @@ import {
   BoostPadDefinition,
   MovingObstacleDefinition,
   parseCustomMazeLevel,
+  computeEditorBoostDirection,
+  computeEditorMovingConfig,
 } from '@/components/scene/mazeLevels';
 import { Modal, Button, cx } from './primitives';
 
@@ -374,6 +376,22 @@ export function LevelEditorModal() {
   const buildLevelDefinition = (): MazeLevelDefinition => {
     let startPos: [number, number, number] = [-4.5, 0.34, -4.5];
     let goalPos: [number, number, number] = [4.5, 0.35, 4.5];
+    let goalCell: [number, number] = [GRID_SIZE - 1, GRID_SIZE - 1];
+    for (let r = 0; r < GRID_SIZE; r++) {
+      for (let c = 0; c < GRID_SIZE; c++) {
+        if (grid[r][c] === 'goal') {
+          goalCell = [r, c];
+        }
+      }
+    }
+
+    const isOutOfBounds = (r: number, c: number) =>
+      r < 0 || r >= GRID_SIZE || c < 0 || c >= GRID_SIZE;
+    const isWallCell = (r: number, c: number) =>
+      isOutOfBounds(r, c) || grid[r][c] === 'wall';
+    const isBlockedCell = (r: number, c: number) =>
+      isOutOfBounds(r, c) || grid[r][c] === 'wall' || grid[r][c] === 'hole';
+
     const innerWalls: WallDefinition[] = [];
     const voidHoles: VoidHoleDefinition[] = [];
     const crystals: [number, number][] = [];
@@ -413,13 +431,19 @@ export function LevelEditorModal() {
         } else if (cell === 'boost') {
           boostPads.push({
             position: [wx, wz],
-            direction: [0, 1],
+            direction: computeEditorBoostDirection(
+              r,
+              c,
+              goalCell,
+              isBlockedCell,
+            ),
           });
         } else if (cell === 'moving') {
+          const movingConfig = computeEditorMovingConfig(r, c, isWallCell);
           movingObstacles.push({
             center: [wx, wz],
-            axis: (r + c) % 2 === 0 ? 'x' : 'z',
-            amplitude: 0.9,
+            axis: movingConfig.axis,
+            amplitude: movingConfig.amplitude,
             speed: 2.2,
             phaseOffset: (r + c) * 0.5,
           });

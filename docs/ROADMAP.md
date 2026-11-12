@@ -178,6 +178,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Eylem Odaklı Modal Koruması & Oyuncu Adı Kalıcılığı (`primitives.tsx`, `DesktopHUD.tsx`):** Zafer ve süre doldu (`hideClose`) modallarında yanlışlıkla dış boşluğa tıklayarak turu sıfırlama riski kapatıldı; skor gönderim alanı nötr `'Oyuncu'` varsayılanı ve kalıcı `localStorage` (`gyromaze_player_name_v1`) desteğiyle güncellendi.
 - [x] **Zaman Aşımlı Oda Temizliği (`room.service.ts`, `room.service.test.mjs`):** Uzun süre açık kalan sunucularda terk edilmiş odaların bellek birikmesini önlemek için `pruneExpiredRooms` eklendi ve birim testiyle doğrulandı.
 
+## ✅ Faz 26: Akıllı Düzenleyici Engel Yerleşimi, Bildirim Kimlik Güvenliği ve IPv6 Loopback QR Desteği (Tamamlandı)
+
+- [x] **Akıllı Düzenleyici Boost Yönü ve Çarpışmasız Hareketli Engel (`mazeLevels.ts`, `LevelEditorModal.tsx`, `mazeLevels.test.mjs`):** Özel harita üreticisi `buildLevelDefinition()` içindeki sabit `[0, 1]` boost yönü ve sabit `0.9` salınım genliği yerine `computeEditorBoostDirection` ve `computeEditorMovingConfig` eklendi; alt sınırdaki veya duvar önündeki hızlandırıcılar açık koridora/hedefe yönelir hale getirildi, hareketli engeller açık eksene göre `0.72` (dar alanda `0.34`) güvenli genlik seçer oldu ve Node birim testleriyle doğrulandı.
+- [x] **Çakışmasız HUD Bildirim Kimliği ve Tur Sıfırlama Yardımcısı (`useGameStore.ts`):** Aynı milisaniye içinde peş peşe tetiklenen bildirimlerin aynı `Date.now()` kimliği yüzünden birbirinin `2800 ms` zamanlayıcısını iptal etmesini önlemek için monotonik `nextHudNotificationId` sayacına geçildi ve tekrarlayan 7 tur sıfırlama bloğu `resetRunFields` yardımcısında birleştirildi.
+- [x] **IPv6 Loopback LAN QR Algılama (`DesktopHUD.tsx`):** Tarayıcı `::1` veya `[::1]` yerel adresi üzerinden açıldığında da telefonla taranabilir yerel ağ QR bağlantısı oluşturulması için `isLocalLoopback` denetimi genişletildi.
+
 
 
 

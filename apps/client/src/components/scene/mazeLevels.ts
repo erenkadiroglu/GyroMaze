@@ -933,3 +933,72 @@ export function parseCustomMazeLevel(raw: unknown): MazeLevelDefinition | null {
         : undefined,
   };
 }
+
+/**
+ * Düzenleyicideki bir hızlandırma (boost) karesi için açık koridora ve hedefe
+ * yönelen `[dx, dz]` birim yön vektörünü hesaplar; tüm komşular kapalıysa `[0, 1]` döner.
+ */
+export function computeEditorBoostDirection(
+  row: number,
+  col: number,
+  goalCell: [number, number],
+  isBlockedCell: (r: number, c: number) => boolean,
+): [number, number] {
+  const [goalRow, goalCol] = goalCell;
+  const candidates: readonly [number, number][] = [
+    [0, 1],
+    [1, 0],
+    [0, -1],
+    [-1, 0],
+  ];
+
+  let bestDirection: [number, number] | null = null;
+  let bestDistanceSq = Number.POSITIVE_INFINITY;
+
+  for (const [dr, dc] of candidates) {
+    const nextRow = row + dr;
+    const nextCol = col + dc;
+    if (isBlockedCell(nextRow, nextCol)) {
+      continue;
+    }
+
+    const dRow = goalRow - nextRow;
+    const dCol = goalCol - nextCol;
+    const distanceSq = dRow * dRow + dCol * dCol;
+
+    if (distanceSq < bestDistanceSq) {
+      bestDistanceSq = distanceSq;
+      // Izgara sütun farkı X eksenine, satır farkı Z eksenine karşılık gelir
+      bestDirection = [dc, dr];
+    }
+  }
+
+  return bestDirection ?? [0, 1];
+}
+
+/**
+ * Düzenleyicideki hareketli engelin komşu duvarlara çarpmaması için
+ * açık olan hareket eksenini ve güvenli salınım genliğini seçer.
+ */
+export function computeEditorMovingConfig(
+  row: number,
+  col: number,
+  isWallCell: (r: number, c: number) => boolean,
+): { axis: 'x' | 'z'; amplitude: number } {
+  const preferredAxis: 'x' | 'z' = (row + col) % 2 === 0 ? 'x' : 'z';
+  const hasHorizontalClearance =
+    !isWallCell(row, col - 1) && !isWallCell(row, col + 1);
+  const hasVerticalClearance =
+    !isWallCell(row - 1, col) && !isWallCell(row + 1, col);
+
+  if (hasHorizontalClearance && hasVerticalClearance) {
+    return { axis: preferredAxis, amplitude: 0.72 };
+  }
+  if (hasHorizontalClearance) {
+    return { axis: 'x', amplitude: 0.72 };
+  }
+  if (hasVerticalClearance) {
+    return { axis: 'z', amplitude: 0.72 };
+  }
+  return { axis: preferredAxis, amplitude: 0.34 };
+}

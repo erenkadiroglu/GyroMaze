@@ -280,7 +280,9 @@ export function DesktopHUD() {
 
   const isLocalLoopback =
     browserLocation.hostname === 'localhost' ||
-    browserLocation.hostname === '127.0.0.1';
+    browserLocation.hostname === '127.0.0.1' ||
+    browserLocation.hostname === '::1' ||
+    browserLocation.hostname === '[::1]';
   const lanFallbackUrl =
     isLocalLoopback && lanIp
       ? `http://${lanIp}${browserLocation.port ? `:${browserLocation.port}` : ''}`

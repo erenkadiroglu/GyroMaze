@@ -6,6 +6,8 @@ import {
   findSafeP2SpawnOffset,
   getLevelRevisionKey,
   parseCustomMazeLevel,
+  computeEditorBoostDirection,
+  computeEditorMovingConfig,
 } from '../src/components/scene/mazeLevels.ts';
 
 const BALL_RADIUS = 0.34;
@@ -255,6 +257,70 @@ describe('MAZE_LEVELS — 3B Harita Geometrisi, Engel Konumları ve Fizik Doğru
       }),
       null,
     );
+  });
+
+  it('düzenleyici boost yönü duvar/sınırlardan kaçmalı ve hareketli engel güvenli eksen seçmelidir', () => {
+    // Alt sınırda (satır 7) sağdaki hedefe giden koridor varken dış sınıra [0, 1] itmemeli
+    assert.deepEqual(
+      computeEditorBoostDirection(
+        7,
+        3,
+        [7, 7],
+        (r, c) => r < 0 || r >= 8 || c < 0 || c >= 8,
+      ),
+      [1, 0],
+    );
+
+    // Doğu komşusu da duvarla kapalıysa açık olan kuzey komşusuna [0, -1] yönelmeli
+    assert.deepEqual(
+      computeEditorBoostDirection(
+        7,
+        3,
+        [7, 7],
+        (r, c) =>
+          r < 0 ||
+          r >= 8 ||
+          c < 0 ||
+          c >= 8 ||
+          (r === 7 && c === 4) ||
+          (r === 7 && c === 2),
+      ),
+      [0, -1],
+    );
+
+    // Her 4 komşu kapalıysa güvenli varsayılan [0, 1] dönmeli
+    assert.deepEqual(
+      computeEditorBoostDirection(3, 3, [7, 7], () => true),
+      [0, 1],
+    );
+
+    // Yatay koridor açık, dikeyde duvar varsa X ekseni ve 0.72 genlik seçilmeli
+    assert.deepEqual(
+      computeEditorMovingConfig(
+        3,
+        3,
+        (r, _c) => r === 2 || r === 4,
+      ),
+      { axis: 'x', amplitude: 0.72 },
+    );
+
+    // Dikey koridor açık, yatayda duvar varsa Z ekseni ve 0.72 genlik seçilmeli
+    assert.deepEqual(
+      computeEditorMovingConfig(
+        3,
+        3,
+        (_r, c) => c === 2 || c === 4,
+      ),
+      { axis: 'z', amplitude: 0.72 },
+    );
+
+    // İki eksen de duvarla sınırlıysa duvar içi taşmayı önleyen dar genlik (0.34) kullanılmalı
+    const confined = computeEditorMovingConfig(
+      3,
+      3,
+      (r, c) => (r === 2 && c === 3) || (r === 3 && c === 4),
+    );
+    assert.equal(confined.amplitude, 0.34);
   });
 });
 

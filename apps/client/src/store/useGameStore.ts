@@ -304,6 +304,22 @@ interface GameStoreState {
   resetTransientGyro: (slot?: 1 | 2) => void;
 }
 
+let nextHudNotificationId = 0;
+
+/**
+ * Her yeni tur, mod değişimi veya harita sıfırlamasında ortak başlangıç
+ * alanlarını tek noktadan sıfırlar.
+ */
+function resetRunFields(state: Pick<GameStoreState, 'resetCount'>) {
+  return {
+    winnerPlayer: null,
+    gameStatus: 'playing' as const,
+    elapsedSeconds: 0,
+    collectedCrystals: [],
+    resetCount: state.resetCount + 1,
+  };
+}
+
 /**
  * GyroMaze Zustand durum deposu.
  * Kullanıcı tercihleri (tema, fizik, ses, katmanlar) `localStorage` üzerinde kalıcı tutulur.
@@ -388,22 +404,14 @@ export const useGameStore = create<GameStoreState>()(
       toggleMultiplayer: () =>
         set((state) => ({
           isMultiplayer: !state.isMultiplayer,
-          winnerPlayer: null,
-          resetCount: state.resetCount + 1,
-          elapsedSeconds: 0,
-          collectedCrystals: [],
-          gameStatus: 'playing',
+          ...resetRunFields(state),
         })),
       updateSettings: (partial) => set((state) => ({ ...state, ...partial })),
       setGameStatus: (gameStatus) => set({ gameStatus }),
       setLevel: (level) =>
         set((state) => ({
           level,
-          winnerPlayer: null,
-          gameStatus: 'playing',
-          elapsedSeconds: 0,
-          collectedCrystals: [],
-          resetCount: state.resetCount + 1,
+          ...resetRunFields(state),
         })),
       setCustomLevel: (customLevel) =>
         set((state) => {
@@ -451,31 +459,19 @@ export const useGameStore = create<GameStoreState>()(
             bestTimes: nextBestTimes,
             ghostPaths: nextGhostPaths,
             level: 99,
-            winnerPlayer: null,
             isEditorOpen: false,
-            gameStatus: 'playing',
-            elapsedSeconds: 0,
-            collectedCrystals: [],
-            resetCount: state.resetCount + 1,
+            ...resetRunFields(state),
           };
         }),
       nextLevel: () =>
         set((state) => ({
           level: state.level === 99 ? 1 : state.level + 1,
-          winnerPlayer: null,
-          gameStatus: 'playing',
-          elapsedSeconds: 0,
-          collectedCrystals: [],
-          resetCount: state.resetCount + 1,
+          ...resetRunFields(state),
         })),
       prevLevel: () =>
         set((state) => ({
           level: state.level === 99 || state.level <= 1 ? 1 : state.level - 1,
-          winnerPlayer: null,
-          gameStatus: 'playing',
-          elapsedSeconds: 0,
-          collectedCrystals: [],
-          resetCount: state.resetCount + 1,
+          ...resetRunFields(state),
         })),
       cycleCameraMode: () =>
         set((state) => {
@@ -532,14 +528,10 @@ export const useGameStore = create<GameStoreState>()(
       setGameMode: (gameMode) =>
         set((state) => ({
           gameMode,
-          resetCount: state.resetCount + 1,
-          winnerPlayer: null,
-          elapsedSeconds: 0,
-          collectedCrystals: [],
-          gameStatus: 'playing',
+          ...resetRunFields(state),
         })),
       showHudNotification: (message, tone = 'info') => {
-        const nextSeq = Date.now();
+        const nextSeq = ++nextHudNotificationId;
         set((state) => ({
           hudNotification: {
             id: nextSeq,
@@ -616,14 +608,7 @@ export const useGameStore = create<GameStoreState>()(
         }),
       toggleSoundMuted: () =>
         set((state) => ({ isSoundMuted: !state.isSoundMuted })),
-      triggerBallReset: () =>
-        set((state) => ({
-          resetCount: state.resetCount + 1,
-          winnerPlayer: null,
-          gameStatus: 'playing',
-          elapsedSeconds: 0,
-          collectedCrystals: [],
-        })),
+      triggerBallReset: () => set((state) => resetRunFields(state)),
       triggerHaptic: (type, playerSlot) =>
         set((state) => ({
           hapticSignal: {
