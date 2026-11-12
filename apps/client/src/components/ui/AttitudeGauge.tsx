@@ -2,6 +2,13 @@
 
 import { useEffect, useRef } from 'react';
 import { transientGyro, transientGyroP2 } from '@/store/useGameStore';
+import {
+  calculateRadarCoords,
+  calculateAttitudeHorizonTransform,
+  formatAttitudeTelemetry,
+} from '@/utils/radarUtils';
+import { AttitudeHorizonDial } from './AttitudeHorizonDial';
+import { MiniMapRadar } from './MiniMapRadar';
 
 interface AttitudeGaugeProps {
   /** Labirent tahtasının genişlik/uzunluk boyutu (varsayılan 12) */
@@ -19,7 +26,7 @@ interface AttitudeGaugeProps {
 }
 
 /**
- * Dünya koordinatını `h-11 w-11` (42px iç alan) radar kutusu içinde kenardan taşmayacak şekilde dönüştürür.
+ * Dünya koordinatını mini-harita (radar) piksel ofsetlerine dönüştürür.
  */
 function updateRadarDot(
   el: HTMLDivElement | null,
@@ -28,9 +35,7 @@ function updateRadarDot(
   boardSize: number,
 ): void {
   if (!el) return;
-  const halfBoard = boardSize / 2;
-  const rx = Math.max(4, Math.min(38, ((worldX + halfBoard) / boardSize) * 42));
-  const rz = Math.max(4, Math.min(38, ((worldZ + halfBoard) / boardSize) * 42));
+  const { rx, rz } = calculateRadarCoords(worldX, worldZ, boardSize, 42, 4);
   el.style.transform = `translate3d(${(rx - 4).toFixed(1)}px, ${(rz - 4).toFixed(1)}px, 0)`;
 }
 
@@ -49,7 +54,7 @@ export function AttitudeGauge({
 }: AttitudeGaugeProps) {
   const boardSizeRef = useRef<number>(boardSize);
   boardSizeRef.current = boardSize;
-  const halfBoard = boardSize / 2;
+
   const horizonRef = useRef<HTMLDivElement | null>(null);
   const pitchTextRef = useRef<HTMLSpanElement | null>(null);
   const rollTextRef = useRef<HTMLSpanElement | null>(null);
@@ -67,11 +72,8 @@ export function AttitudeGauge({
       const gamma = transientGyro.gamma;
 
       if (horizonRef.current) {
-        const clampedBeta = Math.max(-24, Math.min(24, beta));
-        const clampedGamma = Math.max(-24, Math.min(24, gamma));
-        const shiftY = (clampedBeta / 24) * 18;
-        const rotDeg = (-clampedGamma * 1.1).toFixed(1);
-        const key = `${shiftY.toFixed(1)}_${rotDeg}`;
+        const { shiftY, rotDeg } = calculateAttitudeHorizonTransform(beta, gamma, 24, 18);
+        const key = `${shiftY}_${rotDeg}`;
         if (key !== lastHorizonKey) {
           lastHorizonKey = key;
           horizonRef.current.style.transform = `translate3d(0, ${shiftY.toFixed(1)}px, 0) rotate(${rotDeg}deg)`;
@@ -94,15 +96,14 @@ export function AttitudeGauge({
 
       if (now - lastTextTime >= 100) {
         lastTextTime = now;
-        if (pitchTextRef.current) {
-          pitchTextRef.current.textContent = `${beta >= 0 ? '+' : ''}${beta.toFixed(1)}°`;
-        }
-        if (rollTextRef.current) {
-          rollTextRef.current.textContent = `${gamma >= 0 ? '+' : ''}${gamma.toFixed(1)}°`;
-        }
-        if (speedTextRef.current) {
-          speedTextRef.current.textContent = `${transientGyro.ballSpeed.toFixed(1)} m/s`;
-        }
+        const { pitchStr, rollStr, speedStr } = formatAttitudeTelemetry(
+          beta,
+          gamma,
+          transientGyro.ballSpeed,
+        );
+        if (pitchTextRef.current) pitchTextRef.current.textContent = pitchStr;
+        if (rollTextRef.current) rollTextRef.current.textContent = rollStr;
+        if (speedTextRef.current) speedTextRef.current.textContent = speedStr;
       }
 
       animationFrameId = window.requestAnimationFrame(tick);
@@ -118,40 +119,7 @@ export function AttitudeGauge({
       aria-label="Canlı uçuş ve hız göstergesi"
     >
       {/* Yapay Ufuk Kadranı */}
-      <div
-        className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-line bg-surface-2 shadow-inner"
-        title="Yapay Ufuk — Tabla eğim açısı"
-      >
-        {/* Hareketli gökyüzü / zemin ufuk diski */}
-        <div
-          ref={horizonRef}
-          className="pointer-events-none absolute -inset-6 flex flex-col will-change-transform"
-        >
-          <div className="flex-1 bg-signal/14" />
-          <div className="h-[1.5px] w-full bg-signal shadow-[0_0_8px_var(--gm-signal)]" />
-          <div className="flex-1 bg-base/55" />
-        </div>
-
-        {/* Sabit kadran kertikleri */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-1.5 rounded-full border border-dashed border-line/70"
-        />
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute top-0.5 h-1.5 w-[1.5px] bg-brass"
-        />
-
-        {/* Merkez nişangah */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none relative z-10 flex items-center gap-1"
-        >
-          <span className="h-[1.5px] w-2 bg-brass" />
-          <span className="h-2 w-2 rounded-full border border-brass bg-surface" />
-          <span className="h-[1.5px] w-2 bg-brass" />
-        </div>
-      </div>
+      <AttitudeHorizonDial ref={horizonRef} />
 
       {/* Sayısal Telemetri Sütunu */}
       <dl className="grid grid-cols-[auto_auto] items-baseline gap-x-3 gap-y-0.5 text-xs">
@@ -177,49 +145,15 @@ export function AttitudeGauge({
 
       {/* Kompakt 2B Canlı Radar */}
       {showMiniMap && (
-        <>
-          <div className="h-11 w-px bg-line" aria-hidden="true" />
-          <div
-            className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-line bg-base/80"
-            title="Canlı 2B Labirent Radarı"
-          >
-            {/* Hedef Portalı */}
-            <div
-              style={{
-                left: `${((goalPosition[0] + halfBoard) / boardSize) * 100}%`,
-                top: `${((goalPosition[2] + halfBoard) / boardSize) * 100}%`,
-              }}
-              className={`absolute h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full ${
-                isPortalUnlocked
-                  ? 'bg-ok shadow-[0_0_6px_var(--gm-ok)]'
-                  : 'bg-brass'
-              }`}
-            />
-            {/* Kalan Kristaller */}
-            {remainingCrystals.map(([cx, cz], idx) => (
-              <div
-                key={`radar-c-${idx}`}
-                style={{
-                  left: `${((cx + halfBoard) / boardSize) * 100}%`,
-                  top: `${((cz + halfBoard) / boardSize) * 100}%`,
-                }}
-                className="absolute h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-signal"
-              />
-            ))}
-            {/* 1. Oyuncu */}
-            <div
-              ref={miniMapBallRef}
-              className="absolute top-0 left-0 h-2 w-2 rounded-full bg-fg shadow-sm will-change-transform"
-            />
-            {/* 2. Oyuncu (Altın Bilye) */}
-            {isMultiplayer && (
-              <div
-                ref={miniMapBall2Ref}
-                className="absolute top-0 left-0 h-2 w-2 rounded-full bg-warn shadow-sm will-change-transform"
-              />
-            )}
-          </div>
-        </>
+        <MiniMapRadar
+          ref={miniMapBallRef}
+          ball2Ref={miniMapBall2Ref}
+          boardSize={boardSize}
+          goalPosition={goalPosition}
+          remainingCrystals={remainingCrystals}
+          isPortalUnlocked={isPortalUnlocked}
+          isMultiplayer={isMultiplayer}
+        />
       )}
     </div>
   );
