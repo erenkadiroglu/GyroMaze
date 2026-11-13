@@ -992,9 +992,14 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **useMazeStageActors Kancası ve MazeStageActors Sadeleşmesi (`apps/client/src/hooks/useMazeStageActors.ts`, `apps/client/src/components/scene/MazeStageActors.tsx`):** 1P metalik bilye, 2P çok oyunculu bilye, hayalet yarışçı hologramı ve neon hareket izi aktörlerinin başlangıç konumları, ofsetleri ve telemetri durumu tekil kancaya devredildi.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/mazeStageActorsOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 829'dan **836'ya**, monorepo testleri 884'ten **891'e** çıkarıldı.
 
-### Faz 209: 3B Labirent Sahnesi Sabit Fizik Çarpıştırıcıları (MazeStageColliders) Orkestrasyon Motoru (Sıradaki)
-- [ ] **3B Sahne Çarpıştırıcıları Orkestrasyon Motoru (`mazeStageCollidersOrchestrationUtils.ts`, `mazeStageCollidersOrchestrationUtils.test.mjs`):** Rapier sabit gövde (`fixed RigidBody`) parametreleri (`friction: 0.12`, `restitution: 0.18`), duvar/sensör adetleri, revizyon anahtarları ve telemetri durumunu saf motora ayrıştırma.
-- [ ] **MazeStageColliders Bileşeni ve useMazeStageColliders Kancası:** Sabit çarpıştırıcılar hiyerarşisini deklaratif ve test edilebilir kancaya bağlama.
+### Faz 209: 3B Labirent Sahnesi Sabit Fizik Çarpıştırıcıları (MazeStageColliders) Orkestrasyon Motoru (Tamamlandı)
+- [x] **3B Sahne Çarpıştırıcıları Orkestrasyon Motoru (`mazeStageCollidersOrchestrationUtils.ts`, `mazeStageCollidersOrchestrationUtils.test.mjs`):** `resolveCollidersRevisionKey`, `resolveCollidersRigidBodyConfig`, `normalizeColliderWalls`, `normalizeColliderGoalPosition`, `normalizeColliderVoidHoles`, `resolveStageCollidersMetrics`, `formatStageCollidersTelemetry`, `resolveStageCollidersOrchestrationBundle` fonksiyonları saf mimariyle geliştirildi; 13 yeni birim test ile %100 doğrulandı (toplam 849 istemci testi, 49 sunucu testi, 6 shared testi, **904 monorepo testi** - 900+ test barajı aşıldı).
+- [x] **useMazeStageColliders Kancası ve MazeStageColliders Sadeleşmesi (`apps/client/src/hooks/useMazeStageColliders.ts`, `apps/client/src/components/scene/MazeStageColliders.tsx`):** Sabit kodlanmış `friction={0.12}` / `restitution={0.18}` değerleri motora taşındı; duvar, hedef sensörü ve tuzak sensörü girdileri doğrulanmış olarak alt bileşenlere aktarılıyor.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/mazeStageCollidersOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 836'dan **849'a**, monorepo testleri 891'den **904'e** çıkarıldı.
+
+### Faz 210: 3B Labirent Ana Sahne (MazeStage) Kompozisyon Orkestrasyon Motoru (Sıradaki)
+- [ ] **3B Ana Sahne Kompozisyon Motoru (`mazeStageCompositionOrchestrationUtils.ts`, `mazeStageCompositionOrchestrationUtils.test.mjs`):** `MazeStage.tsx` içindeki alt katman (çarpıştırıcılar, fizik küreleri, taban, duvarlar, tehlikeler, toplanabilirler, aktörler) prop gruplamalarını ve birleşik sahne telemetrisini saf motora ayrıştırma.
+- [ ] **MazeStage Bileşeni Sadeleşmesi:** Ana sahneyi yalnızca katman kompozisyonu yapan deklaratif bir bileşene indirgeme.
 - [ ] **Birim Testleri ve Doğrulama:** Yeni birim testleriyle monorepo test kapsamını artırma, tam derleme ve git push.
 
 

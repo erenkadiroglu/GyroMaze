@@ -28,3 +28,4 @@ export function useMazeStageActors({
     });
   }, [startPosition, p2SpawnOffsetX, p2SpawnOffsetZ]);
 }
+

@@ -6,6 +6,7 @@ import type { MazeLevelDefinition } from './mazeLevels';
 import { ColliderWalls } from './colliders/ColliderWalls';
 import { ColliderGoalSensor } from './colliders/ColliderGoalSensor';
 import { ColliderHoleSensors } from './colliders/ColliderHoleSensors';
+import { useMazeStageColliders } from '@/hooks/useMazeStageColliders';
 
 interface MazeStageCollidersProps {
   levelRevisionKey: string;
@@ -45,22 +46,41 @@ export function MazeStageColliders({
   resetSingleBall,
   resetBallAndBoard,
 }: MazeStageCollidersProps) {
+  const {
+    safeRevisionKey,
+    rigidBodyConfig,
+    outerWalls: safeOuterWalls,
+    innerWalls: safeInnerWalls,
+    goalPosition: safeGoalPosition,
+    voidHoles: safeVoidHoles,
+  } = useMazeStageColliders({
+    levelRevisionKey,
+    levelData,
+    outerWalls,
+    isMultiplayer,
+  });
+
   return (
-    <RigidBody type="fixed" colliders={false} friction={0.12} restitution={0.18}>
+    <RigidBody
+      type={rigidBodyConfig.type}
+      colliders={rigidBodyConfig.colliders}
+      friction={rigidBodyConfig.friction}
+      restitution={rigidBodyConfig.restitution}
+    >
       <ColliderWalls
-        outerWalls={outerWalls}
-        innerWalls={levelData.innerWalls}
-        levelRevisionKey={levelRevisionKey}
+        outerWalls={safeOuterWalls}
+        innerWalls={safeInnerWalls}
+        levelRevisionKey={safeRevisionKey}
       />
       <ColliderGoalSensor
-        goalPosition={levelData.goalPosition}
+        goalPosition={safeGoalPosition}
         runPathRef={runPathRef}
         runPathP2Ref={runPathP2Ref}
         onReachGoal={onReachGoal}
       />
       <ColliderHoleSensors
-        voidHoles={levelData.voidHoles}
-        levelRevisionKey={levelRevisionKey}
+        voidHoles={safeVoidHoles}
+        levelRevisionKey={safeRevisionKey}
         lastHoleHitMsRef={lastHoleHitMsRef}
         isMultiplayer={isMultiplayer}
         ballBodyRef={ballBodyRef}
