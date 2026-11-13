@@ -1,9 +1,12 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useGameStore } from '@/store/useGameStore';
 import { soundEngine } from '@/utils/soundEngine';
-import { resolveKeyboardShortcut } from '@/utils/keyboardShortcuts';
+import {
+  handleDesktopKeyDown,
+  type DesktopShortcutHandlers,
+} from '@/utils/keyboardShortcutsListenerUtils';
 
 export interface UseDesktopKeyboardShortcutsOptions {
   isAnyOverlayOpen: boolean;
@@ -31,78 +34,52 @@ export function useDesktopKeyboardShortcuts({
   const setLevel = useGameStore((s) => s.setLevel);
   const showHudNotification = useGameStore((s) => s.showHudNotification);
 
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null;
-      const tag = target?.tagName;
-      const isInputFocused =
-        tag === 'INPUT' ||
-        tag === 'TEXTAREA' ||
-        tag === 'SELECT' ||
-        Boolean(target?.isContentEditable);
-
-      const action = resolveKeyboardShortcut({
-        key: e.key,
-        code: e.code,
-        ctrlKey: e.ctrlKey,
-        metaKey: e.metaKey,
-        altKey: e.altKey,
-        repeat: e.repeat,
-        isInputFocused,
-        isGameOver: gameStatus === 'won' || gameStatus === 'lost',
-        isAnyOverlayOpen,
-        isHelpOpen,
-      });
-
-      if (!action) return;
-
-      if (action === 'help') {
-        e.preventDefault();
-        setHelpOpen(!isHelpOpen);
-      } else if (action === 'reset') {
-        triggerBallReset();
-      } else if (action === 'camera') {
-        cycleCameraMode();
-      } else if (action === 'mute') {
-        toggleSoundMuted();
-      } else if (action === 'theme') {
-        toggleColorScheme();
-      } else if (action === 'editor') {
-        e.preventDefault();
-        setEditorOpen(true);
-      } else if (action === 'leaderboard') {
-        e.preventDefault();
-        setLeaderboardOpen(true);
-      } else if (action === 'pairing') {
-        e.preventDefault();
-        setPairingModalOpen(true);
-      } else if (action === 'calibrate') {
-        e.preventDefault();
+  const handlers: DesktopShortcutHandlers = useMemo(
+    () => ({
+      onHelpToggle: (nextState) => setHelpOpen(nextState),
+      onBallReset: () => triggerBallReset(),
+      onCycleCamera: () => cycleCameraMode(),
+      onToggleMute: () => toggleSoundMuted(),
+      onToggleTheme: () => toggleColorScheme(),
+      onOpenEditor: () => setEditorOpen(true),
+      onOpenLeaderboard: () => setLeaderboardOpen(true),
+      onOpenPairing: () => setPairingModalOpen(true),
+      onCalibrate: () => {
         if (!isSoundMuted) soundEngine.playCalibrate();
         showHudNotification('Merkez kalibre edildi.');
-      } else if (typeof action === 'object' && action.type === 'level') {
-        e.preventDefault();
-        setLevel(action.level);
-      }
+      },
+      onSetLevel: (lvl) => setLevel(lvl),
+    }),
+    [
+      setHelpOpen,
+      triggerBallReset,
+      cycleCameraMode,
+      toggleSoundMuted,
+      toggleColorScheme,
+      setEditorOpen,
+      setLeaderboardOpen,
+      setPairingModalOpen,
+      isSoundMuted,
+      showHudNotification,
+      setLevel,
+    ],
+  );
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      handleDesktopKeyDown(
+        e,
+        {
+          isAnyOverlayOpen,
+          isHelpOpen,
+          gameStatus,
+        },
+        handlers,
+      );
     };
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [
-    isAnyOverlayOpen,
-    isHelpOpen,
-    gameStatus,
-    isSoundMuted,
-    triggerBallReset,
-    cycleCameraMode,
-    toggleSoundMuted,
-    toggleColorScheme,
-    setHelpOpen,
-    setEditorOpen,
-    setLeaderboardOpen,
-    setPairingModalOpen,
-    setLevel,
-    showHudNotification,
-  ]);
+  }, [isAnyOverlayOpen, isHelpOpen, gameStatus, handlers]);
 }
 

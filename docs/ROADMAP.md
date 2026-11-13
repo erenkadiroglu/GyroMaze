@@ -867,9 +867,14 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **useLeaderboardSync Kancası Sadeleşmesi (`apps/client/src/hooks/useLeaderboardSync.ts`):** `useLeaderboardSync.ts` kancasındaki başlangıç ve efektif seviye çözümleme, hata mesajı standartlaştırma ve aktif bölüm numarası hesaplamaları saf motora devredildi.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/leaderboardSyncUtils.test.mjs` dahil edilerek istemci test sayısı 644'ten **654'e**, monorepo testleri 699'dan **709'a** çıkarıldı (700+ test barajı aşıldı).
 
-### Faz 184: Klavye Kısayolları ve HUD Eylemleri Dinleyici Motoru (Sıradaki)
-- [ ] **Klavye Dinleyici Yardımcı Motoru (`keyboardShortcutsListenerUtils.ts`, `keyboardShortcutsListenerUtils.test.mjs`):** `useKeyboardShortcuts.ts` kancasındaki olay tuş kontrolü, metin alanlarında (input/textarea) kısayolları engelleme, modal açıkken kısayol bastırma ve HUD aksiyon tetikleme mantığını saf motora ayrıştırma.
-- [ ] **useKeyboardShortcuts Kancası Sadeleşmesi:** Kancayı salt `window.addEventListener('keydown')` yaşam döngüsüne indirgeme.
+### Faz 184: Klavye Kısayolları ve HUD Eylemleri Dinleyici Motoru (Tamamlandı)
+- [x] **Klavye Dinleyici Yardımcı Motoru (`keyboardShortcutsListenerUtils.ts`, `keyboardShortcutsListenerUtils.test.mjs`):** `isEditableElement`, `isGameOverStatus`, `executeDesktopShortcut`, `handleDesktopKeyDown` fonksiyonları saf mimariyle geliştirildi; 7 yeni birim test ile %100 doğrulandı (toplam 661 istemci testi, 49 sunucu testi, 6 shared testi, **716 monorepo testi**).
+- [x] **useDesktopKeyboardShortcuts Kancası Sadeleşmesi (`apps/client/src/hooks/useDesktopKeyboardShortcuts.ts`):** Inline form odağı kontrolü, oyun durumu denetimi ve 10 farklı kısayol dallanması saf dağıtıcı motora aktarılarak kanca 108 satırdan ~55 satıra indirgendi.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/keyboardShortcutsListenerUtils.test.mjs` dahil edilerek istemci test sayısı 654'ten **661'e**, monorepo testleri 709'dan **716'ya** çıkarıldı.
+
+### Faz 185: Masaüstü HUD ve Bölüm İlerleme Çözümleme Motoru (Sıradaki)
+- [ ] **Masaüstü HUD Orkestrasyon Motoru (`desktopHudOrchestrationUtils.ts`, `desktopHudOrchestrationUtils.test.mjs`):** `useDesktopHUD.ts` kancasındaki toplam kristal, kalan kristal, portal kilit durumu, açık modal birleşimi ve liderlik başlangıç seviyesi çözümlemelerini saf orkestrasyon motoruna ayrıştırma.
+- [ ] **useDesktopHUD Kancası Sadeleşmesi:** Kancayı salt durum seçicilerine indirgeme.
 - [ ] **Birim Testleri ve Doğrulama:** Yeni testlerle kapsamı artırma, derleme ve git push.
 
 
