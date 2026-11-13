@@ -793,6 +793,10 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Kontrolcü ve Barrel Mimarisi (`controllers/index.ts`, `controllers/health.controller.ts`, `controllers/leaderboard.controller.ts`):** HTTP denetleyicileri bağımsız `controllers/` modülü altına taşındı; `controllers/index.ts` ve kök `src/index.ts` üzerinden merkezi re-export mimarisi kuruldu.
 - [x] **Sunucu Test Kapsamı Artışı (`apps/server/package.json`):** Sunucu testlerine `test/httpControllerUtils.test.mjs` dahil edildi.
 
+### Faz 168: İstemci Yardımcı Motorları Kayıt Kılavuzu ve Kategori Yönetimi (Tamamlandı)
+- [x] **İstemci Yardımcı Katalog Motoru (`utilRegistryUtils.ts`, `utilRegistryUtils.test.mjs`):** 5 temel mimari kategori (`controller`, `desktop`, `editor`, `gameplay`, `scene`) tanımlandı; dosya sınıflandırıcı `categorizeUtilFileName`, kategori istatistik üreticisi `getUtilStatsByCategory` ve kategori filtreleyici `filterUtilsByCategory` saf yardımcıları geliştirildi; 8 yeni birim test ile %100 doğrulandı (toplam 506 istemci testi, 49 sunucu testi, 6 shared testi, **561 monorepo testi**).
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/utilRegistryUtils.test.mjs` dahil edilerek istemci test sayısı 498'den 506'ya çıkarıldı.
+
 
 
 
