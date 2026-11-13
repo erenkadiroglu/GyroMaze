@@ -182,6 +182,20 @@ export function isBallInsideGoal(
 }
 
 /**
+ * Oyun etkileşimli ve hedef açılmışken bilyenin hedefe ulaşıp ulaşmadığını denetler.
+ */
+export function canTriggerGoalReach(
+  isInteractive: boolean,
+  isGoalUnlocked: boolean,
+  pos: BallCoord,
+  goalPosition: [number, number, number],
+  thresholdSq = 0.2116,
+): boolean {
+  if (!isInteractive || !isGoalUnlocked) return false;
+  return isBallInsideGoal(pos, goalPosition, thresholdSq);
+}
+
+/**
  * Tahtanın eğim açısına ve yerçekimine göre bilyenin bir sonraki hız vektörünü hesaplar.
  */
 export function stepBallVelocity(

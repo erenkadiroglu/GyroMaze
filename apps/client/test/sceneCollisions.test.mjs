@@ -9,6 +9,7 @@ import {
   isBallCollidingLaserGate,
   calculateMovingObstacleCollision,
   isBallInsideGoal,
+  canTriggerGoalReach,
   stepBallVelocity,
 } from '../src/utils/sceneCollisions.ts';
 
@@ -116,6 +117,22 @@ test('isBallInsideGoal: hedef portalina ulasilip ulasilmadigini denetler', () =>
 
   // Hedefin disinda
   assert.equal(isBallInsideGoal({ x: 2, z: 2 }, goal), false);
+});
+
+test('canTriggerGoalReach: etkilesimli durum, acik kilit ve bilye konumu kurallarini uygular', () => {
+  const goal = [5, 0.35, 5];
+
+  // Hedefin icinde, aktif oyun, kilit acik -> true
+  assert.equal(canTriggerGoalReach(true, true, { x: 5.1, z: 5.1 }, goal, 0.2116), true);
+
+  // Hedefin icinde ama kilit kapali -> false
+  assert.equal(canTriggerGoalReach(true, false, { x: 5.1, z: 5.1 }, goal, 0.2116), false);
+
+  // Hedefin icinde ama etkilesimsiz (modal acik / arka planda) -> false
+  assert.equal(canTriggerGoalReach(false, true, { x: 5.1, z: 5.1 }, goal, 0.2116), false);
+
+  // Hedefin disinda -> false
+  assert.equal(canTriggerGoalReach(true, true, { x: 2, z: 2 }, goal, 0.2116), false);
 });
 
 test('stepBallVelocity: tabla egimine gore ivmelenme ve sonumleme', () => {
