@@ -733,10 +733,21 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Yardım Alt Bileşenleri (`HelpModalFooter.tsx`, `help/index.ts`):** Klavye ipucu metni (`H` / `?`) ve "Anladım" butonunu içeren alt eylem bileşeni ayrıştırıldı; `help/index.ts` üzerinden merkezi modül yapısı tamamlandı.
 - [x] **Yalın Yardım Modalı Orkestratörü (`HelpShortcutsModal.tsx`):** Alt bileşen ve saf yardımcı mimarisine devredilerek `HelpShortcutsModal.tsx` 50 satırdan **44 satıra** indirildi.
 
+### Faz 149: Masaüstü Küresel Skor Tablosu Modalı Ayrıştırması (Tamamlandı)
+- [x] **Skor Tablosu Görünüm Yardımcı Motoru (`leaderboardModalViewUtils.ts`, `leaderboardModalViewUtils.test.mjs`):** Başlık metni `getLeaderboardModalTitle`, açıklama metni `getLeaderboardModalDescription`, arama yer tutucu metni `formatLeaderboardSearchPlaceholder`, hata çubuğu görünürlük kontrolü `isErrorBannerVisible` ve erişilebilir sekme/kayıt özeti formatlayıcı `formatLeaderboardAriaLabel` saf yardımcıları geliştirildi; 5 yeni birim test ile doğrulandı (toplam 417 istemci testi, 445 monorepo testi).
+- [x] **Modüler Hata Bildirim Çubuğu ve Barrel Mimarisi (`LeaderboardErrorBanner.tsx`, `leaderboard/index.ts`):** `fetchError` durumunda beliren erişilebilir alert bileşeni bağımsız modüle ayrıştırıldı; `leaderboard/index.ts` üzerinden merkezi dışa aktarım kuruldu.
+- [x] **Yalın Skor Tablosu Orkestratörü (`LeaderboardModal.tsx`):** Alt bileşen ve saf yardımcı mimarisine devredilerek `LeaderboardModal.tsx` 84 satırdan **72 satıra** indirildi.
+
 ### Faz 150: Masaüstü HUD Ana Orkestratörü ve İskelet Konsolidasyonu (Tamamlandı)
 - [x] **Masaüstü HUD İskelet ve Stil Motoru (`desktopHudUtils.ts`, `desktopHudUtils.test.mjs`):** Ana konteyner erişilebilirlik rolleri `getDesktopHudRole`, dinamik container stil sınıfları `getDesktopHudContainerClass`, modallar katmanı görünürlük denetleyicisi `shouldRenderModalsLayer` ve dinamik durum özeti `formatDesktopHudStateSummary` saf yardımcıları geliştirildi; test süiti 4'ten 8 teste genişletildi (toplam 420 istemci testi, 448 monorepo testi).
 - [x] **HUD Merkezi Barrel Mimarisi (`apps/client/src/components/ui/hud/index.ts`):** Header, Toolbar, Footer, Overlays ve Modallar alt katmanlarının merkezi dışa aktarımı sağlandı.
 - [x] **Yalın ve Erişilebilir Masaüstü HUD Orkestratörü (`DesktopHUD.tsx`):** Semantik `region` rolleri, dinamik ARIA durumları ve merkezi barrel bileşenleri ile refactor edilerek `DesktopHUD.tsx` temiz, SRP uyumlu ve deklaratif bir ana HUD orkestratörüne dönüştürüldü.
+
+### Faz 151: Masaüstü Seviye Seçim Çubuğu Ayrıştırması (Tamamlandı)
+- [x] **Seviye Seçici Yardımcı Motoru (`leaderboardSelectorUtils.ts`, `leaderboardSelectorUtils.test.mjs`):** Çift haneli bölüm formatlayıcı `formatLevelTabLabel`, erişilebilir sekme etiketi `resolveLevelTabAriaLabel`, aktif/pasif sekme stili `resolveTabActiveClasses`, önceki ve sonraki hedef seviye çözümleyicileri `resolvePrevLevelTarget` / `resolveNextLevelTarget` ve yenileme butonu etiketi `getLeaderboardRefreshLabel` saf yardımcıları geliştirildi; 7 yeni birim test ile doğrulandı (toplam 427 istemci testi, 455 monorepo testi).
+- [x] **Modüler Seviye Seçici Alt Bileşenleri (`LeaderboardAllLevelsTab.tsx`, `LeaderboardLevelTabsGrid.tsx`, `LeaderboardRefreshButton.tsx`):** "Tümü" genel sekmesi, 5'li seviye penceresi butonları gridi ve durum göstergeli yenileme butonu bağımsız modüllere ayrıştırıldı; `selector/index.ts` üzerinden re-export edildi.
+- [x] **Yalın Seviye Seçim Çubuğu Orkestratörü (`LeaderboardLevelSelector.tsx`):** Alt bileşen mimarisine devredilerek `LeaderboardLevelSelector.tsx` 101 satırdan **57 satıra** indirildi.
+
 
 
 
