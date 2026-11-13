@@ -26,8 +26,6 @@ import {
   getLevelRevisionKey,
   MazeLevelDefinition,
 } from './mazeLevels';
-import { soundEngine } from '@/utils/soundEngine';
-import { calculateEarnedStars } from '@/utils/gameOutcomeUtils';
 import { isLaserGateActive } from '@/utils/sceneUtils';
 import { calculateOuterWallConfigs } from '@/utils/sceneGeometry';
 import { isBallInsideGoal } from '@/utils/sceneCollisions';
@@ -61,9 +59,14 @@ import {
   calculateClampedTiltAngles,
   calculateBallLinvelStep,
 } from '@/utils/sceneTiltUtils';
+import {
+  shouldThrottleWallHit,
+  isBallSpeedSufficientForWallHit,
+} from '@/utils/sceneEventUtils';
 import { useBallInteractions } from '@/hooks/useBallInteractions';
 import { useGhostReplay } from '@/hooks/useGhostReplay';
 import { useMotionTrail } from '@/hooks/useMotionTrail';
+import { useMazeSceneEvents } from '@/hooks/useMazeSceneEvents';
 
 interface MazeStageProps {
   levelData: MazeLevelDefinition;
@@ -243,11 +246,11 @@ function MazeStage({
       const body = slot === 2 ? ball2BodyRef.current : ballBodyRef.current;
       if (!body) return;
       const now = performance.now();
-      if (now - lastWallSoundTimeRef.current[slot] < 95) return;
+      if (shouldThrottleWallHit(now, lastWallSoundTimeRef.current[slot])) return;
 
       const vel = body.linvel();
       const speed = Math.hypot(vel.x, vel.z);
-      if (speed > 1.3) {
+      if (isBallSpeedSufficientForWallHit(speed)) {
         lastWallSoundTimeRef.current[slot] = now;
         onWallHit(speed, slot);
       }
@@ -584,18 +587,10 @@ function MazeStage({
 export function MazeScene() {
   const level = useGameStore((s) => s.level);
   const customLevel = useGameStore((s) => s.customLevel);
-  const isSoundMuted = useGameStore((s) => s.isSoundMuted);
-  const collectedCrystals = useGameStore((s) => s.collectedCrystals);
   const ghostPaths = useGameStore((s) => s.ghostPaths);
   const colorScheme = useGameStore((s) => s.colorScheme);
   const boardTheme = useGameStore((s) => s.boardTheme);
-  const collectCrystal = useGameStore((s) => s.collectCrystal);
-  const recordLevelCompletion = useGameStore((s) => s.recordLevelCompletion);
-  const triggerHaptic = useGameStore((s) => s.triggerHaptic);
-  const triggerBallReset = useGameStore((s) => s.triggerBallReset);
-  const showHudNotification = useGameStore((s) => s.showHudNotification);
 
-  const lastLockedWarnTimeRef = useRef<number>(0);
   const contextCleanupRef = useRef<(() => void) | null>(null);
   const [isContextLost, setIsContextLost] = useState(false);
   const [canvasRevision, setCanvasRevision] = useState(0);
@@ -612,168 +607,21 @@ export function MazeScene() {
     [level, customLevel],
   );
 
+  const {
+    isGoalUnlocked,
+    collectedCrystals,
+    handleCollectCrystal,
+    handleReachGoal,
+    handleFallIntoHole,
+    handleLaserHit,
+    handleBoostHit,
+    handleTeleportHit,
+    handleWallHit,
+  } = useMazeSceneEvents({ activeLevel });
+
   const isLightScene = colorScheme === 'light' || boardTheme === 'daylight';
   const sceneBgColor = isLightScene ? '#e9eef5' : '#0f1a2b';
   const shadowMargin = Math.max(9, Math.ceil(activeLevel.boardSize * 0.78));
-
-  const isGoalUnlocked =
-    collectedCrystals.length >= activeLevel.crystals.length;
-
-  const handleCollectCrystal = useCallback(
-    (idx: number) => {
-      const liveCollected = useGameStore.getState().collectedCrystals;
-      if (liveCollected.includes(idx)) return;
-
-      const nextCount = liveCollected.length + 1;
-      if (!isSoundMuted) {
-        soundEngine.playCrystalPickup(nextCount);
-      }
-      triggerHaptic('crystal');
-      collectCrystal(idx);
-
-      if (nextCount >= activeLevel.crystals.length) {
-        showHudNotification(
-          '🔓 Tüm enerji kristalleri toplandı! Hedef Portalı açıldı!',
-          'success',
-        );
-      }
-    },
-    [
-      isSoundMuted,
-      activeLevel.crystals.length,
-      triggerHaptic,
-      collectCrystal,
-      showHudNotification,
-    ],
-  );
-
-  const handleReachGoal = useCallback(
-    (runPath: Array<[number, number]>, winnerSlot: 1 | 2 = 1) => {
-      const state = useGameStore.getState();
-      if (
-        state.gameStatus !== 'playing' ||
-        (typeof document !== 'undefined' && document.hidden)
-      ) {
-        return;
-      }
-      if (
-        state.isPairingModalOpen ||
-        state.isSettingsOpen ||
-        state.isEditorOpen ||
-        state.isLeaderboardOpen
-      ) {
-        return;
-      }
-
-      const goalUnlocked =
-        state.collectedCrystals.length >= activeLevel.crystals.length;
-      if (!goalUnlocked) {
-        const now = performance.now();
-        if (now - lastLockedWarnTimeRef.current > 1300) {
-          lastLockedWarnTimeRef.current = now;
-          if (!isSoundMuted) {
-            soundEngine.playLockedPortal();
-          }
-          triggerHaptic('wall', winnerSlot);
-          const remaining = Math.max(
-            1,
-            activeLevel.crystals.length - state.collectedCrystals.length,
-          );
-          showHudNotification(
-            `🔒 Portal Kilitli! Önce kalan ${remaining} enerji kristalini toplayın.`,
-            'warn',
-          );
-        }
-        return;
-      }
-
-      if (!isSoundMuted) {
-        const earnedStars = calculateEarnedStars(
-          state.elapsedSeconds,
-          activeLevel.starThresholds,
-        );
-        soundEngine.playVictory(earnedStars);
-      }
-      triggerHaptic('goal');
-      recordLevelCompletion(
-        activeLevel.id,
-        state.elapsedSeconds,
-        runPath,
-        winnerSlot,
-      );
-    },
-    [
-      isSoundMuted,
-      triggerHaptic,
-      recordLevelCompletion,
-      activeLevel.id,
-      activeLevel.crystals.length,
-      activeLevel.starThresholds,
-      showHudNotification,
-    ],
-  );
-
-  const handleFallIntoHole = useCallback(
-    (slot: 1 | 2) => {
-      if (!isSoundMuted) {
-        soundEngine.playHoleFall();
-      }
-      triggerHaptic('hole', slot);
-      if (!useGameStore.getState().isMultiplayer) {
-        triggerBallReset();
-      } else {
-        showHudNotification(`Oyuncu ${slot} boşluğa düştü`, 'warn');
-      }
-    },
-    [isSoundMuted, triggerHaptic, triggerBallReset, showHudNotification],
-  );
-
-  const handleLaserHit = useCallback(
-    (slot: 1 | 2) => {
-      if (!isSoundMuted) {
-        soundEngine.playLaserZap();
-      }
-      triggerHaptic('laser', slot);
-      if (!useGameStore.getState().isMultiplayer) {
-        triggerBallReset();
-      } else {
-        showHudNotification(`Oyuncu ${slot} lazere çarptı`, 'warn');
-      }
-    },
-    [isSoundMuted, triggerHaptic, triggerBallReset, showHudNotification],
-  );
-
-  const handleBoostHit = useCallback(
-    (slot: 1 | 2) => {
-      if (!isSoundMuted) {
-        soundEngine.playBoostPad();
-      }
-      triggerHaptic('boost', slot);
-    },
-    [isSoundMuted, triggerHaptic],
-  );
-
-  const handleTeleportHit = useCallback(
-    (slot: 1 | 2) => {
-      if (!isSoundMuted) {
-        soundEngine.playTeleport();
-      }
-      triggerHaptic('teleport', slot);
-    },
-    [isSoundMuted, triggerHaptic],
-  );
-
-  const handleWallHit = useCallback(
-    (speed: number, slot: 1 | 2) => {
-      if (!isSoundMuted) {
-        soundEngine.playWallHit(Math.min(1, speed / 8));
-      }
-      if (speed > 2.4) {
-        triggerHaptic('wall', slot);
-      }
-    },
-    [isSoundMuted, triggerHaptic],
-  );
 
   const handleSceneRetry = useCallback(() => {
     setIsContextLost(false);
