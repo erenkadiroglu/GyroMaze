@@ -557,6 +557,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Sensör Kartı Bileşenleri (`SensorCardHeader.tsx`, `InsecureContextWarning.tsx`, `SensorActionButtons.tsx`):** Kalkan ikonu ve başlık alanı, HTTP güvensiz bağlam uyarı notu ve sensör/dokunmatik eylem butonları bağımsız alt bileşenlere ayrıştırıldı.
 - [x] **Yalın Mobil Sensör Kartı Orkestratörü (`ControllerSensorCard.tsx`):** Düzen alt bileşenlerle bağlanarak `ControllerSensorCard.tsx` 58 satırdan **28 satıra** indirildi.
 
+### Faz 111: Arayüz Temel Bileşenleri Motoru ve Primitives Ayrıştırması (Tamamlandı)
+- [x] **Arayüz Temel Bileşenleri Yardımcı Motoru (`primitiveUtils.ts`, `primitiveUtils.test.mjs`):** `cx`, `getModalWidthClass`, `formatShortcutTitle` ve `calculateNextRadioIndex` saf yardımcıları geliştirildi; 5 yeni birim test ile doğrulandı (toplam 242 istemci testi, 270 monorepo testi).
+- [x] **WAI-ARIA Yön Tuşu ve Başlık Standardizasyonu (`primitives.tsx`):** `calculateNextRadioIndex` entegrasyonu ile radyo gruplarında klavye yön tuşu (Ok / Home / End) döngüsü güvenceye alındı; `IconButton` ve `Modal` genişlik sınıfları saf motor üzerinden standartlaştırıldı.
+
+
 
 
 

@@ -9,15 +9,15 @@ import {
 } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import {
+  cx,
+  MODAL_WIDTH,
+  getModalWidthClass,
+  formatShortcutTitle,
+  calculateNextRadioIndex,
+} from '@/utils/primitiveUtils';
 
-/* -------------------------------------------------------------------------- */
-/*  Ortak yardımcılar                                                         */
-/* -------------------------------------------------------------------------- */
-
-/** Koşullu sınıf adlarını birleştirir. */
-export function cx(...parts: Array<string | false | null | undefined>) {
-  return parts.filter(Boolean).join(' ');
-}
+export { cx };
 
 /**
  * Pencere / panel açıkken `Esc` tuşuyla kapatma ve odak yönetimi.
@@ -102,13 +102,6 @@ interface ModalProps {
   footer?: ReactNode;
 }
 
-const MODAL_WIDTH: Record<NonNullable<ModalProps['size']>, string> = {
-  sm: 'max-w-sm',
-  md: 'max-w-md',
-  lg: 'max-w-lg',
-  xl: 'max-w-3xl',
-};
-
 /**
  * Erişilebilir modal pencere: `role="dialog"`, `Esc` ve arka plana tıklama ile kapanır.
  */
@@ -155,7 +148,7 @@ export function Modal({
             transition={{ type: 'spring', stiffness: 420, damping: 34 }}
             className={cx(
               'flex max-h-[min(88dvh,820px)] w-full flex-col overflow-hidden rounded-2xl border border-line bg-surface text-fg shadow-[0_24px_60px_-20px_rgb(0_0_0/0.55)] outline-none',
-              MODAL_WIDTH[size],
+              getModalWidthClass(size),
             )}
           >
             <header className="flex items-start gap-3 border-b border-line px-5 py-4">
@@ -297,7 +290,7 @@ export function IconButton({
       type="button"
       aria-label={label}
       aria-pressed={pressed}
-      title={shortcut ? `${label} (${shortcut})` : label}
+      title={formatShortcutTitle(label, shortcut)}
       className={cx(
         'inline-flex shrink-0 cursor-pointer items-center justify-center rounded-xl text-muted transition-colors hover:text-fg active:scale-95 aria-pressed:text-brass',
         size === 'sm' ? 'h-8 w-8' : 'h-10 w-10',
@@ -367,17 +360,7 @@ export function handleRadioGroupKeyDown(
   total: number,
   onSelectIndex: (nextIndex: number) => void,
 ) {
-  if (total < 2) return;
-  let nextIdx = -1;
-  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-    nextIdx = (idx + 1) % total;
-  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-    nextIdx = (idx - 1 + total) % total;
-  } else if (e.key === 'Home') {
-    nextIdx = 0;
-  } else if (e.key === 'End') {
-    nextIdx = total - 1;
-  }
+  const nextIdx = calculateNextRadioIndex(e.key, idx, total);
   if (nextIdx >= 0) {
     e.preventDefault();
     onSelectIndex(nextIdx);
