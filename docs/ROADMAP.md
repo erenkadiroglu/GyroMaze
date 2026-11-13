@@ -601,6 +601,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Fizik Çarpıştırıcı Bileşenleri (`ColliderWalls.tsx`, `ColliderGoalSensor.tsx`, `ColliderHoleSensors.tsx`):** Katı duvarlar, bitiş portalı temas sensörü ve tuzak deliği tetikleyicileri Rapier alt bileşenlerine ayrıştırıldı.
 - [x] **Yalın Çarpıştırıcılar Orkestratörü (`MazeStageColliders.tsx`):** Sabit Rapier RigidBody orkestrasyonu yalınlaştırılarak `MazeStageColliders.tsx` 140 satırdan **68 satıra** indirildi.
 
+### Faz 120: 3B Toplanabilirler, Başlangıç Halkası ve Hedef Portalı Ayrıştırması (Tamamlandı)
+- [x] **Toplanabilirler ve Geçit Yardımcı Motoru (`collectiblesUtils.ts`, `collectiblesUtils.test.mjs`):** Hedef portalı ışık ve materyalleri `resolveGoalPortalVisuals`, kristal görünürlüğü `isCrystalVisible` ve başlangıç konumu `resolveStartRingPosition` saf yardımcıları geliştirildi; 5 yeni birim test ile doğrulandı (toplam 276 istemci testi, 304 monorepo testi).
+- [x] **Modüler Toplanabilir ve Geçit Bileşenleri (`CollectibleStartRing.tsx`, `CollectibleCrystals.tsx`, `CollectibleGoalPortal.tsx`):** Başlangıç halkası, enerji kristalleri ve kilitli/açık hedef portalı bağımsız Three.js alt bileşenlerine ayrıştırıldı.
+- [x] **Yalın Toplanabilirler Orkestratörü (`MazeStageCollectibles.tsx`):** 3B toplanabilirler ve geçit geometrileri devredilerek `MazeStageCollectibles.tsx` 104 satırdan **48 satıra** indirildi.
+
+
 
 
 
