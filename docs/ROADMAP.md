@@ -686,6 +686,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Oyun Modu Seçici Bileşenleri (`GameModePlayerCountSelector.tsx`, `GameModeRuleSelector.tsx`):** 1P solo vs 2P 1v1 duo seçici ve dinamik rehber metni ile Standart vs Süreye karşı kural seçici bağımsız modüllere ayrıştırıldı.
 - [x] **Yalın Oyun Modu Orkestratörü (`SettingsGameModeSection.tsx`):** Alt bileşen mimarisine geçirilerek `SettingsGameModeSection.tsx` 63 satırdan **35 satıra** indirildi.
 
+### Faz 138: Ayarlar Modalı Fizik ve Kontrol Tepkisi Ayrıştırması (Tamamlandı)
+- [x] **Fizik ve Kontrol Yardımcı Motoru (`physicsSectionUtils.ts`, `physicsSectionUtils.test.mjs`):** Bilye ivmesi etiket formatlayıcı `formatPhysicsScaleLabel`, eğim tepki hızı etiket formatlayıcı `formatTiltResponsivenessLabel`, turbo ivme doğrulaması `isTurboPhysics` ve anında tepki eşiği `isInstantTilt` saf yardımcıları geliştirildi; 4 yeni birim test ile doğrulandı (toplam 360 istemci testi, 388 monorepo testi).
+- [x] **Modüler Fizik Seçici Bileşenleri (`GravityScaleSelector.tsx`, `TiltResponsivenessSelector.tsx`):** Bilye ivmesi ve eğim tepki hızı Segmented buton grupları bağımsız bileşenlere ayrıştırıldı.
+- [x] **Yalın Fizik Bölümü Orkestratörü (`SettingsPhysicsSection.tsx`):** Alt bileşen mimarisine geçirilerek `SettingsPhysicsSection.tsx` 46 satırdan **28 satıra** indirildi.
+
 
 
 

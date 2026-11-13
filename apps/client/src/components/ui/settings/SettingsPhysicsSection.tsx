@@ -1,10 +1,8 @@
 'use client';
 
-import { SettingsSection, FieldLabel, Segmented } from '../primitives';
-import {
-  GRAVITY_SCALE_OPTIONS,
-  TILT_RESPONSIVENESS_OPTIONS,
-} from '@/utils/settingsUtils';
+import { SettingsSection } from '../primitives';
+import { GravityScaleSelector } from './physics/GravityScaleSelector';
+import { TiltResponsivenessSelector } from './physics/TiltResponsivenessSelector';
 
 interface SettingsPhysicsSectionProps {
   gravityScale: number;
@@ -13,6 +11,9 @@ interface SettingsPhysicsSectionProps {
   onSetTiltResponsiveness: (resp: number) => void;
 }
 
+/**
+ * Ayarlar çekmecesi fizik ve kontrol (bilye ivmesi ve eğim tepki hızı) bölümü.
+ */
 export function SettingsPhysicsSection({
   gravityScale,
   onSetGravityScale,
@@ -21,26 +22,15 @@ export function SettingsPhysicsSection({
 }: SettingsPhysicsSectionProps) {
   return (
     <SettingsSection title="Fizik ve kontrol">
-      <div>
-        <FieldLabel>Bilye ivmesi</FieldLabel>
-        <Segmented<number>
-          label="Bilye ivmesi"
-          value={gravityScale}
-          options={GRAVITY_SCALE_OPTIONS}
-          onChange={onSetGravityScale}
-        />
-      </div>
+      <GravityScaleSelector
+        gravityScale={gravityScale}
+        onSetGravityScale={onSetGravityScale}
+      />
 
-      <div>
-        <FieldLabel>Eğim tepki hızı</FieldLabel>
-        <Segmented<number>
-          label="Eğim tepki hızı"
-          value={tiltResponsiveness}
-          options={TILT_RESPONSIVENESS_OPTIONS}
-          onChange={onSetTiltResponsiveness}
-        />
-      </div>
+      <TiltResponsivenessSelector
+        tiltResponsiveness={tiltResponsiveness}
+        onSetTiltResponsiveness={onSetTiltResponsiveness}
+      />
     </SettingsSection>
   );
 }
-
