@@ -24,13 +24,16 @@ export function QuickControlsToolbar({ onResetClick }: QuickControlsToolbarProps
     toggleSoundMuted,
     openEditor,
     openLeaderboard,
+    toolbarAriaLabel,
+    toolbarClass,
+    separatorClass,
   } = useQuickControls();
 
   return (
     <div
       role="toolbar"
-      aria-label="Hızlı sahne kontrolleri"
-      className="gm-panel pointer-events-auto flex items-center gap-1 rounded-2xl p-1.5 shadow-lg"
+      aria-label={toolbarAriaLabel}
+      className={toolbarClass}
     >
       <ViewportAudioControls
         onResetClick={onResetClick}
@@ -47,7 +50,7 @@ export function QuickControlsToolbar({ onResetClick }: QuickControlsToolbarProps
       <span
         role="separator"
         aria-orientation="vertical"
-        className="mx-1 h-5 w-px bg-line"
+        className={separatorClass}
       />
 
       <ToolsControls

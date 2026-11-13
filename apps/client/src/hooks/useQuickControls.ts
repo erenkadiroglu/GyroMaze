@@ -1,11 +1,8 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useGameStore } from '@/store/useGameStore';
-import {
-  resolveThemeToggleLabel,
-  resolveSoundToggleLabel,
-  formatCameraControlAriaLabel,
-} from '@/utils/quickControlsUtils';
+import { resolveQuickControlsToolbarState } from '@/utils/quickControlsOrchestrationUtils';
 
 export function useQuickControls() {
   const cameraMode = useGameStore((s) => s.cameraMode);
@@ -17,20 +14,29 @@ export function useQuickControls() {
   const setEditorOpen = useGameStore((s) => s.setEditorOpen);
   const setLeaderboardOpen = useGameStore((s) => s.setLeaderboardOpen);
 
-  const themeLabel = resolveThemeToggleLabel(colorScheme);
-  const soundLabel = resolveSoundToggleLabel(isSoundMuted);
-  const cameraLabel = formatCameraControlAriaLabel(cameraMode);
+  const state = useMemo(
+    () =>
+      resolveQuickControlsToolbarState({
+        cameraMode,
+        colorScheme,
+        isSoundMuted,
+      }),
+    [cameraMode, colorScheme, isSoundMuted],
+  );
 
   return {
     cameraMode,
     cycleCameraMode,
-    cameraLabel,
+    cameraLabel: state.cameraLabel,
     colorScheme,
     toggleColorScheme,
-    themeLabel,
+    themeLabel: state.themeLabel,
     isSoundMuted,
     toggleSoundMuted,
-    soundLabel,
+    soundLabel: state.soundLabel,
+    toolbarAriaLabel: state.toolbarAriaLabel,
+    toolbarClass: state.toolbarClass,
+    separatorClass: state.separatorClass,
     openEditor: () => setEditorOpen(true),
     openLeaderboard: () => setLeaderboardOpen(true),
   };

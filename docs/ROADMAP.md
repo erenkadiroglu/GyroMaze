@@ -892,9 +892,14 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **useDesktopFooter Kancası ve Alt Panel Sadeleşmesi (`apps/client/src/hooks/useDesktopFooter.ts`, `apps/client/src/components/ui/footer/DesktopFooterControls.tsx`):** Kokpit göstergesi, mini-harita radarı, çok oyunculu/tekil klavye ipucu belirleme ve erişilebilirlik rolleri saf orkestrasyon motoruna bağlandı.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/desktopFooterOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 680'den **684'e**, monorepo testleri 735'ten **739'a** çıkarıldı.
 
-### Faz 189: Hızlı Sahne Kontrolleri (Quick Controls Toolbar) Orkestrasyon Motoru (Sıradaki)
-- [ ] **Hızlı Sahne Kontrolleri Orkestrasyon Motoru (`quickControlsOrchestrationUtils.ts`, `quickControlsOrchestrationUtils.test.mjs`):** `useQuickControls.ts` kancasındaki kamera modu etiketi, aydınlık/karanlık tema durumu, ses kısma/açma etiketi, araç çubuğu ayırıcı ve modal açıcılarını saf motora ayrıştırma.
-- [ ] **useQuickControls Kancası Sadeleşmesi:** Kancayı salt durum seçicilerine indirgeme.
+### Faz 189: Hızlı Sahne Kontrolleri (Quick Controls Toolbar) Orkestrasyon Motoru (Tamamlandı)
+- [x] **Hızlı Sahne Kontrolleri Orkestrasyon Motoru (`quickControlsOrchestrationUtils.ts`, `quickControlsOrchestrationUtils.test.mjs`):** `QUICK_CONTROLS_TOOLBAR_ARIA_LABEL`, `QUICK_CONTROLS_TOOLBAR_CLASS`, `QUICK_CONTROLS_SEPARATOR_CLASS`, `resolveQuickControlsToolbarState`, `getQuickControlsAriaProps`, `getQuickControlsSeparatorProps`, `formatToolbarButtonTooltip` fonksiyonları saf mimariyle geliştirildi; 5 yeni birim test ile %100 doğrulandı (toplam 689 istemci testi, 49 sunucu testi, 6 shared testi, **744 monorepo testi**).
+- [x] **useQuickControls Kancası ve Araç Çubuğu Sadeleşmesi (`apps/client/src/hooks/useQuickControls.ts`, `apps/client/src/components/ui/toolbar/QuickControlsToolbar.tsx`):** Kamera etiketi, gündüz/gece modu geçişi, ses durumu ve semantik araç çubuğu ayırıcı nitelikleri saf motora aktarıldı.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/quickControlsOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 684'ten **689'a**, monorepo testleri 739'dan **744'e** çıkarıldı.
+
+### Faz 190: Masaüstü Modallar ve Çekmeceler Orkestrasyon Motoru (Sıradaki)
+- [ ] **Masaüstü Modallar Orkestrasyon Motoru (`desktopModalsOrchestrationUtils.ts`, `desktopModalsOrchestrationUtils.test.mjs`):** `DesktopModals.tsx` bileşenindeki 6 farklı modalın (Eşleşme, Liderlik Tablosu, Harita Editörü, Ayarlar, Klavye Rehberi, Zafer/Yenilgi) açık olma koşulları, kapanma işleyicileri ve z-index hiyerarşisini saf motora ayrıştırma.
+- [ ] **DesktopModals Bileşeni Sadeleşmesi:** Bileşeni deklaratif yerleşim katmanına indirgeme.
 - [ ] **Birim Testleri ve Doğrulama:** Yeni testlerle kapsamı artırma, derleme ve git push.
 
 
