@@ -1,7 +1,12 @@
 'use client';
 
-import { AlertTriangle, RotateCcw } from 'lucide-react';
-import { Modal, Button } from '@/components/ui/primitives';
+import { AlertTriangle } from 'lucide-react';
+import { Modal } from '@/components/ui/primitives';
+import {
+  getDefeatModalTitle,
+  formatDefeatModalDescription,
+} from '@/utils/defeatModalUtils';
+import { DefeatModalBody, DefeatModalFooter } from './defeat';
 
 export interface DefeatModalProps {
   open: boolean;
@@ -13,9 +18,8 @@ export interface DefeatModalProps {
 
 /**
  * Süreye Karşı (Time Attack) modunda süre dolduğunda açılan modal:
- * - Süre sınırı uyarısı ve kalan/toplanan kristal özeti
- * - Ayarlar penceresinden oyun modunu değiştirme kısayolu
- * - Hızlı tekrar başlama aksiyonu
+ * - Süre sınırı uyarısı ve kalan/toplanan kristal özeti (DefeatModalBody)
+ * - Ayarlar penceresinden oyun modunu değiştirme ve hızlı tekrar başlama aksiyonları (DefeatModalFooter)
  */
 export function DefeatModal({
   open,
@@ -24,38 +28,26 @@ export function DefeatModal({
   onSwitchMode,
   onReset,
 }: DefeatModalProps) {
+  const title = getDefeatModalTitle();
+  const description = formatDefeatModalDescription(timeAttackLimit);
+
   return (
     <Modal
       open={open}
       onClose={onReset}
       hideClose
       size="sm"
-      title="Süre doldu"
-      description={`${timeAttackLimit} saniyelik süre içinde portala ulaşılamadı.`}
+      title={title}
+      description={description}
       icon={<AlertTriangle className="h-5 w-5 text-danger" aria-hidden="true" />}
       footer={
-        <>
-          <Button variant="secondary" onClick={onSwitchMode}>
-            Modu değiştir
-          </Button>
-          <Button
-            variant="primary"
-            icon={<RotateCcw className="h-4 w-4" aria-hidden="true" />}
-            onClick={onReset}
-          >
-            Tekrar dene
-          </Button>
-        </>
+        <DefeatModalFooter
+          onSwitchMode={onSwitchMode}
+          onReset={onReset}
+        />
       }
     >
-      <p className="text-xs leading-relaxed text-muted">
-        Toplanan kristal:{' '}
-        <strong className="gm-num font-semibold text-fg">
-          {crystalSummary}
-        </strong>
-        . Daha hızlı bir başlangıç için bilyeyi sıfırlayıp yeniden dene.
-      </p>
+      <DefeatModalBody crystalSummary={crystalSummary} />
     </Modal>
   );
 }
-

@@ -2,8 +2,7 @@
 
 import { useGameOutcome } from '@/hooks/useGameOutcome';
 import { CelebrationCanvas } from './CelebrationCanvas';
-import { VictoryModal } from './outcome/VictoryModal';
-import { DefeatModal } from './outcome/DefeatModal';
+import { VictoryModal, DefeatModal } from './outcome';
 
 /**
  * Bölüm tamamlandığında (zafer) veya süre dolduğunda (yenilgi)

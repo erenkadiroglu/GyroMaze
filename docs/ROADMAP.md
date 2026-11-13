@@ -718,6 +718,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Modal Grupları (`UtilityModalsGroup.tsx`, `SocialModalsGroup.tsx`):** Araç pencereleri (Editör, Ayarlar, Yardım) ile Sosyal/Ağ pencereleri (QR Eşleştirme, Liderlik Tablosu) tekil sorumluluk esasına göre bağımsız bileşen gruplarına ayrıştırıldı.
 - [x] **Yalın Modallar Katmanı Orkestratörü (`DesktopModalsLayer.tsx`):** Alt grup mimarisine devredilerek `DesktopModalsLayer.tsx` 45 satırdan **31 satıra** indirildi.
 
+### Faz 146: Masaüstü Oyun Sonucu Modalları Ayrıştırması (Tamamlandı)
+- [x] **Süre Doldu (Yenilgi) Yardımcı Motoru (`defeatModalUtils.ts`, `defeatModalUtils.test.mjs`):** Standart başlık `getDefeatModalTitle`, dinamik süre sınırı açıklaması `formatDefeatModalDescription`, toplanan kristal mesajı `formatDefeatCrystalMessage` ve buton yapılandırması `getDefeatActionsConfig` saf yardımcıları geliştirildi; 5 yeni birim test ile doğrulandı (toplam 403 istemci testi, 431 monorepo testi).
+- [x] **Modüler Yenilgi Bileşenleri (`DefeatModalBody.tsx`, `DefeatModalFooter.tsx`):** Kristal özet metni ve "Modu değiştir" / "Tekrar dene" butonları bağımsız modüllere ayrıştırıldı; `defeat/index.ts` ve `victory/index.ts` üzerinden merkezi `outcome/index.ts` barrel mimarisi kuruldu.
+- [x] **Yalın Oyun Sonucu Orkestratörü (`DefeatModal.tsx`, `GameOutcomeModals.tsx`):** `DefeatModal.tsx` 61 satırdan **50 satıra** indirildi; `GameOutcomeModals.tsx` temiz re-export importlarına bağlandı.
+
+
 
 
 
