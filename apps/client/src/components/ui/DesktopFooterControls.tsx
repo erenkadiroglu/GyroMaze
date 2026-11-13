@@ -3,7 +3,7 @@
 import { useGameStore } from '@/store/useGameStore';
 import { AttitudeGauge } from './AttitudeGauge';
 import { QuickControlsToolbar } from './QuickControlsToolbar';
-import { Kbd } from './primitives';
+import { FooterKeyboardHints } from './footer/FooterKeyboardHints';
 
 export interface DesktopFooterControlsProps {
   boardSize: number;
@@ -16,7 +16,7 @@ export interface DesktopFooterControlsProps {
 /**
  * Masaüstü HUD alt paneli:
  * - Sol: Kokpit tutum göstergesi (AttitudeGauge) & mini harita
- * - Orta: 1P ve 2P klavye kontrol ipuçları (WASD, Oklar, R, L)
+ * - Orta: 1P ve 2P klavye kontrol ipuçları (FooterKeyboardHints)
  * - Sağ: Hızlı eylem ikon araç çubuğu (QuickControlsToolbar)
  */
 export function DesktopFooterControls({
@@ -44,45 +44,14 @@ export function DesktopFooterControls({
         showMiniMap={showMiniMap}
       />
 
-      {(!isControllerPaired ||
-        (isMultiplayer && !isSecondControllerPaired)) && (
-        <div className="gm-panel hidden items-center gap-2 rounded-xl px-3 py-1.5 text-xs text-muted lg:flex">
-          {isMultiplayer ? (
-            <>
-              {!isControllerPaired && (
-                <>
-                  <Kbd>WASD</Kbd>
-                  <span>1. Bilye</span>
-                </>
-              )}
-              {!isControllerPaired && !isSecondControllerPaired && (
-                <span className="text-line">·</span>
-              )}
-              {!isSecondControllerPaired && (
-                <>
-                  <Kbd>Oklar</Kbd>
-                  <span>2. Bilye</span>
-                </>
-              )}
-            </>
-          ) : (
-            <>
-              <Kbd>WASD</Kbd>
-              <span>Eğim</span>
-              <span className="text-line">·</span>
-              <Kbd>R</Kbd>
-              <span>Sıfırla</span>
-              <span className="text-line">·</span>
-              <Kbd>L</Kbd>
-              <span>Gece/Gündüz</span>
-            </>
-          )}
-        </div>
-      )}
+      <FooterKeyboardHints
+        isControllerPaired={isControllerPaired}
+        isSecondControllerPaired={isSecondControllerPaired}
+        isMultiplayer={isMultiplayer}
+      />
 
       {/* Sağ Alt Hızlı İkon Araç Çubuğu */}
       <QuickControlsToolbar onResetClick={onResetClick} />
     </footer>
   );
 }
-

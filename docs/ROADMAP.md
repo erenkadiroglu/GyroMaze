@@ -507,6 +507,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Bağımsız Masaüstü HUD Kancası (`useDesktopHUD.ts`):** Bölüm bilgisi, toplanan kristal hesaplaması, overlay açık durumu, oyun saati ve global kısayol bağlamları tek kancada toplandı.
 - [x] **Modüler Modallar Katmanı ve Yalın Orkestratör (`DesktopModalsLayer.tsx`, `DesktopHUD.tsx`):** Editör, Ayarlar, Yardım, Eşleştirme, Skor Tablosu ve Sonuç pencereleri `DesktopModalsLayer` bileşenine taşınarak `DesktopHUD.tsx` 97 satırdan **54 satıra** indirildi.
 
+### Faz 101: Alt Bölge Kontrolleri ve Klavye İpuçları Ayrıştırması (Tamamlandı)
+- [x] **Alt Panel Kontrol ve İpucu Yardımcı Motoru (`footerControlsUtils.ts`, `footerControlsUtils.test.mjs`):** `shouldShowKeyboardHints` ve `resolveMultiplayerSlotHints` saf yardımcıları geliştirildi; 4 yeni birim test ile doğrulandı (toplam 194 istemci testi, 222 monorepo testi).
+- [x] **Modüler Klavye İpuçları Bileşeni (`FooterKeyboardHints.tsx`):** Tek ve çok oyunculu modlar için dinamik tuş eşleşmesi ve yuva ayrımı bağımsız `FooterKeyboardHints` bileşeni olarak ayrıştırıldı.
+- [x] **Yalın Masaüstü Alt Paneli (`DesktopFooterControls.tsx`):** Gösterge, ipucu ve araç çubuğu yapısı modüler alt bileşenlerle bağlanarak `DesktopFooterControls.tsx` 88 satırdan **49 satıra** indirildi.
+
 
 
 
