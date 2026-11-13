@@ -30,3 +30,4 @@ export interface CalibrationOffset {
 export interface CalibratePayload {
   playerSlot?: 1 | 2;
 }
+

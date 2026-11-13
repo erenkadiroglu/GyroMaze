@@ -88,3 +88,4 @@ export interface RoomErrorPayload {
   code: 'ROOM_NOT_FOUND' | 'ROOM_FULL' | 'INVALID_PAYLOAD' | 'SESSION_REPLACED';
   message: string;
 }
+

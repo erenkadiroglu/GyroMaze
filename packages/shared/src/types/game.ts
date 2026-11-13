@@ -47,3 +47,4 @@ export interface ChangeLevelPayload {
   direction?: 'next' | 'prev';
   level?: number;
 }
+

@@ -44,3 +44,4 @@ export function clampAngle(angle: number, min = -45, max = 45): number {
   if (!Number.isFinite(angle)) return 0;
   return Math.max(min, Math.min(max, angle));
 }
+

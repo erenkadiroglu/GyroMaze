@@ -778,10 +778,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Kontrolcü Görünüm Orkestratörü (`MobileControllerView.tsx`, `controller/index.ts`):** `page.tsx` içindeki monolitik kontrolcü JSX yapısı bağımsız `MobileControllerView` bileşenine taşındı; `controller/index.ts` üzerinden merkezi re-export mimarisi tamamlandı.
 - [x] **Yalın Next.js 15 App Router Sayfası (`controller/page.tsx`):** `page.tsx` bileşeni 163 satırdan **30 satıra** indirilerek saf ve standart bir Next.js 15 Suspense sayfa sarmalayıcısı haline getirildi.
 
-### Faz 164: Shared Paketi Modüler Tip Ayrışımı ve Ortak Doğrulama Motoru (Tamamlandı)
-- [x] **Ortak Doğrulama ve Güvenlik Motoru (`sharedValidationUtils.ts`, `sharedValidationUtils.test.mjs`):** 6 haneli oda kodu doğrulayıcı `isValidRoomCode`, oyuncu adı temizleyici `sanitizePlayerName`, oyuncu yuvası denetleyici `isValidPlayerSlot`, bölüm numarası denetleyici `isValidLevelNumber` ve NaN korumalı açı sınırlayıcı `clampAngle` saf yardımcıları geliştirildi; 6 yeni birim test ile doğrulandı (toplam 6 shared testi, 498 istemci testi, 28 sunucu testi, **532 monorepo testi**).
-- [x] **Modüler Tip ve Sözleşme Mimarisi (`types/gyro.ts`, `types/game.ts`, `types/haptic.ts`, `types/leaderboard.ts`, `types/room.ts`, `types/index.ts`):** `packages/shared/src/index.ts` içindeki 214 satırlık monolitik tip havuzu tekil sorumluluk ilkesine (SRP) göre mantıksal alt modüllere bölündü.
-- [x] **Üç Çalışma Alanlı Monorepo Test Entegrasyonu (`packages/shared/package.json`):** `packages/shared` için `test` script'i eklenerek monorepo genelinde 3 çalışma alanının tümünde (client, server, shared) test paketleri standart hale getirildi.
+### Faz 165: Sunucu Oda Servisi Yardımcı Motoru ve Gateway Barrel Konsolidasyonu (Tamamlandı)
+- [x] **Sunucu Oda ve Skor Doğrulama Motoru (`roomServiceUtils.ts`, `roomServiceUtils.test.mjs`):** Karışıklık önleyici 6 haneli kod üreteci `generateRandomCode`, kalıcı dosya yolu çözücü `resolveLeaderboardStoragePath`, bozuk veri filtreleyici ve sıralayıcı `normalizeLeaderboardEntries`, sanal WSL/Hyper-V/Docker arayüzlerini eleyen `selectPreferredLanIp` ve skor veri yükü denetleyicisi `validateScorePayload` saf yardımcıları geliştirildi; 6 yeni birim test ile doğrulandı (toplam 34 sunucu testi, 498 istemci testi, 6 shared testi, **538 monorepo testi**).
+- [x] **NestJS Gateway ve Kök Barrel Mimarisi (`gateway/index.ts`, `server/src/index.ts`):** `RoomService`, `GyroGateway`, `roomServiceUtils` ve HTTP kontrolcüleri hiyerarşik modül dışa aktarım düzenine bağlandı; `room.service.ts` 595 satırdan 470 satıra indirildi.
+- [x] **Sunucu Test Paketi Genişletmesi (`apps/server/package.json`):** Sunucu testlerine `test/roomServiceUtils.test.mjs` eklenerek sunucu test kapsamı 28'den 34'e çıkarıldı.
+
 
 
 

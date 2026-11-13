@@ -20,3 +20,4 @@ export interface HapticPayload {
   /** Yalnızca belirli bir oyuncunun cihazına gönderilecekse yuva numarası */
   playerSlot?: 1 | 2;
 }
+
