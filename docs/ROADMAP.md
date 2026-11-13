@@ -797,6 +797,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **İstemci Yardımcı Katalog Motoru (`utilRegistryUtils.ts`, `utilRegistryUtils.test.mjs`):** 5 temel mimari kategori (`controller`, `desktop`, `editor`, `gameplay`, `scene`) tanımlandı; dosya sınıflandırıcı `categorizeUtilFileName`, kategori istatistik üreticisi `getUtilStatsByCategory` ve kategori filtreleyici `filterUtilsByCategory` saf yardımcıları geliştirildi; 8 yeni birim test ile %100 doğrulandı (toplam 506 istemci testi, 49 sunucu testi, 6 shared testi, **561 monorepo testi**).
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/utilRegistryUtils.test.mjs` dahil edilerek istemci test sayısı 498'den 506'ya çıkarıldı.
 
+### Faz 169: 3B Labirent Seviyeleri Modüler Mimarisi ve Prosedürel Üretim Ayrışımı (Tamamlandı)
+- [x] **Modüler Seviye Modeli ve Statik Haritalar (`levels/types.ts`, `levels/staticLevels.ts`):** `WallDefinition`, `VoidHoleDefinition`, `LaserGateDefinition`, `BoostPadDefinition`, `TeleporterPairDefinition`, `MovingObstacleDefinition`, `MazeLevelDefinition` veri modelleri ve Bölüm 1 - 5 el yapımı seviyeleri bağımsız dosyalara ayrıştırıldı.
+- [x] **Prosedürel Labirent Motoru ve Seviye Yardımcıları (`levels/proceduralGenerator.ts`, `levels/levelUtils.ts`, `levels/index.ts`):** Mulberry32 tohumlu sözde-rastgele sayı üreteci, DFS spanning tree ve braiding mimarisine sahip `generateProceduralLevel` ile `getMazeLevel`, `findSafeP2SpawnOffset`, `getLevelRevisionKey` yardımcıları `levels/` modülü altında toplandı; `mazeLevels.ts` 815 satırdan **28 satıra** indirildi.
+- [x] **Seviye Motoru Birim Testleri (`apps/client/test/levelUtils.test.mjs`):** 8 yeni birim test ile istemci test sayısı 506'dan **514'e**, toplam monorepo test sayısı **569'a** yükseltildi.
+
 
 
 

@@ -10,6 +10,7 @@ export * from './SceneLights';
 export * from './SceneErrorBoundary';
 export * from './ContextLostFallback';
 export * from './mazeLevels';
+export * from './levels';
 export * from './sceneMaterials';
 export * from './actors';
 export * from './collectibles';
