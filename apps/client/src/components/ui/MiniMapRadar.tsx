@@ -1,9 +1,12 @@
 'use client';
 
 import { forwardRef } from 'react';
-import { RadarGoalMarker } from './radar/RadarGoalMarker';
-import { RadarCrystalMarkers } from './radar/RadarCrystalMarkers';
-import { RadarPlayerMarkers } from './radar/RadarPlayerMarkers';
+import {
+  RadarGoalMarker,
+  RadarCrystalMarkers,
+  RadarPlayerMarkers,
+} from './radar';
+import { getMiniMapRadarTitle } from '@/utils/attitudeGaugeUtils';
 
 interface MiniMapRadarProps {
   boardSize: number;
@@ -35,7 +38,8 @@ export const MiniMapRadar = forwardRef<HTMLDivElement, MiniMapRadarProps>(
         <div className="h-11 w-px bg-line" aria-hidden="true" />
         <div
           className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-line bg-base/80"
-          title="Canlı 2B Labirent Radarı"
+          title={getMiniMapRadarTitle()}
+          aria-label={getMiniMapRadarTitle()}
         >
           <RadarGoalMarker
             goalPosition={goalPosition}

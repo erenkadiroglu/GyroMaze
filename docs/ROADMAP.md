@@ -758,6 +758,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Kokpit Modüler Bileşen ve Barrel Mimarisi (`AttitudeHorizonDial.tsx`, `attitude/index.ts`):** Yapay ufuk kadranı `attitude/` dizini altına taşındı; `AttitudeTelemetryColumn` ile birlikte `attitude/index.ts` üzerinden modüler dışa aktarıma bağlandı.
 - [x] **Yalın ve Güvenli Kokpit Uçuş Göstergesi Orkestratörü (`AttitudeGauge.tsx`):** Dinamik güvenli tahta boyutu, semantik ARIA etiketleri ve modüler barrel importları ile `AttitudeGauge.tsx` refactor edildi.
 
+### Faz 154: Masaüstü HUD Üst Bilgi Çubuğu ve Radar Modül Konsolidasyonu (Tamamlandı)
+- [x] **Üst Çubuk Yardımcı Motoru (`desktopHeaderUtils.ts`, `desktopHeaderUtils.test.mjs`):** Üst çubuk erişilebilirlik etiketi `getHeaderAriaLabel`, durum paneli stil sınıfları `getHeaderStatusPanelClass`, canlı durum özet formatlayıcı `formatHeaderStateSummary` ve aksiyon denetleyicisi `isHeaderActionAvailable` saf yardımcıları geliştirildi; 6 yeni birim test ile doğrulandı (toplam 444 istemci testi, 472 monorepo testi).
+- [x] **Üst Çubuk ve Radar Barrel Mimarisi (`header/index.ts`, `header/actions/index.ts`, `header/readouts/index.ts`, `radar/index.ts`):** Üst bilgi çubuğunun aksiyon ve durum okuma alt modülleri ile 2B radarın hedef, kristal ve oyuncu işaretçileri tam modüler barrel hiyerarşisine kavuşturuldu.
+- [x] **Yalın ve Erişilebilir Üst Çubuk & Mini-Harita Orkestratörleri (`DesktopHeader.tsx`, `MiniMapRadar.tsx`):** `role="banner"` semantik üst çubuk yapısı ve temiz modüler radar importları ile her iki orkestratör bileşen konsolide edildi.
+
+
 
 
 

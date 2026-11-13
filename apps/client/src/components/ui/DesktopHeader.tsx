@@ -1,9 +1,15 @@
 'use client';
 
 import { useDesktopHeader } from '@/hooks/useDesktopHeader';
-import { HeaderBrandCapsule } from './header/HeaderBrandCapsule';
-import { HeaderStatusReadouts } from './header/HeaderStatusReadouts';
-import { HeaderActionButtons } from './header/HeaderActionButtons';
+import {
+  HeaderBrandCapsule,
+  HeaderStatusReadouts,
+  HeaderActionButtons,
+} from './header';
+import {
+  getHeaderAriaLabel,
+  getHeaderStatusPanelClass,
+} from '@/utils/desktopHeaderUtils';
 
 /**
  * Masaüstü HUD üst çubuğu:
@@ -31,12 +37,16 @@ export function DesktopHeader() {
   } = useDesktopHeader();
 
   return (
-    <header className="flex flex-wrap items-center justify-between gap-3">
+    <header
+      role="banner"
+      aria-label={getHeaderAriaLabel()}
+      className="flex flex-wrap items-center justify-between gap-3"
+    >
       {/* Sol Kapsül: Marka ve Bölüm Seçici */}
       <HeaderBrandCapsule dotColor={dotColor} />
 
       {/* Sağ Kapsül: Durum Okumaları ve Ana Eylemler */}
-      <div className="gm-panel pointer-events-auto flex flex-wrap items-center gap-2.5 rounded-2xl px-3.5 py-2 shadow-lg">
+      <div className={getHeaderStatusPanelClass()}>
         <HeaderStatusReadouts
           portalTooltip={portalTooltip}
           ratioText={ratioText}
