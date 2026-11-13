@@ -671,6 +671,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Başlık Eylem Bileşenleri (`ControllerHapticButton.tsx`, `ControllerThemeButton.tsx`, `ControllerRoomButton.tsx`, `ControllerConnectionBadge.tsx`):** Titreşim açma/kapatma butonu, aydınlık/karanlık tema geçiş butonu, oda kodu düzenleme butonu ve canlı RTT gecikme süreli ağ bağlantı rozeti bağımsız modüllere ayrıştırıldı.
 - [x] **Yalın Başlık Eylemleri Orkestratörü (`ControllerHeaderActions.tsx`):** Alt bileşen mimarisine geçirilerek `ControllerHeaderActions.tsx` 133 satırdan **56 satıra** indirildi.
 
+### Faz 135: Ayarlar Modalı Görünüm ve Sahne Atmosferi Ayrıştırması (Tamamlandı)
+- [x] **Görünüm Seçenekleri ve Bilye Kaplama Yardımcı Motoru (`appearanceUtils.ts`, `appearanceUtils.test.mjs`):** Renk şeması seçenekleri `COLOR_SCHEME_OPTIONS`, 3B atmosfer seçenekleri `BOARD_THEME_OPTIONS`, kamera modları `CAMERA_MODE_OPTIONS`, bilye kaplama buton stili `resolveBallSkinButtonClass`, renk önizleme `resolveBallSkinSwatchClass` ve erişilebilir etiket `formatBallSkinAriaLabel` saf yardımcıları geliştirildi; 5 yeni birim test ile doğrulandı (toplam 344 istemci testi, 372 monorepo testi).
+- [x] **Modüler Görünüm ve Sahne Seçici Bileşenleri (`AppearanceColorSchemeSelector.tsx`, `AppearanceBoardThemeSelector.tsx`, `AppearanceCameraModeSelector.tsx`, `AppearanceBallSkinSelector.tsx`):** Gece/Gündüz renk şeması, Zümrüt/Siberpunk/Kızıl Kor/Gün Işığı atmosferi, İzometrik/Üstten/Takip kamera açısı ve Krom/Zümrüt/Plazma/Kızıl bilye kaplama paleti bağımsız alt bileşenlere ayrıştırıldı.
+- [x] **Yalın Görünüm Bölümü Orkestratörü (`SettingsAppearanceSection.tsx`):** Alt bileşen mimarisine geçirilerek `SettingsAppearanceSection.tsx` 126 satırdan **56 satıra** indirildi.
+
 
 
 

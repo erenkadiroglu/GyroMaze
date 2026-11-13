@@ -1,18 +1,16 @@
 'use client';
 
-import {
+import type {
   BallSkin,
   BoardTheme,
   CameraMode,
   ColorScheme,
 } from '@gyromaze/shared';
-import {
-  SettingsSection,
-  FieldLabel,
-  Segmented,
-  handleRadioGroupKeyDown,
-} from '../primitives';
-import { BALL_SKIN_OPTIONS } from '@/utils/settingsUtils';
+import { SettingsSection } from '../primitives';
+import { AppearanceColorSchemeSelector } from './appearance/AppearanceColorSchemeSelector';
+import { AppearanceBoardThemeSelector } from './appearance/AppearanceBoardThemeSelector';
+import { AppearanceCameraModeSelector } from './appearance/AppearanceCameraModeSelector';
+import { AppearanceBallSkinSelector } from './appearance/AppearanceBallSkinSelector';
 
 interface SettingsAppearanceSectionProps {
   colorScheme: ColorScheme;
@@ -25,6 +23,9 @@ interface SettingsAppearanceSectionProps {
   onSetBallSkin: (skin: BallSkin) => void;
 }
 
+/**
+ * Ayarlar çekmecesi görünüm, sahne atmosferi, kamera açısı ve bilye kaplaması bölümü.
+ */
 export function SettingsAppearanceSection({
   colorScheme,
   onSetColorScheme,
@@ -37,90 +38,25 @@ export function SettingsAppearanceSection({
 }: SettingsAppearanceSectionProps) {
   return (
     <SettingsSection title="Görünüm ve sahne">
-      <div>
-        <FieldLabel>Renk şeması</FieldLabel>
-        <Segmented<ColorScheme>
-          label="Renk şeması"
-          value={colorScheme}
-          options={[
-            { value: 'dark', label: 'Gece' },
-            { value: 'light', label: 'Gündüz' },
-          ]}
-          onChange={onSetColorScheme}
-        />
-      </div>
+      <AppearanceColorSchemeSelector
+        colorScheme={colorScheme}
+        onSetColorScheme={onSetColorScheme}
+      />
 
-      <div>
-        <FieldLabel>3B sahne atmosferi</FieldLabel>
-        <Segmented<BoardTheme>
-          label="Sahne atmosferi"
-          value={boardTheme}
-          options={[
-            { value: 'emerald', label: 'Zümrüt' },
-            { value: 'cyberpunk', label: 'Siberpunk' },
-            { value: 'crimson', label: 'Kızıl Kor' },
-            { value: 'daylight', label: 'Gün Işığı' },
-          ]}
-          onChange={onSetBoardTheme}
-        />
-      </div>
+      <AppearanceBoardThemeSelector
+        boardTheme={boardTheme}
+        onSetBoardTheme={onSetBoardTheme}
+      />
 
-      <div>
-        <FieldLabel>Kamera açısı</FieldLabel>
-        <Segmented<CameraMode>
-          label="Kamera açısı"
-          value={cameraMode}
-          options={[
-            { value: 'isometric', label: 'İzometrik' },
-            { value: 'topdown', label: 'Üstten' },
-            { value: 'follow', label: 'Takip' },
-          ]}
-          onChange={onSetCameraMode}
-        />
-      </div>
+      <AppearanceCameraModeSelector
+        cameraMode={cameraMode}
+        onSetCameraMode={onSetCameraMode}
+      />
 
-      <div>
-        <FieldLabel>Bilye görünümü</FieldLabel>
-        <div
-          role="radiogroup"
-          aria-label="Bilye görünümü"
-          className="grid grid-cols-4 gap-1.5"
-        >
-          {BALL_SKIN_OPTIONS.map((skin, idx) => {
-            const active = ballSkin === skin.value;
-            return (
-              <button
-                key={skin.value}
-                type="button"
-                role="radio"
-                aria-checked={active}
-                tabIndex={active ? 0 : -1}
-                onClick={() => onSetBallSkin(skin.value)}
-                onKeyDown={(e) =>
-                  handleRadioGroupKeyDown(
-                    e,
-                    idx,
-                    BALL_SKIN_OPTIONS.length,
-                    (nextIdx) => onSetBallSkin(BALL_SKIN_OPTIONS[nextIdx].value),
-                  )
-                }
-                className={`flex cursor-pointer flex-col items-center gap-1.5 rounded-xl border py-2 text-xs font-medium transition-colors ${
-                  active
-                    ? 'border-brass bg-surface-2 text-fg'
-                    : 'border-line bg-surface-2/40 text-muted hover:text-fg'
-                }`}
-              >
-                <span
-                  aria-hidden="true"
-                  className={`h-4 w-4 rounded-full ring-1 ring-line ${skin.swatchClass}`}
-                />
-                <span>{skin.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <AppearanceBallSkinSelector
+        ballSkin={ballSkin}
+        onSetBallSkin={onSetBallSkin}
+      />
     </SettingsSection>
   );
 }
-
