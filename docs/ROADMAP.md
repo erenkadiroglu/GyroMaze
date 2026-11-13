@@ -483,6 +483,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Bağımsız Başlık Kancası (`useDesktopHeader.ts`):** Portal/kristal telemetrisi, oyun süresi formatlama, kontrolcü bağlantı durumu ve modal tetikleyicileri bağımsız `useDesktopHeader` kancasına taşındı.
 - [x] **Modüler Üst Çubuk Arayüz Mimarisi (`HeaderBrandCapsule.tsx`, `HeaderStatusReadouts.tsx`, `HeaderActionButtons.tsx`, `DesktopHeader.tsx`):** Sol marka/bölüm kapsülü, sağ durum göstergeleri ve aksiyon butonları bağımsız bileşenlere ayrılarak `DesktopHeader.tsx` 184 satırdan **54 satıra** indirildi.
 
+### Faz 96: Modüler Klavye ve Yardım Rehberi Modalı, Kısayol Veri Modeli Ayrışımı (Tamamlandı)
+- [x] **Klavye ve Mobil Kılavuz Veri/Yardımcı Motoru (`keyboardShortcuts.ts`, `shortcuts.test.mjs`):** `SHORTCUT_GUIDE_GROUPS`, `MOBILE_GUIDE_FEATURES`, `formatShortcutKeyAriaLabel` ve `resolveShortcutGroupIconColor` saf modelleri ve yardımcıları geliştirildi; 1 yeni birim test ile doğrulandı (toplam 178 istemci testi, 206 monorepo testi).
+- [x] **Modüler Kılavuz Bileşen Mimarisi (`ShortcutRow.tsx`, `ShortcutsSection.tsx`, `MobileFeaturesSection.tsx`, `HelpShortcutsModal.tsx`):** Kısayol satırları, kategori kartları ve mobil özellik rehberi bağımsız alt bileşenlere ayrılarak `HelpShortcutsModal.tsx` 174 satırdan **52 satıra** indirildi.
+
+
 
 
 

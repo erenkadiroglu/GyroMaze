@@ -1,6 +1,12 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { resolveKeyboardShortcut } from '../src/utils/keyboardShortcuts.ts';
+import {
+  resolveKeyboardShortcut,
+  SHORTCUT_GUIDE_GROUPS,
+  MOBILE_GUIDE_FEATURES,
+  formatShortcutKeyAriaLabel,
+  resolveShortcutGroupIconColor,
+} from '../src/utils/keyboardShortcuts.ts';
 
 describe('resolveKeyboardShortcut — Masaüstü Klavye Kısayolları ve Kural Çözümleyici', () => {
   it('yardım kısayolunu (H, h, ?) modal durumundan bağımsız olarak çözümler', () => {
@@ -82,6 +88,37 @@ describe('resolveKeyboardShortcut — Masaüstü Klavye Kısayolları ve Kural �
       resolveKeyboardShortcut({ key: 'r', isGameOver: true }),
       null,
     );
+  });
+
+  it('SHORTCUT_GUIDE_GROUPS, MOBILE_GUIDE_FEATURES ve yardımcı formatlayıcıları doğrular', () => {
+    // SHORTCUT_GUIDE_GROUPS yapısı
+    assert.equal(SHORTCUT_GUIDE_GROUPS.length, 3);
+    assert.equal(SHORTCUT_GUIDE_GROUPS[0].id, 'movement');
+    assert.equal(SHORTCUT_GUIDE_GROUPS[1].id, 'camera');
+    assert.equal(SHORTCUT_GUIDE_GROUPS[2].id, 'menu');
+    assert.equal(SHORTCUT_GUIDE_GROUPS[0].items.length, 4);
+
+    // MOBILE_GUIDE_FEATURES yapısı
+    assert.equal(MOBILE_GUIDE_FEATURES.length, 3);
+    assert.equal(MOBILE_GUIDE_FEATURES[0].id, 'gyro');
+    assert.equal(MOBILE_GUIDE_FEATURES[1].id, 'touch');
+    assert.equal(MOBILE_GUIDE_FEATURES[2].id, 'multiplayer');
+    assert.equal(MOBILE_GUIDE_FEATURES[2].badge, '2P');
+
+    // formatShortcutKeyAriaLabel
+    assert.equal(
+      formatShortcutKeyAriaLabel(['W', 'A', 'S', 'D']),
+      'Kısayol: W + A + S + D',
+    );
+    assert.equal(
+      formatShortcutKeyAriaLabel([]),
+      'Kısayol tuşu atanmamış',
+    );
+
+    // resolveShortcutGroupIconColor
+    assert.equal(resolveShortcutGroupIconColor('movement'), 'text-brass');
+    assert.equal(resolveShortcutGroupIconColor('camera'), 'text-signal');
+    assert.equal(resolveShortcutGroupIconColor('menu'), 'text-ok');
   });
 });
 
