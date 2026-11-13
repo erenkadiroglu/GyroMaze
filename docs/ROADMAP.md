@@ -631,6 +631,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Araç Butonu Bileşeni (`EditorToolButton.tsx`):** Tekil araç butonu, erişilebilir radyo semantiği ve ikon/etiket yerleşimi bağımsız bileşene ayrıştırıldı.
 - [x] **Yalın Araç Çubuğu Orkestratörü (`LevelEditorToolbar.tsx`):** Araç listesi ve durum eşlemesi sadeleştirilerek `LevelEditorToolbar.tsx` 159 satırdan **45 satıra** indirildi ve `TOOLS`, `TOOL_BY_ID` geriye dönük re-export uyumluluğu korundu.
 
+### Faz 127: Harita Editörü Alt Çubuğu ve Eylemleri Ayrıştırması (Tamamlandı)
+- [x] **Alt Çubuk Durum ve Hata Yardımcı Motoru (`editorFooterUtils.ts`, `editorFooterUtils.test.mjs`):** JSON ve bağlantı kopyalama butonu durumu `resolveCopyButtonState`, içe aktarma hatası görünürlüğü `shouldShowImportError` ve hata metni temizleyici `formatImportErrorMessage` saf yardımcıları geliştirildi; 5 yeni birim test ile doğrulandı (toplam 306 istemci testi, 334 monorepo testi).
+- [x] **Modüler Editör Alt Bileşenleri (`EditorImportErrorAlert.tsx`, `EditorGridActions.tsx`, `EditorPlayButton.tsx`):** İçe aktarma hatası uyarısı, ızgara yardımcı aksiyonları (temizle, rastgele, kopyala, panodan yükle) ve birincil "Bu haritayı oyna" butonu bağımsız bileşenlere ayrıştırıldı.
+- [x] **Yalın Editör Alt Çubuğu (`LevelEditorFooter.tsx`):** Alt bileşen mimarisine geçirilerek `LevelEditorFooter.tsx` 112 satırdan **45 satıra** indirildi.
+
 
 
 
