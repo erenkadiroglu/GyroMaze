@@ -16,6 +16,13 @@ import {
 } from '@gyromaze/shared';
 import { useGameStore } from '@/store/useGameStore';
 import { getMazeLevel } from '@/components/scene/mazeLevels';
+import {
+  getHapticVibrationPattern,
+  resolveSocketServerUrl,
+  shouldThrottleGyroEmit,
+  calculatePingLatency,
+  normalizeRoomCodeForJoin,
+} from '@/utils/socketConnectionUtils';
 
 const VALID_GAME_STATUSES: ReadonlySet<string> = new Set<GameStatus>([
   'waiting',
@@ -25,17 +32,6 @@ const VALID_GAME_STATUSES: ReadonlySet<string> = new Set<GameStatus>([
   'won',
   'lost',
 ]);
-
-const HAPTIC_PATTERNS: Record<HapticPayload['type'], VibratePattern> = {
-  wall: 18,
-  hole: [70, 40, 110],
-  goal: [50, 50, 50, 50, 140],
-  calibrate: 30,
-  crystal: [25, 30, 45],
-  laser: [90, 30, 90],
-  boost: [30, 20, 40],
-  teleport: [20, 40, 20, 40, 60],
-};
 
 function triggerDeviceVibrate(pattern: VibratePattern): void {
   if (
@@ -50,29 +46,6 @@ function triggerDeviceVibrate(pattern: VibratePattern): void {
   } catch {
     // WebView veya tarayıcı titreşim kısıtını sessizce yoksay
   }
-}
-
-/**
- * Hem yerel geliştirme ortamında (localhost:4000) hem de tek portlu HTTPS tünellerinde
- * (server.mjs TCP_NODELAY WebSocket Proxy) kesintisiz çalışan sunucu adresi çözücü.
- */
-function resolveSocketServerUrl(): string {
-  if (process.env.NEXT_PUBLIC_SOCKET_URL) {
-    return process.env.NEXT_PUBLIC_SOCKET_URL;
-  }
-  if (typeof window !== 'undefined') {
-    const { protocol, hostname, origin } = window.location;
-    const isLoopback =
-      hostname === 'localhost' ||
-      hostname === '127.0.0.1' ||
-      hostname === '::1' ||
-      hostname === '[::1]';
-    if (protocol === 'https:' || !isLoopback) {
-      return origin;
-    }
-    return `http://${hostname}:4000`;
-  }
-  return 'http://localhost:4000';
 }
 
 interface UseSocketOptions {
@@ -137,7 +110,7 @@ export function useSocket({
   const setRemoteProgress = useGameStore((s) => s.setRemoteProgress);
 
   useEffect(() => {
-    const serverUrl = resolveSocketServerUrl();
+    const serverUrl = resolveSocketServerUrl(process.env.NEXT_PUBLIC_SOCKET_URL);
 
     const socket = io(serverUrl, {
       path: '/socket.io/',
@@ -301,7 +274,7 @@ export function useSocket({
         if (!payload?.type) {
           return;
         }
-        const pattern = HAPTIC_PATTERNS[payload.type];
+        const pattern = getHapticVibrationPattern(payload.type);
         if (pattern !== undefined) {
           triggerDeviceVibrate(pattern);
         }
@@ -395,7 +368,7 @@ export function useSocket({
       if (!sock?.connected) return;
       const sentAt = performance.now();
       sock.emit(RoomEvents.ROOM_PING, () => {
-        const rtt = Math.max(1, Math.min(999, Math.round(performance.now() - sentAt)));
+        const rtt = calculatePingLatency(sentAt, performance.now());
         setLatencyMs(rtt);
       });
     };
@@ -461,17 +434,16 @@ export function useSocket({
   const emitGyroUpdate = useCallback((targetRoom: string, data: GyroData) => {
     if (!socketRef.current?.connected) return;
     const now = performance.now();
-    const isZero = data.beta === 0 && data.gamma === 0;
-    const wasNonZero =
-      lastSentBetaRef.current !== 0 || lastSentGammaRef.current !== 0;
-    const isZeroTransition = isZero && wasNonZero;
-
-    if (!isZeroTransition && now - lastEmitTimeRef.current < 15) return;
-
-    const deltaBeta = Math.abs(data.beta - lastSentBetaRef.current);
-    const deltaGamma = Math.abs(data.gamma - lastSentGammaRef.current);
-
-    if (!isZeroTransition && deltaBeta < 0.1 && deltaGamma < 0.1) {
+    if (
+      shouldThrottleGyroEmit(
+        now,
+        lastEmitTimeRef.current,
+        data.beta,
+        data.gamma,
+        lastSentBetaRef.current,
+        lastSentGammaRef.current,
+      )
+    ) {
       return;
     }
 
@@ -490,7 +462,7 @@ export function useSocket({
    */
   const joinRoomByCode = useCallback(
     (code: string, slot: 1 | 2 = playerSlotRef.current) => {
-      const normalized = code.trim().toUpperCase();
+      const normalized = normalizeRoomCodeForJoin(code);
       if (!normalized || !socketRef.current?.connected) return;
       sessionReplacedRef.current = false;
       setControllerPaired(false);

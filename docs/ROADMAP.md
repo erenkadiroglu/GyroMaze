@@ -812,6 +812,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **404 Sayfası Yardımcı Motoru (`notFoundViewUtils.ts`, `notFoundViewUtils.test.mjs`):** Başlık, mesaj, ana sayfaya dönüş butonu metni ve stillerini sağlayan `getNotFoundTitle`, `getNotFoundMessage`, `getNotFoundContainerClass`, `getNotFoundButtonClass` saf yardımcıları geliştirildi; 4 yeni birim test ile doğrulandı.
 - [x] **Rota Dosyaları Sadeleşmesi (`manifest.ts`, `not-found.tsx`):** `manifest.ts` ve `not-found.tsx` saf yardımcı motorlara devredilerek yalınlaştırıldı; `apps/client/package.json` üzerinden test kapsamı 520'den **527'ye**, monorepo testleri **582'ye** yükseltildi.
 
+### Faz 172: İstemci WebSocket Bağlantı ve Haptik İletişim Motoru (Tamamlandı)
+- [x] **WebSocket & Haptik Yardımcı Motoru (`socketConnectionUtils.ts`, `socketConnectionUtils.test.mjs`):** `HAPTIC_PATTERNS`, `getHapticVibrationPattern`, `resolveSocketServerUrl`, `shouldThrottleGyroEmit`, `calculatePingLatency`, `normalizeRoomCodeForJoin` fonksiyonları saf mimariyle geliştirildi; 9 yeni birim test ile %100 doğrulandı (toplam 536 istemci testi, 49 sunucu testi, 6 shared testi, **591 monorepo testi**).
+- [x] **useSocket Kancası Sadeleşmesi (`apps/client/src/hooks/useSocket.ts`):** Tekrarlayan haptik desenleri, tünel/localhost soket URL çözümleme mantığı, 60Hz jiroskop veri frenleme eşikleri, RTT gecikme hesaplaması ve oda kodu normalizasyonu saf yardımcı motora devredildi.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/socketConnectionUtils.test.mjs` dahil edilerek istemci test sayısı 527'den **536'ya** çıkarıldı.
+
 
 
 
