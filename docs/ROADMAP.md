@@ -713,6 +713,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Kurtarma ve Toast Bileşenleri (`PauseRecoveryMessage.tsx`, `PauseRecoveryActions.tsx`, `ToastContent.tsx`):** Uyarı mesajı metni, "Bağla" / "Devam et" buton grubu ve dinamik ton stillerine sahip toast içerik kartı bağımsız modüllere ayrıştırıldı.
 - [x] **Yalın Overlay Bileşenleri ve Barrel Yapısı (`PauseRecoveryBar.tsx`, `HudNotificationToast.tsx`, `DesktopHUDOverlays.tsx`):** Tekil sorumluluk ilkesi uygulanarak çubuk ve bildirim yapıları sadeleştirildi; `overlays/index.ts` üzerinden merkezi dışa aktarım sağlandı.
 
+### Faz 145: Masaüstü Modallar Katmanı Ayrıştırması (Tamamlandı)
+- [x] **Masaüstü Modallar Yardımcı Motoru (`desktopModalsUtils.ts`, `desktopModalsUtils.test.mjs`):** Modal anahtarları `DESKTOP_MODAL_KEYS`, liderlik tablosu seviye sınırlandırması `resolveInitialLeaderboardLevel`, dinamik modal başlığı `formatLeaderboardModalTitle`, aktif modal sorgulayıcı `isAnyDesktopModalOpen` ve görünürlük denetleyici `shouldRenderLeaderboardModal` saf yardımcıları geliştirildi; 6 yeni birim test ile doğrulandı (toplam 398 istemci testi, 426 monorepo testi).
+- [x] **Modüler Modal Grupları (`UtilityModalsGroup.tsx`, `SocialModalsGroup.tsx`):** Araç pencereleri (Editör, Ayarlar, Yardım) ile Sosyal/Ağ pencereleri (QR Eşleştirme, Liderlik Tablosu) tekil sorumluluk esasına göre bağımsız bileşen gruplarına ayrıştırıldı.
+- [x] **Yalın Modallar Katmanı Orkestratörü (`DesktopModalsLayer.tsx`):** Alt grup mimarisine devredilerek `DesktopModalsLayer.tsx` 45 satırdan **31 satıra** indirildi.
+
+
 
 
 
