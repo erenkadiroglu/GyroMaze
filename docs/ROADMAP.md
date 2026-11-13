@@ -661,6 +661,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler İlkel Bileşenler (`useDialogBehavior.ts`, `Modal.tsx`, `Drawer.tsx`, `Buttons.tsx`, `FormControls.tsx`, `DisplayPrimitives.tsx`):** Pencere/panel odak tuzağı kancası, modal pencere, sağ çekmece paneli, ikon/metin butonları, radyo grupları/anahtarlar ve etiket elemanları bağımsız modüllere ayrıştırıldı.
 - [x] **Yalın UI Primitives Barrel Dosyası (`primitives.tsx`):** Monolitik yapı saf re-export mimarisine dönüştürülerek `primitives.tsx` 525 satırdan **42 satıra** indirildi ve geriye dönük tam uyumluluk korundu.
 
+### Faz 133: Mobil Kontrolcü Eğim ve Seçici Kontrolleri Ayrıştırması (Tamamlandı)
+- [x] **Gimbal Seçici Buton Yardımcı Motoru (`gimbalSelectorUtils.ts`, `gimbalSelectorUtils.test.mjs`):** Eğim modu buton stili `resolveGimbalModeButtonClass`, hassasiyet çarpanı butonu stili `resolveSensitivityButtonClass` ve 1P/2P yuva butonu stili `resolveSlotButtonClass` saf yardımcıları geliştirildi; 4 yeni birim test ile doğrulandı (toplam 335 istemci testi, 363 monorepo testi).
+- [x] **Modüler Eğim Seçici Bileşenleri (`GimbalModeSelector.tsx`, `GimbalSensitivitySelector.tsx`, `GimbalSlotSelector.tsx`):** Jiroskop/Dokunmatik modu seçici, 0.75x..1.35x hassasiyet seçici ve çok oyunculu oyuncu yuvası seçici radyo grupları bağımsız modüllere ayrıştırıldı.
+- [x] **Yalın Eğim Kontrolleri Orkestratörü (`GimbalControlSelectors.tsx`):** Seçici bileşen mimarisine geçirilerek `GimbalControlSelectors.tsx` 144 satırdan **38 satıra** indirildi.
+
 
 
 
