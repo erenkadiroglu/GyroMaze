@@ -1,11 +1,8 @@
 'use client';
 
-import { SettingsSection, FieldLabel, Segmented, SwitchRow } from '../primitives';
-import {
-  VOLUME_SEGMENTED_OPTIONS,
-  formatVolumeLabel,
-  resolveActiveVolumeValue,
-} from '@/utils/settingsUtils';
+import { SettingsSection } from '../primitives';
+import { AudioVolumeControl } from './audio/AudioVolumeControl';
+import { OverlaysSwitchGroup } from './audio/OverlaysSwitchGroup';
 
 interface SettingsAudioOverlaysSectionProps {
   soundVolume: number;
@@ -21,6 +18,9 @@ interface SettingsAudioOverlaysSectionProps {
   onSetHapticEnabled: (enabled: boolean) => void;
 }
 
+/**
+ * Ayarlar çekmecesi ses düzeyi ve ekran katmanları (iz, hayalet, radar, titreşim) bölümü.
+ */
 export function SettingsAudioOverlaysSection({
   soundVolume,
   isSoundMuted,
@@ -34,48 +34,24 @@ export function SettingsAudioOverlaysSection({
   isHapticEnabled,
   onSetHapticEnabled,
 }: SettingsAudioOverlaysSectionProps) {
-  const activeVolumeKey = resolveActiveVolumeValue(soundVolume, isSoundMuted);
-  const volumeLabel = formatVolumeLabel(soundVolume, isSoundMuted);
-
   return (
     <SettingsSection title="Ses ve ekran katmanları">
-      <div>
-        <FieldLabel value={volumeLabel}>Ses şiddeti</FieldLabel>
-        <Segmented<number>
-          label="Ses şiddeti"
-          value={activeVolumeKey}
-          options={VOLUME_SEGMENTED_OPTIONS}
-          onChange={onVolumeChange}
-        />
-      </div>
+      <AudioVolumeControl
+        soundVolume={soundVolume}
+        isSoundMuted={isSoundMuted}
+        onVolumeChange={onVolumeChange}
+      />
 
-      <div className="divide-y divide-line pt-1">
-        <SwitchRow
-          label="Neon hareket izi"
-          description="Bilyenin arkasındaki parlak iz halkaları"
-          checked={showTrail}
-          onChange={onSetShowTrail}
-        />
-        <SwitchRow
-          label="3B hayalet yarışçı"
-          description="Bölümdeki en iyi turunun canlı hologramı"
-          checked={showGhost}
-          onChange={onSetShowGhost}
-        />
-        <SwitchRow
-          label="2B canlı radar"
-          description="Sol alt göstergede üstten harita konumu"
-          checked={showMiniMap}
-          onChange={onSetShowMiniMap}
-        />
-        <SwitchRow
-          label="Mobil titreşim (Haptik)"
-          description="Çarpma, lazer ve portallarda telefon titreşimi"
-          checked={isHapticEnabled}
-          onChange={onSetHapticEnabled}
-        />
-      </div>
+      <OverlaysSwitchGroup
+        showTrail={showTrail}
+        onSetShowTrail={onSetShowTrail}
+        showGhost={showGhost}
+        onSetShowGhost={onSetShowGhost}
+        showMiniMap={showMiniMap}
+        onSetShowMiniMap={onSetShowMiniMap}
+        isHapticEnabled={isHapticEnabled}
+        onSetHapticEnabled={onSetHapticEnabled}
+      />
     </SettingsSection>
   );
 }
-

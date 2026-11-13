@@ -676,6 +676,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Görünüm ve Sahne Seçici Bileşenleri (`AppearanceColorSchemeSelector.tsx`, `AppearanceBoardThemeSelector.tsx`, `AppearanceCameraModeSelector.tsx`, `AppearanceBallSkinSelector.tsx`):** Gece/Gündüz renk şeması, Zümrüt/Siberpunk/Kızıl Kor/Gün Işığı atmosferi, İzometrik/Üstten/Takip kamera açısı ve Krom/Zümrüt/Plazma/Kızıl bilye kaplama paleti bağımsız alt bileşenlere ayrıştırıldı.
 - [x] **Yalın Görünüm Bölümü Orkestratörü (`SettingsAppearanceSection.tsx`):** Alt bileşen mimarisine geçirilerek `SettingsAppearanceSection.tsx` 126 satırdan **56 satıra** indirildi.
 
+### Faz 136: Ayarlar Modalı Ses ve Ekran Katmanları Ayrıştırması (Tamamlandı)
+- [x] **Ses ve Katman Yardımcı Motoru (`audioOverlaysUtils.ts`, `audioOverlaysUtils.test.mjs`):** Katman konfigürasyonları `OVERLAY_SWITCH_CONFIGS`, erişilebilir anahtar etiketi `formatOverlayToggleAriaLabel`, katman arama `getOverlaySwitchConfig` ve ses düzeyi metin formatlayıcı `formatVolumeAriaLabel` saf yardımcıları geliştirildi; 5 yeni birim test ile doğrulandı (toplam 350 istemci testi, 378 monorepo testi).
+- [x] **Modüler Ses ve Katman Bileşenleri (`AudioVolumeControl.tsx`, `OverlaysSwitchGroup.tsx`):** Ses şiddeti göstergesi ve Segmented seçici bileşeni ile Neon hareket izi, 3B hayalet yarışçı, 2B canlı radar ve Mobil titreşim switch grubu bağımsız modüllere ayrıştırıldı.
+- [x] **Yalın Ses ve Katmanlar Orkestratörü (`SettingsAudioOverlaysSection.tsx`):** Alt bileşen mimarisine geçirilerek `SettingsAudioOverlaysSection.tsx` 81 satırdan **53 satıra** indirildi.
+
 
 
 
