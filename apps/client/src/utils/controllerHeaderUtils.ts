@@ -12,6 +12,20 @@ export function resolveHapticButtonLabel(isHapticEnabled: boolean): {
 }
 
 /**
+ * Titreşim butonunun stil sınıflarını döner.
+ */
+export function resolveHapticButtonClass(isHapticEnabled: boolean): string {
+  return isHapticEnabled ? 'text-brass' : 'text-muted/50 opacity-60';
+}
+
+/**
+ * Tema değiştirme butonunun erişilebilir etiketini döner.
+ */
+export function resolveThemeButtonLabel(colorScheme: 'dark' | 'light'): string {
+  return colorScheme === 'light' ? 'Gece moduna geç' : 'Gündüz moduna geç';
+}
+
+/**
  * Oda kodu düzenleme butonunun metnini çözer.
  */
 export function resolveRoomCodeButtonLabel(activeRoomCode: string): string {

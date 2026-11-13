@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   resolveHapticButtonLabel,
+  resolveHapticButtonClass,
+  resolveThemeButtonLabel,
   resolveRoomCodeButtonLabel,
   resolveConnectionAriaLabel,
   resolvePlayerSlotBadgeClasses,
@@ -17,6 +19,16 @@ test('controllerHeaderUtils — Mobil Kontrolcü Üst Çubuğu Yardımcıları',
       ariaLabel: 'Titreşimi aç',
       title: 'Titreşim kapalı',
     });
+  });
+
+  await t.test('resolveHapticButtonClass açık/kapalı durumuna göre sınıf döner', () => {
+    assert.equal(resolveHapticButtonClass(true), 'text-brass');
+    assert.equal(resolveHapticButtonClass(false), 'text-muted/50 opacity-60');
+  });
+
+  await t.test('resolveThemeButtonLabel renk şemasına göre erişilebilir etiket döner', () => {
+    assert.equal(resolveThemeButtonLabel('light'), 'Gece moduna geç');
+    assert.equal(resolveThemeButtonLabel('dark'), 'Gündüz moduna geç');
   });
 
   await t.test('resolveRoomCodeButtonLabel aktif oda koduna göre buton metnini belirler', () => {

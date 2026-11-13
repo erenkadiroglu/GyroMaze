@@ -666,6 +666,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Eğim Seçici Bileşenleri (`GimbalModeSelector.tsx`, `GimbalSensitivitySelector.tsx`, `GimbalSlotSelector.tsx`):** Jiroskop/Dokunmatik modu seçici, 0.75x..1.35x hassasiyet seçici ve çok oyunculu oyuncu yuvası seçici radyo grupları bağımsız modüllere ayrıştırıldı.
 - [x] **Yalın Eğim Kontrolleri Orkestratörü (`GimbalControlSelectors.tsx`):** Seçici bileşen mimarisine geçirilerek `GimbalControlSelectors.tsx` 144 satırdan **38 satıra** indirildi.
 
+### Faz 134: Mobil Kontrolcü Başlık Eylemleri ve Ağ Rozeti Ayrıştırması (Tamamlandı)
+- [x] **Başlık Eylemleri ve Tema Yardımcı Motoru (`controllerHeaderUtils.ts`, `controllerHeaderUtils.test.mjs`):** Titreşim butonu stil sınıfı `resolveHapticButtonClass` ve tema değiştirme butonu erişilebilir etiketi `resolveThemeButtonLabel` saf yardımcıları geliştirildi; test kapsamı 6 birim teste çıkarıldı (toplam 338 istemci testi, 366 monorepo testi).
+- [x] **Modüler Başlık Eylem Bileşenleri (`ControllerHapticButton.tsx`, `ControllerThemeButton.tsx`, `ControllerRoomButton.tsx`, `ControllerConnectionBadge.tsx`):** Titreşim açma/kapatma butonu, aydınlık/karanlık tema geçiş butonu, oda kodu düzenleme butonu ve canlı RTT gecikme süreli ağ bağlantı rozeti bağımsız modüllere ayrıştırıldı.
+- [x] **Yalın Başlık Eylemleri Orkestratörü (`ControllerHeaderActions.tsx`):** Alt bileşen mimarisine geçirilerek `ControllerHeaderActions.tsx` 133 satırdan **56 satıra** indirildi.
+
+
 
 
 
