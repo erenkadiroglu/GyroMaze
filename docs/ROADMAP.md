@@ -877,9 +877,14 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **useDesktopHUD Kancası Sadeleşmesi (`apps/client/src/hooks/useDesktopHUD.ts`):** `useDesktopHUD.ts` kancasındaki toplam kristal, kalan kristal, portal kilit durumu, açık modal birleşimi, rozet metni ve liderlik başlangıç seviyesi çözümlemeleri saf orkestrasyon motoruna devredildi.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/desktopHudOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 661'den **667'ye**, monorepo testleri 716'dan **722'ye** çıkarıldı.
 
-### Faz 186: Oyun Bitiş (Game Outcome) ve Zafer/Yenilgi Orkestrasyon Motoru (Sıradaki)
-- [ ] **Oyun Bitiş Orkestrasyon Motoru (`gameOutcomeOrchestrationUtils.ts`, `gameOutcomeOrchestrationUtils.test.mjs`):** `useGameOutcome.ts` kancasındaki zafer/yenilgi ses tetikleyicileri, mobil haptik geri bildirimi, yıldız kazanımı hesaplaması, yerel ve küresel skor gönderimi ile hayalet yarışçı kaydını saf motora ayrıştırma.
-- [ ] **useGameOutcome Kancası Sadeleşmesi:** Kancayı salt durum dinleyicisi ve reaktif tetikleyiciye indirgeme.
+### Faz 186: Oyun Bitiş (Game Outcome) ve Zafer/Yenilgi Orkestrasyon Motoru (Tamamlandı)
+- [x] **Oyun Bitiş Orkestrasyon Motoru (`gameOutcomeOrchestrationUtils.ts`, `gameOutcomeOrchestrationUtils.test.mjs`):** `PLAYER_NAME_STORAGE_KEY`, `DEFAULT_STAR_THRESHOLDS`, `loadStoredPlayerName`, `saveStoredPlayerName`, `prepareLeaderboardScorePayload`, `resolveGameOutcomeMetrics` fonksiyonları saf mimariyle geliştirildi; 6 yeni birim test ile %100 doğrulandı (toplam 673 istemci testi, 49 sunucu testi, 6 shared testi, **728 monorepo testi**).
+- [x] **useGameOutcome Kancası Sadeleşmesi (`apps/client/src/hooks/useGameOutcome.ts`):** `useGameOutcome.ts` kancasındaki yıldız, rekor, süre sınırları, kutlama gereksinimi, çok oyunculu kazanan metni ve liderlik skoru hazırlığı saf orkestrasyon motoruna devredildi.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/gameOutcomeOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 667'den **673'e**, monorepo testleri 722'den **728'e** çıkarıldı.
+
+### Faz 187: Masaüstü Başlık (Header) ve Seviye Seçim Orkestrasyon Motoru (Sıradaki)
+- [ ] **Masaüstü Başlık Orkestrasyon Motoru (`desktopHeaderOrchestrationUtils.ts`, `desktopHeaderOrchestrationUtils.test.mjs`):** `useDesktopHeader.ts` ve `useLevelSelect.ts` kancalarındaki başlık/altbaşlık formatlama, seviye penceresi hesaplama, modal tetikleyicileri ve sesli bölüm geçişlerini saf motora ayrıştırma.
+- [ ] **useDesktopHeader ve useLevelSelect Kancaları Sadeleşmesi:** Kancaları salt durum bağlayıcılarına indirgeme.
 - [ ] **Birim Testleri ve Doğrulama:** Yeni testlerle kapsamı artırma, derleme ve git push.
 
 
