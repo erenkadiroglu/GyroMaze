@@ -26,3 +26,4 @@ test('wallUtils — 3B Duvar Geometri ve Anahtar Yardımcıları', async (t) => 
     assert.equal(fractional, 1.2);
   });
 });
+

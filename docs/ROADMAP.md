@@ -616,6 +616,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler 3B Duvar Bileşenleri (`StageOuterWalls.tsx`, `StageInnerWalls.tsx`):** Dış sınır ve iç labirent duvarları bağımsız Three.js alt bileşenlerine ayrıştırıldı.
 - [x] **Yalın Duvarlar Orkestratörü (`MazeStageWalls.tsx`):** Duvar geometrileri alt bileşenlere devredilerek `MazeStageWalls.tsx` 53 satırdan **33 satıra** indirildi.
 
+### Faz 123: 3B Sahne Orkestrasyonu ve Ref Yaşam Döngüsü Kancası (Tamamlandı)
+- [x] **Sahne Orkestrasyonu ve Hız Yardımcı Motoru (`stageOrchestrationUtils.ts`, `stageOrchestrationUtils.test.mjs`):** Açık zemin teması `isLightBoardTheme`, XZ bilye hız büyüklüğü `calculateBallVelocitySpeed` ve zaman aşımlı duvar sesi denetimi `shouldTriggerWallSound` saf yardımcıları geliştirildi; 4 yeni birim test ile doğrulandı (toplam 285 istemci testi, 313 monorepo testi).
+- [x] **Bağımsız Sahne Orkestrasyon Kancası (`useMazeStageOrchestration.ts`):** 13 adet Three.js/Rapier ref nesnesi, sıfırlama kancaları, hareket izi, hayalet yarışçı, bilye etkileşimleri ve 60 FPS kare döngüsü tek bir kancada konsolide edildi.
+- [x] **Yalın Sahne Görsel Şablonu (`MazeStage.tsx`):** Tüm yan etkiler ve orkestrasyon devredilerek `MazeStage.tsx` 280 satırdan **132 satıra** indirildi.
+
+
 
 
 

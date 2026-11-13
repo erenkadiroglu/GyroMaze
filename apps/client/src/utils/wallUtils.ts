@@ -29,3 +29,4 @@ export function formatWallGeometryArgs(
 export function calculateWallVolume(size: [number, number, number]): number {
   return Number((size[0] * size[1] * size[2]).toFixed(4));
 }
+
