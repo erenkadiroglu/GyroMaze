@@ -768,6 +768,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Alt Panel ve Araç Çubuğu Barrel Mimarisi (`footer/index.ts`, `toolbar/index.ts`):** Hızlı araç çubuğu ve alt kontroller paneli ilgili klasörlerine taşındı; `footer/index.ts` ve `toolbar/index.ts` üzerinden temiz re-export mimarisi kuruldu.
 - [x] **Yalın ve Erişilebilir Alt Panel & Araç Çubuğu Orkestratörleri (`DesktopFooterControls.tsx`, `QuickControlsToolbar.tsx`):** `role="contentinfo"` ve `role="toolbar"` semantik erişilebilirlik yapıları, merkezi barrel importları ve saf yardımcı fonksiyonlar ile konsolide edildi.
 
+### Faz 156: Mobil Kontrolcü Merkez Sahnesi ve Barrel Konsolidasyonu (Tamamlandı)
+- [x] **Merkez Sahne Yardımcı Motoru (`controllerCenterStageUtils.ts`, `controllerCenterStageUtils.test.mjs`):** Aşama bazlı erişilebilirlik etiketi `getCenterStageAriaLabel`, konteyner stil sınıfları `getCenterStageContainerClass`, aşama doğrulayıcılar `isGimbalStageActive` / `isRoomStageActive` / `isSensorStageActive` ve aşama durum özet formatlayıcı `formatStageModeSummary` saf yardımcıları geliştirildi; 5 yeni birim test ile doğrulandı (toplam 454 istemci testi, 482 monorepo testi).
+- [x] **Mobil Kontrolcü Barrel Hiyerarşisi (`banners/index.ts`, `footer/index.ts`, `gimbal/index.ts`, `gimbal/selectors/index.ts`, `header/index.ts`, `header/actions/index.ts`, `room/index.ts`, `sensor/index.ts`):** Mobil kontrolcünün tüm alt modülleri bağımsız ve hiyerarşik barrel sistemine kavuşturuldu.
+- [x] **Yalın ve Erişilebilir Merkez Sahne Orkestratörü (`ControllerCenterStage.tsx`):** `role="region"` semantik yapısı, dinamik `aria-label` çözümlemesi ve saf yardımcı fonksiyonlar ile `ControllerCenterStage.tsx` refactor edildi.
+
+
 
 
 

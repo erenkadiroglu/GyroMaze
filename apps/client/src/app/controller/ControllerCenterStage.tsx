@@ -5,8 +5,12 @@ import type { CenterStageMode } from '@/utils/controllerOrchestrationUtils';
 import { ControllerRoomCard } from './ControllerRoomCard';
 import { ControllerSensorCard } from './ControllerSensorCard';
 import { ControllerGimbalPad } from './ControllerGimbalPad';
+import {
+  getCenterStageAriaLabel,
+  getCenterStageContainerClass,
+} from '@/utils/controllerCenterStageUtils';
 
-interface ControllerCenterStageProps {
+export interface ControllerCenterStageProps {
   stageMode: CenterStageMode;
   // Room card props
   manualRoomInput: string;
@@ -76,7 +80,11 @@ export function ControllerCenterStage({
   onPointerEndOnGimbal,
 }: ControllerCenterStageProps) {
   return (
-    <section className="my-auto flex flex-col items-center justify-center py-3">
+    <section
+      role="region"
+      aria-label={getCenterStageAriaLabel(stageMode)}
+      className={getCenterStageContainerClass()}
+    >
       {stageMode === 'room' ? (
         <ControllerRoomCard
           manualRoomInput={manualRoomInput}
