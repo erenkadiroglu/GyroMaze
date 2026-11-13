@@ -681,6 +681,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Ses ve Katman Bileşenleri (`AudioVolumeControl.tsx`, `OverlaysSwitchGroup.tsx`):** Ses şiddeti göstergesi ve Segmented seçici bileşeni ile Neon hareket izi, 3B hayalet yarışçı, 2B canlı radar ve Mobil titreşim switch grubu bağımsız modüllere ayrıştırıldı.
 - [x] **Yalın Ses ve Katmanlar Orkestratörü (`SettingsAudioOverlaysSection.tsx`):** Alt bileşen mimarisine geçirilerek `SettingsAudioOverlaysSection.tsx` 81 satırdan **53 satıra** indirildi.
 
+### Faz 137: Ayarlar Modalı Oyun Modu ve Oyuncu Sayısı Ayrıştırması (Tamamlandı)
+- [x] **Oyun Modu Seçenekleri ve Oyuncu Sayısı Yardımcı Motoru (`gameModeSectionUtils.ts`, `gameModeSectionUtils.test.mjs`):** Oyuncu sayısı seçenekleri `PLAYER_COUNT_OPTIONS`, süre kuralı seçenekleri `GAME_MODE_RULE_OPTIONS`, seçimden boolean türetici `resolvePlayerCountValue` / `isMultiplayerValue` ve erişilebilir mod etiketi `formatGameModeAriaLabel` saf yardımcıları geliştirildi; 5 yeni birim test ile doğrulandı (toplam 356 istemci testi, 384 monorepo testi).
+- [x] **Modüler Oyun Modu Seçici Bileşenleri (`GameModePlayerCountSelector.tsx`, `GameModeRuleSelector.tsx`):** 1P solo vs 2P 1v1 duo seçici ve dinamik rehber metni ile Standart vs Süreye karşı kural seçici bağımsız modüllere ayrıştırıldı.
+- [x] **Yalın Oyun Modu Orkestratörü (`SettingsGameModeSection.tsx`):** Alt bileşen mimarisine geçirilerek `SettingsGameModeSection.tsx` 63 satırdan **35 satıra** indirildi.
+
 
 
 
