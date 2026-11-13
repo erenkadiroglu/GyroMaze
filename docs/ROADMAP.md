@@ -636,6 +636,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Editör Alt Bileşenleri (`EditorImportErrorAlert.tsx`, `EditorGridActions.tsx`, `EditorPlayButton.tsx`):** İçe aktarma hatası uyarısı, ızgara yardımcı aksiyonları (temizle, rastgele, kopyala, panodan yükle) ve birincil "Bu haritayı oyna" butonu bağımsız bileşenlere ayrıştırıldı.
 - [x] **Yalın Editör Alt Çubuğu (`LevelEditorFooter.tsx`):** Alt bileşen mimarisine geçirilerek `LevelEditorFooter.tsx` 112 satırdan **45 satıra** indirildi.
 
+### Faz 128: Harita Editörü Üst Bilgi ve Başlık/Boyut Seçici Ayrıştırması (Tamamlandı)
+- [x] **Üst Bilgi ve Boyut Yardımcı Motoru (`editorMetaUtils.ts`, `editorMetaUtils.test.mjs`):** Başlık temizleme `sanitizeMapTitle`, tahta boyutu etiketi formatlayıcı `formatBoardSizeLabel`, boyut seçili denetimi `isBoardSizeSelected` ve dinamik stil sınıfı `resolveBoardSizeButtonClass` saf yardımcıları geliştirildi; 6 yeni birim test ile doğrulandı (toplam 312 istemci testi, 340 monorepo testi).
+- [x] **Modüler Üst Bilgi Bileşenleri (`EditorTitleInput.tsx`, `EditorBoardSizeSelector.tsx`):** Harita adı metin girişi ve erişilebilir radyo semantiğine sahip tahta boyutu seçici buton grubu bağımsız bileşenlere ayrıştırıldı.
+- [x] **Yalın Editör Üst Meta Kontrolleri (`LevelEditorMetaControls.tsx`):** Grid düzeni sadeleştirilerek `LevelEditorMetaControls.tsx` 84 satırdan **35 satıra** indirildi.
+
 
 
 
