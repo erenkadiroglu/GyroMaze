@@ -83,3 +83,4 @@ describe('controllerFooterOrchestrationUtils — Mobil Kontrolcü Alt Eylemler O
     assert.equal(state.telemetrySummary, 'Alt Çubuk: Gizli (Gimbal Pasif)');
   });
 });
+
