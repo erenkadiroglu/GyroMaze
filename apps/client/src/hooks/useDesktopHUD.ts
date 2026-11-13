@@ -1,15 +1,10 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useGameStore } from '@/store/useGameStore';
-import { getMazeLevel } from '@/components/scene/mazeLevels';
 import { useGameTimer } from '@/hooks/useGameTimer';
 import { useDesktopKeyboardShortcuts } from '@/hooks/useDesktopKeyboardShortcuts';
-import {
-  calculateRemainingCrystals,
-  resolveIsPortalUnlocked,
-  resolveAnyOverlayOpen,
-  resolveLeaderboardInitialLevel,
-} from '@/utils/desktopHudUtils';
+import { resolveDesktopHudState } from '@/utils/desktopHudOrchestrationUtils';
 
 export function useDesktopHUD() {
   const isPairingModalOpen = useGameStore((s) => s.isPairingModalOpen);
@@ -22,47 +17,55 @@ export function useDesktopHUD() {
   const customLevel = useGameStore((s) => s.customLevel);
   const collectedCrystals = useGameStore((s) => s.collectedCrystals);
 
-  const currentLevelInfo = getMazeLevel(level, customLevel);
-  const totalCrystals = currentLevelInfo.crystals.length;
-  const remainingCrystals = calculateRemainingCrystals(
-    currentLevelInfo.crystals,
-    collectedCrystals,
+  const resolved = useMemo(
+    () =>
+      resolveDesktopHudState({
+        level,
+        customLevel,
+        collectedCrystals,
+        overlayFlags: {
+          isPairingModalOpen,
+          isSettingsOpen,
+          isEditorOpen,
+          isLeaderboardOpen,
+          isHelpOpen,
+        },
+      }),
+    [
+      level,
+      customLevel,
+      collectedCrystals,
+      isPairingModalOpen,
+      isSettingsOpen,
+      isEditorOpen,
+      isLeaderboardOpen,
+      isHelpOpen,
+    ],
   );
-  const isPortalUnlocked = resolveIsPortalUnlocked(
-    totalCrystals,
-    collectedCrystals.length,
-  );
-
-  const isAnyOverlayOpen = resolveAnyOverlayOpen({
-    isPairingModalOpen,
-    isSettingsOpen,
-    isEditorOpen,
-    isLeaderboardOpen,
-    isHelpOpen,
-  });
 
   // Oyun saati ve Süreye Karşı modu kancası
   const { handleResetClick } = useGameTimer({
-    starThresholds: currentLevelInfo.starThresholds,
-    isAnyOverlayOpen,
+    starThresholds: resolved.starThresholds,
+    isAnyOverlayOpen: resolved.isAnyOverlayOpen,
   });
 
   // Global masaüstü klavye kısayolları kancası
   useDesktopKeyboardShortcuts({
-    isAnyOverlayOpen,
+    isAnyOverlayOpen: resolved.isAnyOverlayOpen,
     isHelpOpen,
   });
 
-  const leaderboardInitialLevel = resolveLeaderboardInitialLevel(currentLevelInfo.id);
-
   return {
-    currentLevelInfo,
-    remainingCrystals,
-    isPortalUnlocked,
-    isAnyOverlayOpen,
+    currentLevelInfo: resolved.currentLevelInfo,
+    remainingCrystals: resolved.remainingCrystals,
+    isPortalUnlocked: resolved.isPortalUnlocked,
+    isAnyOverlayOpen: resolved.isAnyOverlayOpen,
     handleResetClick,
     isLeaderboardOpen,
     setLeaderboardOpen,
-    leaderboardInitialLevel,
+    leaderboardInitialLevel: resolved.leaderboardInitialLevel,
+    crystalProgressText: resolved.crystalProgressText,
+    crystalProgressPercentage: resolved.crystalProgressPercentage,
+    levelBadgeText: resolved.levelBadgeText,
   };
 }
