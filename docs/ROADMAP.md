@@ -641,6 +641,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Üst Bilgi Bileşenleri (`EditorTitleInput.tsx`, `EditorBoardSizeSelector.tsx`):** Harita adı metin girişi ve erişilebilir radyo semantiğine sahip tahta boyutu seçici buton grubu bağımsız bileşenlere ayrıştırıldı.
 - [x] **Yalın Editör Üst Meta Kontrolleri (`LevelEditorMetaControls.tsx`):** Grid düzeni sadeleştirilerek `LevelEditorMetaControls.tsx` 84 satırdan **35 satıra** indirildi.
 
+### Faz 129: Harita Editörü Hazır Şablonlar Listesi ve Şablon Kartı Ayrıştırması (Tamamlandı)
+- [x] **Şablon Listesi ve Kart Yardımcı Motoru (`editorTemplateListUtils.ts`, `editorTemplateListUtils.test.mjs`):** Şablon butonu ARIA etiketi `getTemplateCardAriaLabel`, şablon kartı hover/geçiş sınıfları `resolveTemplateCardClass` ve şablon kimlik denetimi `isTemplateMatchingId` saf yardımcıları geliştirildi; 4 yeni birim test ile doğrulandı (toplam 316 istemci testi, 344 monorepo testi).
+- [x] **Modüler Şablon Bileşenleri (`EditorTemplatesHeader.tsx`, `EditorTemplateCard.tsx`):** "Hazır şablonlar" + "Hızlı başla" rozet başlığı ve tekil şablon seçim butonu bağımsız bileşenlere ayrıştırıldı.
+- [x] **Yalın Şablonlar Paleti (`LevelEditorTemplatesList.tsx`):** Alt bileşen mimarisine geçirilerek `LevelEditorTemplatesList.tsx` 42 satırdan **31 satıra** indirildi.
+
 
 
 
