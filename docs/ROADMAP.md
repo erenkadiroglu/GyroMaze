@@ -656,6 +656,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Yalın Editör Kancası (`useLevelEditor.ts`):** Pano/şema mantığı motor fonksiyonlarına devredilerek `useLevelEditor.ts` 204 satırdan **139 satıra** indirildi.
 - [x] **Kapsamlı Editör Modalı Mimarisi (`LevelEditorModal.tsx`):** Araç paleti, şablon listesi, meta kontrolleri, çizim ızgarası ve alt çubuk alt bileşenleri tam uyum içinde konsolide edildi.
 
+### Faz 132: UI İlkel Bileşenleri, Dialog Kancası ve Modallar Ayrıştırması (Tamamlandı)
+- [x] **Dialog Odak ve Tuş Yardımcı Motoru (`dialogBehaviorUtils.ts`, `dialogBehaviorUtils.test.mjs`):** Odaklanabilir öğe seçicisi `FOCUSABLE_ELEMENTS_SELECTOR`, Escape/Tab tuş denetleyicileri ve döngüsel odak çözümleyici `resolveNextFocusElement` saf yardımcıları geliştirildi; 6 yeni birim test ile doğrulandı (toplam 331 istemci testi, 359 monorepo testi).
+- [x] **Modüler İlkel Bileşenler (`useDialogBehavior.ts`, `Modal.tsx`, `Drawer.tsx`, `Buttons.tsx`, `FormControls.tsx`, `DisplayPrimitives.tsx`):** Pencere/panel odak tuzağı kancası, modal pencere, sağ çekmece paneli, ikon/metin butonları, radyo grupları/anahtarlar ve etiket elemanları bağımsız modüllere ayrıştırıldı.
+- [x] **Yalın UI Primitives Barrel Dosyası (`primitives.tsx`):** Monolitik yapı saf re-export mimarisine dönüştürülerek `primitives.tsx` 525 satırdan **42 satıra** indirildi ve geriye dönük tam uyumluluk korundu.
+
 
 
 
