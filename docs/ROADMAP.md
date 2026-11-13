@@ -527,6 +527,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Kontrolcü Merkez Sahnesi (`ControllerCenterStage.tsx`):** Oda kodu girişi, sensör izni ve canlı gimbal pad görünümleri `ControllerCenterStage` bileşeni altında modülerleştirildi.
 - [x] **Bağımsız Mobil Kontrolcü Kancası ve Yalın Sayfa (`useMobileController.ts`, `controller/page.tsx`):** Tüm sensör, oda, soket ve gimbal durumları tek kancada toplanarak `page.tsx` 268 satırdan **150 satıra** indirildi.
 
+### Faz 105: Mobil Kontrolcü Başlık Çubuğu Ayrıştırması (Tamamlandı)
+- [x] **Mobil Başlık Yardımcı Motoru (`controllerHeaderUtils.ts`, `controllerHeaderUtils.test.mjs`):** `resolveHapticButtonLabel`, `resolveRoomCodeButtonLabel`, `resolveConnectionAriaLabel` ve `resolvePlayerSlotBadgeClasses` saf yardımcıları geliştirildi; 5 yeni birim test ile doğrulandı (toplam 211 istemci testi, 239 monorepo testi).
+- [x] **Modüler Başlık Eylemleri ve Marka Kapsülü (`ControllerBrandCapsule.tsx`, `ControllerHeaderActions.tsx`):** Sol marka ve P1/P2 rozeti ile sağ taraftaki titreşim, tema, oda kodu ve bağlantı kapsülü bağımsız bileşenlere ayrıştırıldı.
+- [x] **Yalın Mobil Kontrolcü Başlığı (`ControllerHeader.tsx`):** Başlık yapısı alt bileşenlerle birleştirilerek `ControllerHeader.tsx` 154 satırdan **52 satıra** indirildi.
+
 
 
 
