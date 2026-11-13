@@ -215,5 +215,18 @@ export function updateMovingObstaclesTransform(
   }
 }
 
+/**
+ * Bilye hareket izi (motion trail) başlangıç 3B konumu ve düzlem rotasyonunu hesaplar.
+ */
+export function resolveTrailInitialTransform(
+  startPosition: [number, number, number],
+): { position: [number, number, number]; rotation: [number, number, number] } {
+  return {
+    position: [startPosition[0], 0.025, startPosition[2]],
+    rotation: [-Math.PI / 2, 0, 0],
+  };
+}
+
+
 
 

@@ -39,3 +39,4 @@ test('collectiblesUtils — 3B Sahne Toplanabilirler ve Geçit Yardımcıları',
     assert.deepEqual(pos, [4.5, 0.02, -3.2]);
   });
 });
+

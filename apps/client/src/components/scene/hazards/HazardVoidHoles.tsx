@@ -38,3 +38,4 @@ export function HazardVoidHoles({ voidHoles, levelRevisionKey }: HazardVoidHoles
     </>
   );
 }
+

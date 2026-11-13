@@ -37,3 +37,4 @@ export function HazardTeleporters({ teleporters, levelRevisionKey }: HazardTelep
     </>
   );
 }
+

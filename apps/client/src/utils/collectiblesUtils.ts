@@ -51,3 +51,4 @@ export function resolveStartRingPosition(
 ): [number, number, number] {
   return [startPosition[0], 0.02, startPosition[2]];
 }
+

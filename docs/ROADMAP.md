@@ -606,6 +606,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Toplanabilir ve Geçit Bileşenleri (`CollectibleStartRing.tsx`, `CollectibleCrystals.tsx`, `CollectibleGoalPortal.tsx`):** Başlangıç halkası, enerji kristalleri ve kilitli/açık hedef portalı bağımsız Three.js alt bileşenlerine ayrıştırıldı.
 - [x] **Yalın Toplanabilirler Orkestratörü (`MazeStageCollectibles.tsx`):** 3B toplanabilirler ve geçit geometrileri devredilerek `MazeStageCollectibles.tsx` 104 satırdan **48 satıra** indirildi.
 
+### Faz 121: 3B Sahne Aktörleri ve Hareket İzi Ayrıştırması (Tamamlandı)
+- [x] **Aktör Geometri ve Başlangıç Yardımcı Motoru (`sceneActorUtils.ts`, `sceneActorUtils.test.mjs`):** Hareket izi başlangıç dönüşümü `resolveTrailInitialTransform` saf yardımcısı geliştirildi; test kapsamı 13 teste çıkarıldı (toplam 277 istemci testi, 305 monorepo testi).
+- [x] **Modüler 3B Aktör Bileşenleri (`ActorMotionTrail.tsx`, `ActorGhostBall.tsx`, `ActorPlayerBalls.tsx`):** Neon hareket izi halkaları, hayalet yarışçı hologram küresi ve 1P/2P oyuncu bilyeleri bağımsız alt bileşenlere ayrıştırıldı.
+- [x] **Yalın Sahne Aktörleri Orkestratörü (`MazeStageActors.tsx`):** Doğrudan Three.js aktör geometrileri devredilerek `MazeStageActors.tsx` 91 satırdan **46 satıra** indirildi.
+
+
 
 
 

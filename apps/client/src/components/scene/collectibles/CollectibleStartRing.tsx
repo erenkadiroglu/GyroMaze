@@ -23,3 +23,4 @@ export function CollectibleStartRing({ startPosition }: CollectibleStartRingProp
     </mesh>
   );
 }
+

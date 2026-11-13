@@ -12,6 +12,7 @@ import {
   updateCrystalsAnimation,
   updateLaserBeamsVisibility,
   updateMovingObstaclesTransform,
+  resolveTrailInitialTransform,
 } from '../src/utils/sceneActorUtils.ts';
 
 test('sceneActorUtils — 3B Aktör Animasyonları ve Etkileşim Zamanlayıcı Motoru', async (t) => {
@@ -200,5 +201,15 @@ test('sceneActorUtils — 3B Aktör Animasyonları ve Etkileşim Zamanlayıcı M
       assert.ok(mockObstacles[0].rotation.y > 0);
     },
   );
+
+  await t.test(
+    'resolveTrailInitialTransform hareket izi halkasi icin baslangic yuksekligi (0.025) ve -PI/2 egim doner',
+    () => {
+      const transform = resolveTrailInitialTransform([2.4, 0, -1.8]);
+      assert.deepEqual(transform.position, [2.4, 0.025, -1.8]);
+      assert.deepEqual(transform.rotation, [-Math.PI / 2, 0, 0]);
+    },
+  );
 });
+
 

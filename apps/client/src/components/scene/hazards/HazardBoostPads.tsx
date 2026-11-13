@@ -42,3 +42,4 @@ export function HazardBoostPads({ boostPads, levelRevisionKey }: HazardBoostPads
     </>
   );
 }
+
