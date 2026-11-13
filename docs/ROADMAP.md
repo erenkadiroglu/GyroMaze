@@ -487,6 +487,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Klavye ve Mobil Kılavuz Veri/Yardımcı Motoru (`keyboardShortcuts.ts`, `shortcuts.test.mjs`):** `SHORTCUT_GUIDE_GROUPS`, `MOBILE_GUIDE_FEATURES`, `formatShortcutKeyAriaLabel` ve `resolveShortcutGroupIconColor` saf modelleri ve yardımcıları geliştirildi; 1 yeni birim test ile doğrulandı (toplam 178 istemci testi, 206 monorepo testi).
 - [x] **Modüler Kılavuz Bileşen Mimarisi (`ShortcutRow.tsx`, `ShortcutsSection.tsx`, `MobileFeaturesSection.tsx`, `HelpShortcutsModal.tsx`):** Kısayol satırları, kategori kartları ve mobil özellik rehberi bağımsız alt bileşenlere ayrılarak `HelpShortcutsModal.tsx` 174 satırdan **52 satıra** indirildi.
 
+### Faz 97: Modüler Ayarlar Paneli, Çekmece Kancası ve Tercih Alt Çubuğu (Tamamlandı)
+- [x] **Ayarlar ve Ses Geçişleri Yardımcı Motoru (`settingsUtils.ts`, `settingsUtils.test.mjs`):** `resolveVolumeTransition` ve `formatPreferenceAriaLabel` saf yardımcıları geliştirildi; 1 yeni birim test ile doğrulandı (toplam 179 istemci testi, 207 monorepo testi).
+- [x] **Bağımsız Ayarlar Çekmecesi Kancası (`useSettingsDrawer.ts`):** Ses kademesi/sessize alma akışı, harita editörü ve skor tablosu geçişleri ile varsayılanlara sıfırlama eylemleri `useSettingsDrawer` kancasına taşındı.
+- [x] **Modüler Ayarlar Alt Çubuğu Mimarisi (`SettingsDrawerFooter.tsx`, `SettingsModal.tsx`):** Harita editörü, skor tablosu ve sıfırlama butonları bağımsız `SettingsDrawerFooter` bileşeni olarak ayrıştırılarak `SettingsModal.tsx` 146 satırdan **78 satıra** indirildi.
+
+
 
 
 

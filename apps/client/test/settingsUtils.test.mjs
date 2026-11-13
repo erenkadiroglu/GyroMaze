@@ -5,6 +5,8 @@ import {
   resolveActiveVolumeValue,
   resolveNextRadioIndex,
   resolveBallSkinSwatch,
+  resolveVolumeTransition,
+  formatPreferenceAriaLabel,
   BALL_SKIN_OPTIONS,
   GRAVITY_SCALE_OPTIONS,
   TILT_RESPONSIVENESS_OPTIONS,
@@ -57,6 +59,38 @@ test('settingsUtils — Ayarlar Seçenekleri ve Biçimlendirme Motoru', async (t
     assert.equal(GRAVITY_SCALE_OPTIONS.length, 3);
     assert.equal(TILT_RESPONSIVENESS_OPTIONS.length, 3);
     assert.equal(VOLUME_SEGMENTED_OPTIONS.length, 5);
+  });
+
+  await t.test('resolveVolumeTransition ve formatPreferenceAriaLabel kurallarını uygular', () => {
+    // 0 seviyesine çekildiğinde sessize alma
+    assert.deepEqual(resolveVolumeTransition(0, false), {
+      shouldToggleMute: true,
+      safeVolume: 0,
+      shouldPlayTone: false,
+    });
+    assert.deepEqual(resolveVolumeTransition(0, true), {
+      shouldToggleMute: false,
+      safeVolume: 0,
+      shouldPlayTone: false,
+    });
+
+    // Sıfırdan farklı bir değere çekildiğinde sessizden çıkarma ve ton çalma
+    assert.deepEqual(resolveVolumeTransition(0.75, true), {
+      shouldToggleMute: true,
+      safeVolume: 0.75,
+      shouldPlayTone: true,
+    });
+    assert.deepEqual(resolveVolumeTransition(0.5, false), {
+      shouldToggleMute: false,
+      safeVolume: 0.5,
+      shouldPlayTone: true,
+    });
+
+    // formatPreferenceAriaLabel
+    assert.equal(
+      formatPreferenceAriaLabel('Kamera Açısı', 'İzometrik'),
+      'Kamera Açısı: İzometrik',
+    );
   });
 });
 

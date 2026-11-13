@@ -72,3 +72,40 @@ export function resolveBallSkinSwatch(skin: BallSkin): string {
   const match = BALL_SKIN_OPTIONS.find((opt) => opt.value === skin);
   return match?.swatchClass ?? 'bg-zinc-200';
 }
+
+/**
+ * Ses seviyesi kaydırıldığında veya tıklandığında sessize alma durumunu
+ * ve kalibrasyon ses tonu çalma kararını çözümler.
+ */
+export function resolveVolumeTransition(
+  nextVol: number,
+  isSoundMuted: boolean,
+): { shouldToggleMute: boolean; safeVolume: number; shouldPlayTone: boolean } {
+  const clamped = Math.max(
+    0,
+    Math.min(1, Number.isFinite(nextVol) ? nextVol : 0.5),
+  );
+  if (clamped === 0) {
+    return {
+      shouldToggleMute: !isSoundMuted,
+      safeVolume: 0,
+      shouldPlayTone: false,
+    };
+  }
+  return {
+    shouldToggleMute: isSoundMuted,
+    safeVolume: clamped,
+    shouldPlayTone: true,
+  };
+}
+
+/**
+ * Ayarlar kartı için ekran okuyucu aria-label metnini biçimlendirir.
+ */
+export function formatPreferenceAriaLabel(
+  label: string,
+  valueLabel: string,
+): string {
+  return `${label}: ${valueLabel}`;
+}
+
