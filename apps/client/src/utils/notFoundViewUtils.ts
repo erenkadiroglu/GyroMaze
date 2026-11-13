@@ -42,3 +42,4 @@ export function getNotFoundContainerClass(): string {
 export function getNotFoundButtonClass(): string {
   return NOT_FOUND_BUTTON_CLASSES;
 }
+

@@ -15,8 +15,25 @@ import {
 import {
   MazeLevelDefinition,
   getLevelRevisionKey,
-  parseCustomMazeLevel,
 } from '@/components/scene/mazeLevels';
+import {
+  BEST_TIMES_STORAGE_KEY,
+  GHOST_PATHS_STORAGE_KEY,
+  CUSTOM_LEVEL_STORAGE_KEY,
+  SETTINGS_STORAGE_KEY,
+  DEFAULT_PREFERENCES,
+  parseStoredBestTimes,
+  parseStoredGhostPaths,
+  parseStoredCustomLevel,
+  resolvePairingGameStatus,
+  resolveRecentRooms,
+  getNextCameraMode,
+  getNextBoardTheme,
+  getNextColorScheme,
+  createResetRunFields,
+} from '@/utils/gameStoreUtils';
+
+export { DEFAULT_PREFERENCES };
 
 /**
  * React re-render tetiklemeden 60 FPS Three.js döngüsü (useFrame) ve HUD telemetrisi
@@ -54,119 +71,19 @@ export const transientGyroP2: GyroData & {
   ballSpeed: 0,
 };
 
-const BEST_TIMES_STORAGE_KEY = 'gyromaze_best_times_v1';
-const GHOST_PATHS_STORAGE_KEY = 'gyromaze_ghost_paths_v1';
-const CUSTOM_LEVEL_STORAGE_KEY = 'gyromaze_custom_level_v1';
-const SETTINGS_STORAGE_KEY = 'gyromaze_settings_v1';
-
-/**
- * Kullanıcı tarafından özelleştirilebilen tüm oyun ve kontrolcü varsayılan tercihleri.
- */
-export const DEFAULT_PREFERENCES = {
-  gravityScale: 36,
-  tiltResponsiveness: 32,
-  soundVolume: 1,
-  showTrail: true,
-  showGhost: true,
-  showMiniMap: true,
-  cameraMode: 'isometric' as CameraMode,
-  boardTheme: 'emerald' as BoardTheme,
-  colorScheme: 'dark' as ColorScheme,
-  ballSkin: 'chrome' as BallSkin,
-  gameMode: 'standard' as GameMode,
-  isHapticEnabled: true,
-  controllerSensitivity: 1 as 0.75 | 1 | 1.35,
-  controllerTouchOverride: false,
-};
-
 function loadBestTimes(): Record<number, number> {
   if (typeof window === 'undefined') return {};
-  try {
-    const raw = window.localStorage.getItem(BEST_TIMES_STORAGE_KEY);
-    if (!raw) return {};
-    const parsed: unknown = JSON.parse(raw);
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      return {};
-    }
-    const result: Record<number, number> = {};
-    for (const [key, val] of Object.entries(parsed)) {
-      const levelNum = Number(key);
-      if (
-        Number.isInteger(levelNum) &&
-        levelNum > 0 &&
-        typeof val === 'number' &&
-        Number.isFinite(val) &&
-        val > 0
-      ) {
-        result[levelNum] = val;
-      }
-    }
-    return result;
-  } catch {
-    return {};
-  }
+  return parseStoredBestTimes(window.localStorage.getItem(BEST_TIMES_STORAGE_KEY));
 }
 
 function loadCustomLevel(): MazeLevelDefinition | null {
   if (typeof window === 'undefined') return null;
-  try {
-    const raw = window.localStorage.getItem(CUSTOM_LEVEL_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed: unknown = JSON.parse(raw);
-    return parseCustomMazeLevel(parsed);
-  } catch {
-    return null;
-  }
+  return parseStoredCustomLevel(window.localStorage.getItem(CUSTOM_LEVEL_STORAGE_KEY));
 }
 
 function loadGhostPaths(): Record<number, Array<[number, number]>> {
   if (typeof window === 'undefined') return {};
-  try {
-    const raw = window.localStorage.getItem(GHOST_PATHS_STORAGE_KEY);
-    if (!raw) return {};
-    const parsed: unknown = JSON.parse(raw);
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      return {};
-    }
-    const result: Record<number, Array<[number, number]>> = {};
-    for (const [key, points] of Object.entries(parsed)) {
-      const levelNum = Number(key);
-      if (!Number.isInteger(levelNum) || levelNum <= 0 || !Array.isArray(points)) {
-        continue;
-      }
-      const validPoints = points.filter(
-        (pt): pt is [number, number] =>
-          Array.isArray(pt) &&
-          pt.length === 2 &&
-          typeof pt[0] === 'number' &&
-          Number.isFinite(pt[0]) &&
-          typeof pt[1] === 'number' &&
-          Number.isFinite(pt[1]),
-      );
-      if (validPoints.length > 0) {
-        result[levelNum] = validPoints;
-      }
-    }
-    return result;
-  } catch {
-    return {};
-  }
-}
-
-function resolvePairingGameStatus(
-  wasAny: boolean,
-  nextAny: boolean,
-  currentStatus: GameStatus,
-): GameStatus {
-  if (!wasAny && nextAny) {
-    return currentStatus === 'waiting' || currentStatus === 'paused'
-      ? 'playing'
-      : currentStatus;
-  }
-  if (wasAny && !nextAny && currentStatus === 'playing') {
-    return 'paused';
-  }
-  return currentStatus;
+  return parseStoredGhostPaths(window.localStorage.getItem(GHOST_PATHS_STORAGE_KEY));
 }
 
 /**
@@ -365,13 +282,7 @@ function zeroTransientGyro(slot?: 1 | 2): void {
  * alanlarını tek noktadan sıfırlar.
  */
 function resetRunFields(state: Pick<GameStoreState, 'resetCount'>) {
-  return {
-    winnerPlayer: null,
-    gameStatus: 'playing' as const,
-    elapsedSeconds: 0,
-    collectedCrystals: [],
-    resetCount: state.resetCount + 1,
-  };
+  return createResetRunFields(state.resetCount);
 }
 
 /**
@@ -537,46 +448,16 @@ export const useGameStore = create<GameStoreState>()(
           ...resetRunFields(state),
         })),
       cycleCameraMode: () =>
-        set((state) => {
-          const order: CameraMode[] = ['isometric', 'topdown', 'follow'];
-          const nextIdx = (order.indexOf(state.cameraMode) + 1) % order.length;
-          return { cameraMode: order[nextIdx] };
-        }),
+        set((state) => ({ cameraMode: getNextCameraMode(state.cameraMode) })),
       setCameraMode: (cameraMode) => set({ cameraMode }),
-      cycleBoardTheme: () =>
-        set((state) => {
-          const order: BoardTheme[] = [
-            'emerald',
-            'cyberpunk',
-            'crimson',
-            'daylight',
-          ];
-          const nextIdx = (order.indexOf(state.boardTheme) + 1) % order.length;
-          const nextTheme = order[nextIdx];
-          return {
-            boardTheme: nextTheme,
-            colorScheme: nextTheme === 'daylight' ? 'light' : 'dark',
-          };
-        }),
+      cycleBoardTheme: () => set((state) => getNextBoardTheme(state.boardTheme)),
       setBoardTheme: (boardTheme) =>
         set({
           boardTheme,
           colorScheme: boardTheme === 'daylight' ? 'light' : 'dark',
         }),
       toggleColorScheme: () =>
-        set((state) => {
-          const nextScheme: ColorScheme =
-            state.colorScheme === 'dark' ? 'light' : 'dark';
-          return {
-            colorScheme: nextScheme,
-            boardTheme:
-              nextScheme === 'light'
-                ? 'daylight'
-                : state.boardTheme === 'daylight'
-                  ? 'emerald'
-                  : state.boardTheme,
-          };
-        }),
+        set((state) => getNextColorScheme(state.colorScheme, state.boardTheme)),
       setColorScheme: (colorScheme) =>
         set((state) => ({
           colorScheme,
@@ -675,12 +556,9 @@ export const useGameStore = create<GameStoreState>()(
       toggleHapticEnabled: () =>
         set((state) => ({ isHapticEnabled: !state.isHapticEnabled })),
       addRecentRoom: (roomCode) =>
-        set((state) => {
-          const code = roomCode.trim().toUpperCase().slice(0, 6);
-          if (!code) return state;
-          const filtered = state.recentRooms.filter((r) => r !== code);
-          return { recentRooms: [code, ...filtered].slice(0, 3) };
-        }),
+        set((state) => ({
+          recentRooms: resolveRecentRooms(state.recentRooms, roomCode),
+        })),
       clearRecentRooms: () => set({ recentRooms: [] }),
       setControllerSensitivity: (controllerSensitivity) =>
         set({ controllerSensitivity }),

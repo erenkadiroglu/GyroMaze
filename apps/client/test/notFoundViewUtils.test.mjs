@@ -27,3 +27,4 @@ test('notFoundViewUtils — 404 Bulunamadı Sayfası Yardımcıları', async (t)
     assert.ok(getNotFoundButtonClass().includes('bg-brass'));
   });
 });
+

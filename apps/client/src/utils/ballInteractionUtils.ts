@@ -190,3 +190,4 @@ export function evaluateMovingObstacleHit(
   }
   return { hit: false };
 }
+

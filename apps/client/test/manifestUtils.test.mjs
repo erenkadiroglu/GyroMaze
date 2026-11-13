@@ -35,3 +35,4 @@ test('manifestUtils — PWA WebManifest Yapılandırması', async (t) => {
     assert.equal(manifest.shortcuts[1].url, '/');
   });
 });
+

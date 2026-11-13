@@ -131,3 +131,4 @@ test('orientationFilterUtils — resolveSensorInitialPermission izin durumu çö
   assert.equal(resolveSensorInitialPermission(false, true), 'unsupported');
   assert.equal(resolveSensorInitialPermission(true, true), 'prompt');
 });
+

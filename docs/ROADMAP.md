@@ -827,10 +827,15 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **useBallInteractions Kancası Sadeleşmesi (`apps/client/src/hooks/useBallInteractions.ts`):** Inline etkileşim, süre kontrolü ve çarpışma dallanmaları saf yardımcı motor fonksiyonlarına devredildi.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/ballInteractionUtils.test.mjs` dahil edilerek test sayısı 543'ten **549'a** çıkarıldı.
 
-### Faz 175: Masaüstü Klavye Sanal Eğim ve Çok Oyunculu Yönlendirme Motoru (Tamamlandı)
-- [x] **Klavye Sanal Eğim Motoru (`keyboardFallbackUtils.ts`, `keyboardFallbackUtils.test.mjs`):** `DEFAULT_KEYBOARD_TILT_DEGREES`, `MOVEMENT_KEY_CODES`, `isKeyboardFallbackBlocked`, `shouldIgnoreKeyboardEvent`, `isMovementKey`, `shouldPreventDefaultMovementKey`, `calculateSinglePlayerKeyboardTilt`, `calculateMultiplayerKeyboardTilt` saf yardımcı fonksiyonları geliştirildi; 6 yeni birim test ile %100 doğrulandı (toplam 555 istemci testi, 49 sunucu testi, 6 shared testi, **610 monorepo testi**).
-- [x] **useKeyboardFallback Kancası Sadeleşmesi (`apps/client/src/hooks/useKeyboardFallback.ts`):** Inline engelleme koşulları, girdi alanı filtrelemesi ve çok oyunculu tuş dağılımı saf yardımcı motora devredildi.
-- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/keyboardFallbackUtils.test.mjs` dahil edilerek test sayısı 549'dan **555'e** çıkarıldı.
+### Faz 176: Zustand Durum Depolama, Tercihler ve Geçiş Motoru (Tamamlandı)
+- [x] **Zustand Durum Yardımcı Motoru (`gameStoreUtils.ts`, `gameStoreUtils.test.mjs`):** `BEST_TIMES_STORAGE_KEY`, `GHOST_PATHS_STORAGE_KEY`, `CUSTOM_LEVEL_STORAGE_KEY`, `SETTINGS_STORAGE_KEY`, `DEFAULT_PREFERENCES`, `parseStoredBestTimes`, `parseStoredGhostPaths`, `parseStoredCustomLevel`, `resolvePairingGameStatus`, `resolveRecentRooms`, `getNextCameraMode`, `getNextBoardTheme`, `getNextColorScheme`, `createResetRunFields` fonksiyonları saf mimariyle geliştirildi; 19 yeni birim test ile %100 doğrulandı (toplam 574 istemci testi, 49 sunucu testi, 6 shared testi, **629 monorepo testi**).
+- [x] **useGameStore Durum Deposu Sadeleşmesi (`apps/client/src/store/useGameStore.ts`):** Inline localStorage JSON ayrıştırma, hata yakalama, eşleşme oyun durumu çözümleme, kamera döngüsü, tema/renk düzeni senkronizasyonu ve tur sıfırlama alanları `gameStoreUtils` motoruna bağlandı.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/gameStoreUtils.test.mjs` dahil edilerek istemci test sayısı 555'ten **574'e**, toplam monorepo testleri **629'a** yükseltildi.
+
+### Faz 177: Hayalet Yarışçı Yeniden Oynatma ve Örnekleme Motoru (Sıradaki)
+- [ ] **Ghost Replay Yardımcı Motoru (`ghostReplayUtils.ts`, `ghostReplayUtils.test.mjs`):** `useGhostReplay.ts` kancasındaki 10Hz örnekleme aralığı, mesafe eşiği, hayalet konumu enterpolasyonu (lerp), hayalet opaklığı ve görünürlük mantığını saf yardımcı motora ayrıştırma.
+- [ ] **useGhostReplay Kancası Sadeleşmesi:** Kancayı salt React/Three.js yaşam döngüsü ve useFrame aboneliğine indirgeme.
+- [ ] **Birim Testleri ve Doğrulama:** Yeni testlerle istemci test sayısını artırma, derleme ve git push.
 
 
 

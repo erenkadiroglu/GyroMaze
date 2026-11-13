@@ -178,3 +178,4 @@ test('keyboardFallbackUtils — calculateMultiplayerKeyboardTilt çok oyunculu e
   assert.deepEqual(res4.p1, { beta: 0, gamma: 0 });
   assert.deepEqual(res4.p2, { beta: 0, gamma: 0 });
 });
+

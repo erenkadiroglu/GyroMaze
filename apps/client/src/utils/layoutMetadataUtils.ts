@@ -56,3 +56,4 @@ export function resolveRootBodyClasses(customClasses?: string): string {
   }
   return `${DEFAULT_ROOT_BODY_CLASSES} ${customClasses.trim()}`;
 }
+

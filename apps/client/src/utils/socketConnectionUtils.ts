@@ -118,3 +118,4 @@ export function normalizeRoomCodeForJoin(code: unknown): string | null {
   }
   return trimmed;
 }
+
