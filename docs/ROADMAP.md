@@ -425,9 +425,30 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **3B Aktör Animasyon ve Etkileşim Yardımcı Motoru (`sceneActorUtils.ts`, `sceneActorUtils.test.mjs`):** Hedef portal halkası açı hesabı `calculateGoalRingRotation`, kristal havada süzülme ve dönme dönüşümü `calculateCrystalFloatTransform`, hareketli kinetik engelin 3B sinüzoidal konumu `calculateObstacleMeshPosition`, engelin kendi ekseni etrafında dönüşü `calculateObstacleRotationY` ve bekleme süresi denetleyicisi `isWithinInteractionCooldown` geliştirildi; 6 yeni birim test ile doğrulandı (toplam 147 istemci testi, 175 monorepo testi).
 - [x] **Bağımsız Bilye Etkileşim Kancası (`useBallInteractions.ts`, `MazeScene.tsx`):** Rampa (boost), portal (teleport), lazer kapısı ve kinetik engel bekleme süreleri (cooldowns) ile bilye etkileşim döngüsü `useBallInteractions` özel kancasına taşındı; `MazeScene.tsx` dosyasından 110+ satırlık gömülü etkileşim ve animasyon kodu temizlenerek bileşen 940 satıra indirildi.
 
+### Faz 83: 3B Hayalet Kayıt/Yeniden Oynatma Kancası ve Hayalet Yarışçı Motoru (Tamamlandı)
+- [x] **Hayalet Yarışçı Matematik ve Doğrulama Motoru (`ghostReplayUtils.ts`, `ghostReplayUtils.test.mjs`):** Hayalet koordinat enterpolasyonu, örnekleme frekans filtresi ve hayalet veri doğrulayıcı saf fonksiyonları geliştirildi; 6 yeni birim test ile doğrulandı (toplam 153 istemci testi, 181 monorepo testi).
+- [x] **Bağımsız Hayalet Kayıt ve Yeniden Oynatma Kancası (`useGhostReplay.ts`, `MazeScene.tsx`):** 1P solo modunda en iyi süreyi koşan hayaletin kare kare kaydı ve oynatımı `useGhostReplay` kancasına devredildi; `MazeScene.tsx` bileşeni 810 satıra indirildi.
+
+### Faz 84: 3B Neon Hareket İzi Kancası, Telemetri ve Bilye Aktör Dönüşüm Motoru (Tamamlandı)
+- [x] **Bilye Aktör Dönüşüm ve Telemetri Motoru (`sceneActorUtils.ts`, `sceneActorUtils.test.mjs`):** `updateTransientTelemetry` ve `updateBallActorTransform` saf yardımcıları geliştirildi; 2 yeni birim test ile doğrulandı (toplam 155 istemci testi, 183 monorepo testi).
+- [x] **Bağımsız Neon Hareket İzi Kancası (`useMotionTrail.ts`, `MazeScene.tsx`):** 12 segmentli halka tampon neon hareket izi yaşam döngüsü `useMotionTrail` kancasına taşındı; `MazeScene.tsx` bileşeni 760 satıra indirildi.
+
+### Faz 85: 3B Sahne Olay İşleyicileri ve Ses/Haptik Kancası Ayrışımı (Tamamlandı)
+- [x] **Sahne Olay ve Ses/Haptik Kuralları Motoru (`sceneEventUtils.ts`, `sceneEventUtils.test.mjs`):** Kristal toplama, hedefe ulaşma, boşluğa düşme, lazer/duvar çarpışması ses ve titreşim eylem çözümleyicileri saf motor olarak geliştirildi; 7 yeni birim test ile doğrulandı (toplam 162 istemci testi, 190 monorepo testi).
+- [x] **Bağımsız Sahne Olay İşleyici Kancası (`useMazeSceneEvents.ts`, `MazeScene.tsx`):** Kristal toplama, hedefe varış, boşluğa düşme, lazer çarpması, rampa ve portal tetikleyicileri `useMazeSceneEvents` kancasına taşındı; `MazeScene.tsx` bileşeni 712 satıra indirildi.
+
+### Faz 86: 3B Sahne Sıfırlama Kancası, Aktör Animasyon Döngüleri ve Bilye Doğuş Motoru (Tamamlandı)
+- [x] **Aktör Animasyon ve Doğuş Motoru (`sceneActorUtils.ts`, `sceneActorUtils.test.mjs`):** `calculateBallSpawnPosition`, `updateCrystalsAnimation`, `updateLaserBeamsVisibility` ve `updateMovingObstaclesTransform` saf yardımcıları geliştirildi; 4 yeni birim test ile doğrulandı (toplam 166 istemci testi, 194 monorepo testi).
+- [x] **Bağımsız Sahne Sıfırlama Kancası (`useMazeStageReset.ts`, `MazeScene.tsx`):** 1P ve 2P bilye doğuş, tabla ve tehlike saati sıfırlaması `useMazeStageReset` kancasına taşındı; `MazeScene.tsx` bileşeni 657 satıra indirildi.
+
 ### Faz 87: Bağımsız 3B Labirent Sahnesi (MazeStage) Bileşeni ve Hedef Varış Motoru (Tamamlandı)
 - [x] **Hedef Varış Kural Motoru (`sceneCollisions.ts`, `sceneCollisions.test.mjs`):** Oyun etkileşimi, kilit açılma durumu ve bilye hedef yarıçap mesafesini tek kuralla doğrulayan `canTriggerGoalReach` saf yardımcısı eklendi; 1 yeni birim test ile doğrulandı (toplam 168 istemci testi, 196 monorepo testi).
 - [x] **Bağımsız 3B Labirent Sahnesi Bileşeni (`MazeStage.tsx`, `MazeScene.tsx`):** Fizik simülasyonu, Rapier dinamik bilyeleri, görsel tabla slerp dönüşümü ve sahne kare döngüsü (`useFrame`) bağımsız `MazeStage` bileşeni olarak ayrıştırıldı; `MazeScene.tsx` konteyner bileşeni 657 satırdan 149 satıra indirilerek saf WebGL/Canvas orkestratörü haline getirildi.
+
+### Faz 88: Mobil Kontrolcü Sanal Gimbal, Oda Bağlantı Kancaları ve Yardımcı Motoru (Tamamlandı)
+- [x] **Mobil Kontrolcü Mantık ve Durum Motoru (`controllerUtils.ts`, `controllerUtils.test.mjs`):** 8 Hz metin güncelleme filtresi `shouldUpdateAngleText`, işaretçi kimlik eşleşmesi `isPointerEventMatching`, sürükleme bırakma denetleyicisi `shouldResetPointerDrag` ve yuva değiştirme çözümleyicisi `resolveSlotChange` geliştirildi; 1 yeni birim test ile doğrulandı (toplam 169 istemci testi, 197 monorepo testi).
+- [x] **Bağımsız Sanal Gimbal ve Oda Bağlantı Kancaları (`useGimbalInteraction.ts`, `useControllerRoom.ts`, `controller/page.tsx`):** Sanal gimbal işaretçi yakalama, ufuk küresi 60 FPS GPU animasyonu `useGimbalInteraction` kancasına; oda kodu parametreleri ve manuel bağlantı doğrulama formu `useControllerRoom` kancasına devredildi; `controller/page.tsx` bileşeni 520 satırdan 341 satıra indirildi.
+
 
 
 

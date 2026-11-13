@@ -13,6 +13,10 @@ import {
   calculateGimbalBounds,
   resolveGimbalSurfaceVisibility,
   shouldUpdateGimbalDotOffset,
+  shouldUpdateAngleText,
+  isPointerEventMatching,
+  shouldResetPointerDrag,
+  resolveSlotChange,
 } from '../src/utils/controllerUtils.ts';
 
 describe('controllerUtils — Mobil Kontrolcü ve Sanal Gimbal Motoru', () => {
@@ -178,6 +182,31 @@ describe('controllerUtils — Mobil Kontrolcü ve Sanal Gimbal Motoru', () => {
 
     // Delta Y 0.2'den büyük -> güncelleme gerekli
     assert.equal(shouldUpdateGimbalDotOffset(10.0, 20.3, 10.0, 20.0, 0.2), true);
+  });
+
+  it('shouldUpdateAngleText, isPointerEventMatching, shouldResetPointerDrag ve resolveSlotChange kurallarını uygular', () => {
+    // 120ms periyot kontrolü
+    assert.equal(shouldUpdateAngleText(200, 100, 120), false);
+    assert.equal(shouldUpdateAngleText(230, 100, 120), true);
+
+    // İşaretçi eşleşmesi
+    assert.equal(isPointerEventMatching(5, 5), true);
+    assert.equal(isPointerEventMatching(5, 6), false);
+    assert.equal(isPointerEventMatching(null, 5), false);
+
+    // Sürükleme sıfırlama gereksinimi
+    assert.equal(shouldResetPointerDrag(true, null), true);
+    assert.equal(shouldResetPointerDrag(false, 3), true);
+    assert.equal(shouldResetPointerDrag(false, null), false);
+
+    // Yuva değişikliği kontrolü
+    const same = resolveSlotChange(1, 1);
+    assert.equal(same.changed, false);
+    assert.equal(same.nextSlot, 1);
+
+    const changed = resolveSlotChange(1, 2);
+    assert.equal(changed.changed, true);
+    assert.equal(changed.nextSlot, 2);
   });
 });
 

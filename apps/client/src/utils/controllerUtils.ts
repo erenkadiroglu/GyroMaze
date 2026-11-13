@@ -220,5 +220,50 @@ export function shouldUpdateGimbalDotOffset(
   );
 }
 
+/**
+ * Sayısal açı metinlerinin (pitch/roll) DOM güncelleme periyodunu denetler (varsayılan 120ms = ~8Hz).
+ */
+export function shouldUpdateAngleText(
+  now: number,
+  lastUpdateTime: number,
+  intervalMs = 120,
+): boolean {
+  return now - lastUpdateTime >= intervalMs;
+}
+
+/**
+ * Gelen işaretçi (pointer) olayının aktif sürüklenen işaretçi kimliğiyle eşleştiğini doğrular.
+ */
+export function isPointerEventMatching(
+  activePointerId: number | null,
+  eventPointerId: number,
+): boolean {
+  return activePointerId !== null && activePointerId === eventPointerId;
+}
+
+/**
+ * Sürüklemenin takılı kalıp kalmadığını denetler (blur, gizlenme veya yüzey kapanmasında sıfırlama için).
+ */
+export function shouldResetPointerDrag(
+  isDragging: boolean,
+  activePointerId: number | null,
+): boolean {
+  return isDragging || activePointerId !== null;
+}
+
+/**
+ * Oyuncu yuvası (1P / 2P) seçim değişikliği durumunu çözümler.
+ */
+export function resolveSlotChange(
+  currentSlot: 1 | 2,
+  requestedSlot: 1 | 2,
+): { changed: boolean; nextSlot: 1 | 2 } {
+  return {
+    changed: currentSlot !== requestedSlot,
+    nextSlot: requestedSlot,
+  };
+}
+
+
 
 

@@ -1,7 +1,6 @@
 'use client';
 
 import { Suspense, useState, useEffect, useRef, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { GyroData } from '@gyromaze/shared';
 import { useGameStore } from '@/store/useGameStore';
 import { useSocket } from '@/hooks/useSocket';
@@ -9,16 +8,12 @@ import { useDeviceOrientation } from '@/hooks/useDeviceOrientation';
 import { useAppPreferences } from '@/hooks/useAppPreferences';
 import { useWakeLock } from '@/hooks/useWakeLock';
 import {
-  cleanRoomCode,
-  validateRoomCode,
-  calculateGimbalTouchAngles,
-  calculateGimbalDotOffset,
-  formatGimbalAngle,
   scaleGyroAngles,
-  calculateGimbalBounds,
   resolveGimbalSurfaceVisibility,
-  shouldUpdateGimbalDotOffset,
+  resolveSlotChange,
 } from '@/utils/controllerUtils';
+import { useControllerRoom } from '@/hooks/useControllerRoom';
+import { useGimbalInteraction } from '@/hooks/useGimbalInteraction';
 import { ControllerHeader } from './ControllerHeader';
 import { ControllerStatusBanners } from './ControllerStatusBanners';
 import { ControllerRoomCard } from './ControllerRoomCard';
@@ -33,20 +28,6 @@ import { ControllerFooter } from './ControllerFooter';
  */
 function MobileControllerContent() {
   useAppPreferences();
-
-  const searchParams = useSearchParams();
-  const initialRoomParam = cleanRoomCode(searchParams.get('room') ?? '');
-  const initialSlotParam = searchParams.get('slot') === '2' ? 2 : 1;
-
-  const [manualRoomInput, setManualRoomInput] = useState(initialRoomParam);
-  const [activeRoomCode, setActiveRoomCode] = useState(initialRoomParam);
-  const [playerSlot, setPlayerSlot] = useState<1 | 2>(initialSlotParam);
-  const playerSlotRef = useRef<1 | 2>(initialSlotParam);
-  playerSlotRef.current = playerSlot;
-  const [isRoomEditorOpen, setIsRoomEditorOpen] = useState(!initialRoomParam);
-  const [roomFormError, setRoomFormError] = useState<string | null>(null);
-  const [isInsecureContext, setIsInsecureContext] = useState(false);
-  const [sensorSignalTimedOut, setSensorSignalTimedOut] = useState(false);
 
   const isSocketConnected = useGameStore((s) => s.isSocketConnected);
   const isControllerPaired = useGameStore((s) => s.isControllerPaired);
@@ -75,31 +56,14 @@ function MobileControllerContent() {
     (s) => s.setControllerTouchOverride,
   );
 
+  const [isInsecureContext, setIsInsecureContext] = useState(false);
+  const [sensorSignalTimedOut, setSensorSignalTimedOut] = useState(false);
+
   const sensitivityRef = useRef<number>(controllerSensitivity);
   sensitivityRef.current = controllerSensitivity;
 
-  const activeRoomCodeRef = useRef<string>(activeRoomCode);
-  activeRoomCodeRef.current = activeRoomCode;
-
   const isControllerPairedRef = useRef<boolean>(isControllerPaired);
   isControllerPairedRef.current = isControllerPaired;
-
-  const gimbalPadRef = useRef<HTMLDivElement | null>(null);
-  const gimbalDotRef = useRef<HTMLDivElement | null>(null);
-  const pitchValueRef = useRef<HTMLSpanElement | null>(null);
-  const rollValueRef = useRef<HTMLSpanElement | null>(null);
-
-  const isPointerDraggingRef = useRef<boolean>(false);
-  const activePointerIdRef = useRef<number | null>(null);
-  const gimbalBoundsRef = useRef<{
-    centerX: number;
-    centerY: number;
-    maxRadius: number;
-  }>({
-    centerX: 0,
-    centerY: 0,
-    maxRadius: 100,
-  });
 
   const liveGyroRef = useRef<GyroData>({
     alpha: 0,
@@ -107,6 +71,31 @@ function MobileControllerContent() {
     gamma: 0,
     timestamp: 0,
   });
+
+  const joinRoomRef = useRef<((code: string) => void) | null>(null);
+
+  const {
+    activeRoomCode,
+    manualRoomInput,
+    setManualRoomInput,
+    playerSlot,
+    setPlayerSlot,
+    playerSlotRef,
+    isRoomEditorOpen,
+    roomFormError,
+    setRoomFormError,
+    openRoomEditor,
+    closeRoomEditor,
+    handleManualConnect,
+  } = useControllerRoom({
+    isSocketConnected,
+    isControllerPaired,
+    joinRoomByCode: (code) => joinRoomRef.current?.(code),
+    setErrorMessage,
+  });
+
+  const activeRoomCodeRef = useRef<string>(activeRoomCode);
+  activeRoomCodeRef.current = activeRoomCode;
 
   const {
     emitGyroUpdate,
@@ -119,6 +108,7 @@ function MobileControllerContent() {
     targetRoomId: activeRoomCode || null,
     playerSlot,
   });
+  joinRoomRef.current = joinRoomByCode;
 
   const pushGyroSample = useCallback(
     (beta: number, gamma: number) => {
@@ -142,12 +132,27 @@ function MobileControllerContent() {
     [emitGyroUpdate],
   );
 
+  const {
+    gimbalPadRef,
+    gimbalDotRef,
+    pitchValueRef,
+    rollValueRef,
+    isPointerDraggingRef,
+    handlePointerDownOnGimbal,
+    handlePointerMoveOnGimbal,
+    handlePointerEndOnGimbal,
+  } = useGimbalInteraction({
+    showGimbalSurface: !isRoomEditorOpen && Boolean(activeRoomCode),
+    liveGyroRef,
+    pushGyroSample,
+  });
+
   const handleOrientationData = useCallback(
     (data: GyroData) => {
       if (isPointerDraggingRef.current) return;
       pushGyroSample(data.beta, data.gamma);
     },
-    [pushGyroSample],
+    [isPointerDraggingRef, pushGyroSample],
   );
 
   const {
@@ -182,25 +187,10 @@ function MobileControllerContent() {
   ]);
 
   useEffect(() => {
-    setPlayerSlot(initialSlotParam);
-    if (initialRoomParam) {
-      setActiveRoomCode(initialRoomParam);
-      setManualRoomInput(initialRoomParam);
-      setIsRoomEditorOpen(false);
-    }
-  }, [initialRoomParam, initialSlotParam]);
-
-  useEffect(() => {
     if (typeof window !== 'undefined' && !window.isSecureContext) {
       setIsInsecureContext(true);
     }
   }, []);
-
-  useEffect(() => {
-    if (isControllerPaired) {
-      setIsRoomEditorOpen(false);
-    }
-  }, [isControllerPaired]);
 
   const showGimbalSurface = resolveGimbalSurfaceVisibility(
     permissionState,
@@ -211,96 +201,6 @@ function MobileControllerContent() {
 
   // Kontrolcü aktifken telefon ekranının kapanmasını Wake Lock API ile engelle
   useWakeLock(showGimbalSurface);
-
-  // Gimbal yüzeyi kapandığında, sekme gizlendiğinde veya pencere odağı kaybedildiğinde takılı sürüklemeyi ve eğimi sıfırla
-  const wasGimbalVisibleRef = useRef(false);
-  useEffect(() => {
-    const resetActiveDrag = () => {
-      if (isPointerDraggingRef.current || activePointerIdRef.current !== null) {
-        isPointerDraggingRef.current = false;
-        activePointerIdRef.current = null;
-        pushGyroSample(0, 0);
-      }
-    };
-
-    if (!showGimbalSurface) {
-      if (wasGimbalVisibleRef.current) {
-        wasGimbalVisibleRef.current = false;
-        isPointerDraggingRef.current = false;
-        activePointerIdRef.current = null;
-        pushGyroSample(0, 0);
-      }
-      return;
-    }
-
-    wasGimbalVisibleRef.current = true;
-    const onVisibilityChange = () => {
-      if (document.hidden) {
-        resetActiveDrag();
-      }
-    };
-    window.addEventListener('blur', resetActiveDrag);
-    document.addEventListener('visibilitychange', onVisibilityChange);
-    return () => {
-      window.removeEventListener('blur', resetActiveDrag);
-      document.removeEventListener('visibilitychange', onVisibilityChange);
-    };
-  }, [showGimbalSurface, pushGyroSample]);
-
-  // 60 FPS GPU-hızlandırmalı mobil ufuk küresi ve 8Hz sayısal açı güncellemesi
-  useEffect(() => {
-    if (!showGimbalSurface) return;
-
-    let rafId = 0;
-    let lastRenderedX = 999;
-    let lastRenderedY = 999;
-    let lastTextUpdateTime = 0;
-    let lastPitchStr = '';
-    let lastRollStr = '';
-
-    const updateMobileUI = (now: number) => {
-      const beta = liveGyroRef.current.beta;
-      const gamma = liveGyroRef.current.gamma;
-
-      if (gimbalDotRef.current) {
-        const { offsetX, offsetY } = calculateGimbalDotOffset(beta, gamma, 68, 35);
-
-        if (
-          shouldUpdateGimbalDotOffset(
-            offsetX,
-            offsetY,
-            lastRenderedX,
-            lastRenderedY,
-            0.2,
-          )
-        ) {
-          lastRenderedX = offsetX;
-          lastRenderedY = offsetY;
-          gimbalDotRef.current.style.transform = `translate3d(${offsetX.toFixed(1)}px, ${offsetY.toFixed(1)}px, 0)`;
-        }
-      }
-
-      if (now - lastTextUpdateTime >= 120) {
-        lastTextUpdateTime = now;
-        const nextPitchStr = formatGimbalAngle(beta);
-        const nextRollStr = formatGimbalAngle(gamma);
-
-        if (pitchValueRef.current && nextPitchStr !== lastPitchStr) {
-          lastPitchStr = nextPitchStr;
-          pitchValueRef.current.textContent = nextPitchStr;
-        }
-        if (rollValueRef.current && nextRollStr !== lastRollStr) {
-          lastRollStr = nextRollStr;
-          rollValueRef.current.textContent = nextRollStr;
-        }
-      }
-
-      rafId = window.requestAnimationFrame(updateMobileUI);
-    };
-
-    rafId = window.requestAnimationFrame(updateMobileUI);
-    return () => window.cancelAnimationFrame(rafId);
-  }, [showGimbalSurface]);
 
   const handleActivateSensors = async () => {
     const granted = await requestSensorPermission();
@@ -317,86 +217,6 @@ function MobileControllerContent() {
     calibrate();
     emitCalibrate();
     pushGyroSample(0, 0);
-  };
-
-  const updatePointerSample = (clientX: number, clientY: number) => {
-    const { beta, gamma } = calculateGimbalTouchAngles(
-      clientX,
-      clientY,
-      gimbalBoundsRef.current,
-      28,
-    );
-    pushGyroSample(beta, gamma);
-  };
-
-  const handlePointerDownOnGimbal = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!gimbalPadRef.current || activePointerIdRef.current !== null) return;
-    activePointerIdRef.current = e.pointerId;
-    isPointerDraggingRef.current = true;
-    const rect = gimbalPadRef.current.getBoundingClientRect();
-    gimbalBoundsRef.current = calculateGimbalBounds(rect, 24, 40);
-
-    e.currentTarget.setPointerCapture(e.pointerId);
-    updatePointerSample(e.clientX, e.clientY);
-  };
-
-  const handlePointerMoveOnGimbal = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (
-      !isPointerDraggingRef.current ||
-      activePointerIdRef.current !== e.pointerId
-    ) {
-      return;
-    }
-    updatePointerSample(e.clientX, e.clientY);
-  };
-
-  const handlePointerEndOnGimbal = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (
-      !isPointerDraggingRef.current ||
-      activePointerIdRef.current !== e.pointerId
-    ) {
-      return;
-    }
-    isPointerDraggingRef.current = false;
-    activePointerIdRef.current = null;
-    pushGyroSample(0, 0);
-  };
-
-  const openRoomEditor = () => {
-    setManualRoomInput(activeRoomCode);
-    setRoomFormError(null);
-    setIsRoomEditorOpen(true);
-  };
-
-  const closeRoomEditor = () => {
-    setRoomFormError(null);
-    setIsRoomEditorOpen(false);
-  };
-
-  const handleManualConnect = (e: React.FormEvent) => {
-    e.preventDefault();
-    const validation = validateRoomCode(manualRoomInput);
-    if (!validation.valid) {
-      setRoomFormError(validation.error);
-      return;
-    }
-    const cleaned = validation.cleanCode;
-    if (cleaned === activeRoomCode) {
-      if (!isSocketConnected) {
-        setRoomFormError(
-          'Sunucu bağlantısı bekleniyor; bağlantı kurulunca tekrar deneyin.',
-        );
-        return;
-      }
-      setRoomFormError(null);
-      setErrorMessage(null);
-      joinRoomByCode(cleaned);
-    } else {
-      setRoomFormError(null);
-      setErrorMessage(null);
-      setActiveRoomCode(cleaned);
-    }
-    setIsRoomEditorOpen(false);
   };
 
   return (
@@ -458,9 +278,10 @@ function MobileControllerContent() {
             rollValueRef={rollValueRef}
             playerSlot={playerSlot}
             onSelectSlot={(slot) => {
-              if (playerSlot !== slot) {
+              const { changed, nextSlot } = resolveSlotChange(playerSlot, slot);
+              if (changed) {
                 pushGyroSample(0, 0);
-                setPlayerSlot(slot);
+                setPlayerSlot(nextSlot);
               }
             }}
             controllerTouchOverride={controllerTouchOverride}
