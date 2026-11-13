@@ -28,3 +28,4 @@ export function isStarFilled(starIdx: number, earnedStars: number): boolean {
 export function formatSubmitButtonText(scoreSubmitted: boolean): string {
   return scoreSubmitted ? 'Kaydedildi' : 'Skoru kaydet';
 }
+

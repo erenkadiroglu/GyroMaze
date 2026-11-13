@@ -626,6 +626,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Zafer Arayüz Bileşenleri (`VictoryWinnerBadge.tsx`, `VictoryStarsRow.tsx`, `VictoryTimeReadout.tsx`, `VictoryScoreSubmitForm.tsx`):** Kazanan rozeti, yıldız gösterimi, süre/PB rozeti ve liderlik tablosu formu bağımsız alt bileşenlere ayrıştırıldı.
 - [x] **Yalın Zafer Modalı (`VictoryModal.tsx`):** Alt bileşen mimarisine geçirilerek `VictoryModal.tsx` 170 satırdan **88 satıra** indirildi.
 
+### Faz 125: Bölüm Seçici Menüsü ve Liste Bileşenleri Ayrıştırması (Tamamlandı)
+- [x] **Bölüm Menüsü ve Kural Yardımcı Motoru (`levelMenuUtils.ts`, `levelMenuUtils.test.mjs`):** Standart bölüm kartı aktiflik denetimi `isStandardLevelActive`, en iyi süre metin formatı `formatLevelBestTimeText`, yıldız glifleri `formatLevelStarsText`, prosedürel mod kontrolü `isProceduralActive` ve rozet formatlayıcı `formatProceduralBadgeText` saf yardımcıları geliştirildi; 6 yeni birim test ile doğrulandı (toplam 296 istemci testi, 324 monorepo testi).
+- [x] **Modüler Bölüm Seçici Arayüz Bileşenleri (`LevelSelectCampaignSummary.tsx`, `LevelSelectStandardGrid.tsx`, `LevelSelectActionList.tsx`):** Kampanya yıldız özeti, 1..5 bölüm kartları ve prosedürel/özel harita butonları bağımsız alt bileşenlere ayrıştırıldı.
+- [x] **Yalın Bölüm Menüsü (`LevelSelectMenu.tsx`):** Açılır menü şablonu yalınlaştırılarak `LevelSelectMenu.tsx` 181 satırdan **68 satıra** indirildi.
+
+
 
 
 

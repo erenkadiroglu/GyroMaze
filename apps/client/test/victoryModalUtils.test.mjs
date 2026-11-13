@@ -33,3 +33,4 @@ test('victoryModalUtils — Zafer Modalı ve Skor Gönderim Kuralları', async (
     assert.equal(formatSubmitButtonText(false), 'Skoru kaydet');
   });
 });
+

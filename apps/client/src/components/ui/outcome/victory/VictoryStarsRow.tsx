@@ -35,3 +35,4 @@ export function VictoryStarsRow({ earnedStars }: VictoryStarsRowProps) {
     </div>
   );
 }
+
