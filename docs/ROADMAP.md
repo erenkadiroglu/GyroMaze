@@ -922,9 +922,14 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **useControllerHeader Kancası ve ControllerHeader Sadeleşmesi (`apps/client/src/hooks/useControllerHeader.ts`, `apps/client/src/app/controller/ControllerHeader.tsx`):** Başlık marka kapsülü, oda kodu, P1/P2 oyuncu yuvası rozeti, haptik titreşim, renk şeması, oda düzenleyici ve ağ gecikme telemetrisi saf motora devredildi.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/controllerHeaderOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 721'den **728'e**, monorepo testleri 776'dan **783'e** çıkarıldı.
 
-### Faz 195: Mobil Kontrolcü Merkez Sahne (ControllerCenterStage) Orkestrasyon Motoru (Sıradaki)
-- [ ] **Mobil Kontrolcü Merkez Sahne Orkestrasyon Motoru (`controllerCenterStageOrchestrationUtils.ts`, `controllerCenterStageOrchestrationUtils.test.mjs`):** `ControllerCenterStage.tsx` bileşenindeki 3 farklı aşama modunun (`room`, `sensor`, `gimbal`), dokunmatik yönlendirme/hassasiyet geçişlerinin ve semantik landmark özniteliklerinin saf motora ayrıştırılması.
-- [ ] **useControllerCenterStage Kancası ve ControllerCenterStage Sadeleşmesi:** Merkez sahne aşama durumunu tekil kancaya bağlayarak sunum katmanına indirgeme.
+### Faz 195: Mobil Kontrolcü Merkez Sahne (ControllerCenterStage) Orkestrasyon Motoru (Tamamlandı)
+- [x] **Mobil Kontrolcü Merkez Sahne Orkestrasyon Motoru (`controllerCenterStageOrchestrationUtils.ts`, `controllerCenterStageOrchestrationUtils.test.mjs`):** `resolveSensitivityLabel`, `resolveCenterStageDescriptor`, `resolveCenterStageContainerProps`, `formatCenterStageDetailedSummary`, `resolveControllerCenterStageState` fonksiyonları saf mimariyle geliştirildi; 7 yeni birim test ile %100 doğrulandı (toplam 735 istemci testi, 49 sunucu testi, 6 shared testi, **790 monorepo testi**).
+- [x] **useControllerCenterStage Kancası ve ControllerCenterStage Sadeleşmesi (`apps/client/src/hooks/useControllerCenterStage.ts`, `apps/client/src/app/controller/ControllerCenterStage.tsx`):** 3 aşama modunun (`room`, `sensor`, `gimbal`) alt kart prop gruplamaları (Oda kartı, Sensör izin kartı, Gimbal pad) kancaya taşınarak bileşen 128 satırdan 57 satıra indirgendi.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/controllerCenterStageOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 728'den **735'e**, monorepo testleri 783'ten **790'a** çıkarıldı.
+
+### Faz 196: Mobil Kontrolcü Alt Eylemler (ControllerFooter) Orkestrasyon Motoru (Sıradaki)
+- [ ] **Mobil Kontrolcü Alt Eylemler Orkestrasyon Motoru (`controllerFooterOrchestrationUtils.ts`, `controllerFooterOrchestrationUtils.test.mjs`):** `ControllerFooter.tsx` bileşenindeki gimbal yüzeyi görünürlük kontrolü, merkez kalibrasyon butonu eylemi, bilye sıfırlama (ResetBall) butonu durum/erişilebilirlik kuralları ve semantik footer landmark özniteliklerini saf motora ayrıştırma.
+- [ ] **useControllerFooter Kancası ve ControllerFooter Sadeleşmesi:** Alt araç çubuğu durumunu tekil kancaya bağlayarak sunum katmanına indirgeme.
 - [ ] **Birim Testleri ve Doğrulama:** Yeni birim testleriyle monorepo test barajını artırma, tam derleme ve git push.
 
 

@@ -2,13 +2,10 @@
 
 import type { RefObject } from 'react';
 import type { CenterStageMode } from '@/utils/controllerOrchestrationUtils';
+import { useControllerCenterStage } from '@/hooks/useControllerCenterStage';
 import { ControllerRoomCard } from './ControllerRoomCard';
 import { ControllerSensorCard } from './ControllerSensorCard';
 import { ControllerGimbalPad } from './ControllerGimbalPad';
-import {
-  getCenterStageAriaLabel,
-  getCenterStageContainerClass,
-} from '@/utils/controllerCenterStageUtils';
 
 export interface ControllerCenterStageProps {
   stageMode: CenterStageMode;
@@ -46,82 +43,28 @@ export interface ControllerCenterStageProps {
 }
 
 /**
- * Mobil kontrolcü ekranının merkezindeki içerik aşamasını (Oda Kartı, İzin Kartı veya Canlı Gimbal) yönetir.
+ * Mobil kontrolcü ekranının merkezindeki içerik aşamasını (Oda Kartı, İzin Kartı veya Canlı Gimbal)
+ * useControllerCenterStage kancası ile koordine eden orkestratör bileşen.
  */
-export function ControllerCenterStage({
-  stageMode,
-  manualRoomInput,
-  setManualRoomInput,
-  roomFormError,
-  setRoomFormError,
-  recentRooms,
-  activeRoomCode,
-  onCloseRoomEditor,
-  onSubmitRoomCode,
-  isInsecureContext,
-  onActivateSensors,
-  onEnableTouchMode,
-  gimbalPadRef,
-  gimbalDotRef,
-  pitchValueRef,
-  rollValueRef,
-  playerSlot,
-  onSelectSlot,
-  controllerTouchOverride,
-  onToggleTouchOverride,
-  controllerSensitivity,
-  onSelectSensitivity,
-  isControllerPaired,
-  errorMessage,
-  sensorSignalTimedOut,
-  hasSensorSignal,
-  onPointerDownOnGimbal,
-  onPointerMoveOnGimbal,
-  onPointerEndOnGimbal,
-}: ControllerCenterStageProps) {
+export function ControllerCenterStage(props: ControllerCenterStageProps) {
+  const {
+    state,
+    containerProps,
+    roomCardProps,
+    sensorCardProps,
+    gimbalPadProps,
+  } = useControllerCenterStage(props);
+
+  const { descriptor } = state;
+
   return (
-    <section
-      role="region"
-      aria-label={getCenterStageAriaLabel(stageMode)}
-      className={getCenterStageContainerClass()}
-    >
-      {stageMode === 'room' ? (
-        <ControllerRoomCard
-          manualRoomInput={manualRoomInput}
-          setManualRoomInput={setManualRoomInput}
-          roomFormError={roomFormError}
-          setRoomFormError={setRoomFormError}
-          recentRooms={recentRooms}
-          activeRoomCode={activeRoomCode}
-          onClose={onCloseRoomEditor}
-          onSubmit={onSubmitRoomCode}
-        />
-      ) : stageMode === 'sensor' ? (
-        <ControllerSensorCard
-          isInsecureContext={isInsecureContext}
-          onActivateSensors={onActivateSensors}
-          onEnableTouchMode={onEnableTouchMode}
-        />
+    <section {...containerProps}>
+      {descriptor.isRoom ? (
+        <ControllerRoomCard {...roomCardProps} />
+      ) : descriptor.isSensor ? (
+        <ControllerSensorCard {...sensorCardProps} />
       ) : (
-        <ControllerGimbalPad
-          gimbalPadRef={gimbalPadRef}
-          gimbalDotRef={gimbalDotRef}
-          pitchValueRef={pitchValueRef}
-          rollValueRef={rollValueRef}
-          playerSlot={playerSlot}
-          onSelectSlot={onSelectSlot}
-          controllerTouchOverride={controllerTouchOverride}
-          onToggleTouchOverride={onToggleTouchOverride}
-          controllerSensitivity={controllerSensitivity}
-          onSelectSensitivity={onSelectSensitivity}
-          isControllerPaired={isControllerPaired}
-          errorMessage={errorMessage}
-          sensorSignalTimedOut={sensorSignalTimedOut}
-          hasSensorSignal={hasSensorSignal}
-          onPointerDown={onPointerDownOnGimbal}
-          onPointerMove={onPointerMoveOnGimbal}
-          onPointerEnd={onPointerEndOnGimbal}
-        />
+        <ControllerGimbalPad {...gimbalPadProps} />
       )}
     </section>
   );
