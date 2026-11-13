@@ -807,6 +807,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Kök Yerleşim Temizliği (`apps/client/src/app/layout.tsx`):** Bozuk Türkçe karakter kodlamaları (mojibake) düzeltildi; metadata ve viewport tanımları `layoutMetadataUtils` motoruna bağlanarak `layout.tsx` deklaratif ve SRP uyumlu hale getirildi.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/layoutMetadataUtils.test.mjs` dahil edilerek istemci test sayısı 514'ten 520'ye yükseltildi.
 
+### Faz 171: PWA Manifest ve 404 Sayfası Yardımcı Motorları ile İstemci Rota Konsolidasyonu (Tamamlandı)
+- [x] **PWA Manifest Motoru (`manifestUtils.ts`, `manifestUtils.test.mjs`):** Bağımsız (standalone) ekran kipi, maskelenebilir SVG ikonları ve mobil kumanda/3B sahne kısayollarını sağlayan `buildAppManifest` saf motoru geliştirildi; 3 yeni birim test ile doğrulandı.
+- [x] **404 Sayfası Yardımcı Motoru (`notFoundViewUtils.ts`, `notFoundViewUtils.test.mjs`):** Başlık, mesaj, ana sayfaya dönüş butonu metni ve stillerini sağlayan `getNotFoundTitle`, `getNotFoundMessage`, `getNotFoundContainerClass`, `getNotFoundButtonClass` saf yardımcıları geliştirildi; 4 yeni birim test ile doğrulandı.
+- [x] **Rota Dosyaları Sadeleşmesi (`manifest.ts`, `not-found.tsx`):** `manifest.ts` ve `not-found.tsx` saf yardımcı motorlara devredilerek yalınlaştırıldı; `apps/client/package.json` üzerinden test kapsamı 520'den **527'ye**, monorepo testleri **582'ye** yükseltildi.
+
 
 
 
