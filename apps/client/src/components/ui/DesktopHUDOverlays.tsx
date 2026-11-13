@@ -2,8 +2,7 @@
 
 import { useGameStore } from '@/store/useGameStore';
 import { shouldShowPauseRecoveryBar } from '@/utils/overlayBarUtils';
-import { PauseRecoveryBar } from './overlays/PauseRecoveryBar';
-import { HudNotificationToast } from './overlays/HudNotificationToast';
+import { PauseRecoveryBar, HudNotificationToast } from './overlays';
 
 export interface DesktopHUDOverlaysProps {
   isAnyOverlayOpen: boolean;

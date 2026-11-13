@@ -708,6 +708,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Klavye İpucu Bileşenleri (`KeyboardHintItem.tsx`, `MultiplayerKeyboardHints.tsx`, `SoloKeyboardHints.tsx`):** Kbd/span çifti, 1P/2P çok oyunculu yuva gösterimi ve solo eğim/sıfırlama/tema gösterimi bağımsız modüllere ayrıştırıldı.
 - [x] **Yalın Alt Klavye İpuçları Orkestratörü (`FooterKeyboardHints.tsx`):** Alt bileşen ve dinamik ARIA etiket mimarisine geçirilerek `FooterKeyboardHints.tsx` 74 satırdan **57 satıra** indirildi.
 
+### Faz 144: Masaüstü HUD Durum Overlay Katmanı Ayrıştırması (Tamamlandı)
+- [x] **Overlay ve Kurtarma Yardımcı Motoru (`overlayBarUtils.ts`, `overlayBarUtils.test.mjs`):** Duraklatma mesajı `getPauseRecoveryMessage`, eylem butonları yapılandırması `getPauseRecoveryActionsConfig`, canlı bölge önceliği `resolveToastAriaLive` ve bildirim geçerlilik denetleyicisi `isNotificationPresent` saf yardımcıları geliştirildi; test süiti 2'den 7 teste genişletildi (toplam 392 istemci testi, 420 monorepo testi).
+- [x] **Modüler Kurtarma ve Toast Bileşenleri (`PauseRecoveryMessage.tsx`, `PauseRecoveryActions.tsx`, `ToastContent.tsx`):** Uyarı mesajı metni, "Bağla" / "Devam et" buton grubu ve dinamik ton stillerine sahip toast içerik kartı bağımsız modüllere ayrıştırıldı.
+- [x] **Yalın Overlay Bileşenleri ve Barrel Yapısı (`PauseRecoveryBar.tsx`, `HudNotificationToast.tsx`, `DesktopHUDOverlays.tsx`):** Tekil sorumluluk ilkesi uygulanarak çubuk ve bildirim yapıları sadeleştirildi; `overlays/index.ts` üzerinden merkezi dışa aktarım sağlandı.
+
+
 
 
 
