@@ -1,7 +1,8 @@
 'use client';
 
 import type { WallDefinition } from './mazeLevels';
-import { _outerWallMaterial, _innerWallMaterial } from './sceneMaterials';
+import { StageOuterWalls } from './walls/StageOuterWalls';
+import { StageInnerWalls } from './walls/StageInnerWalls';
 
 interface MazeStageWallsProps {
   levelRevisionKey: string;
@@ -22,32 +23,14 @@ export function MazeStageWalls({
 }: MazeStageWallsProps) {
   return (
     <>
-      {/* Çevreleyen Dış Duvarlar */}
-      {outerWalls.map((wall, idx) => (
-        <mesh
-          key={`vis-outer-${levelRevisionKey}-${idx}`}
-          position={wall.position}
-          material={_outerWallMaterial}
-          castShadow
-          receiveShadow
-        >
-          <boxGeometry args={wall.size} />
-        </mesh>
-      ))}
-
-      {/* İç Labirent Duvarları */}
-      {innerWalls.map((wall, idx) => (
-        <mesh
-          key={`vis-inner-${levelRevisionKey}-${idx}`}
-          position={wall.position}
-          material={_innerWallMaterial}
-          castShadow
-          receiveShadow
-        >
-          <boxGeometry args={wall.size} />
-        </mesh>
-      ))}
+      <StageOuterWalls
+        levelRevisionKey={levelRevisionKey}
+        outerWalls={outerWalls}
+      />
+      <StageInnerWalls
+        levelRevisionKey={levelRevisionKey}
+        innerWalls={innerWalls}
+      />
     </>
   );
 }
-

@@ -611,6 +611,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler 3B Aktör Bileşenleri (`ActorMotionTrail.tsx`, `ActorGhostBall.tsx`, `ActorPlayerBalls.tsx`):** Neon hareket izi halkaları, hayalet yarışçı hologram küresi ve 1P/2P oyuncu bilyeleri bağımsız alt bileşenlere ayrıştırıldı.
 - [x] **Yalın Sahne Aktörleri Orkestratörü (`MazeStageActors.tsx`):** Doğrudan Three.js aktör geometrileri devredilerek `MazeStageActors.tsx` 91 satırdan **46 satıra** indirildi.
 
+### Faz 122: 3B Labirent Duvarları ve Geometri Ayrıştırması (Tamamlandı)
+- [x] **Duvar Geometri ve Anahtar Yardımcı Motoru (`wallUtils.ts`, `wallUtils.test.mjs`):** Tutarli React anahtarları `resolveWallKey`, boyut doğrulama `formatWallGeometryArgs` ve 3B hacim hesabı `calculateWallVolume` saf yardımcıları geliştirildi; 4 yeni birim test ile doğrulandı (toplam 281 istemci testi, 309 monorepo testi).
+- [x] **Modüler 3B Duvar Bileşenleri (`StageOuterWalls.tsx`, `StageInnerWalls.tsx`):** Dış sınır ve iç labirent duvarları bağımsız Three.js alt bileşenlerine ayrıştırıldı.
+- [x] **Yalın Duvarlar Orkestratörü (`MazeStageWalls.tsx`):** Duvar geometrileri alt bileşenlere devredilerek `MazeStageWalls.tsx` 53 satırdan **33 satıra** indirildi.
+
+
 
 
 
