@@ -9,6 +9,7 @@ export * from './MazeCameraRig';
 export * from './SceneLights';
 export * from './SceneErrorBoundary';
 export * from './ContextLostFallback';
+export * from './SceneRecoveryCard';
 export * from './mazeLevels';
 export * from './levels';
 export * from './sceneMaterials';

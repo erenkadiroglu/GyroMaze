@@ -947,10 +947,15 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **useSceneLights Kancası ve SceneLights Sadeleşmesi (`apps/client/src/hooks/useSceneLights.ts`, `apps/client/src/components/scene/SceneLights.tsx`):** Sahne aydınlatma şiddetleri, gölge kamera sınırları ve dolgu ışığı ayarları tekil orkestrasyon kancasına devredilerek bileşen 33 satırdan **30 satıra** indirgendi ve deklaratif sunum sağlandı.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/sceneLightsOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 755'ten **761'e**, monorepo testleri 810'dan **816'ya** çıkarıldı.
 
-### Faz 200: 3B WebGL Hata ve Bağlam Kurtarma (SceneErrorBoundary & ContextLostFallback) Orkestrasyon Motoru (Sıradaki)
-- [ ] **3B Sahne Kurtarma Orkestrasyon Motoru (`sceneRecoveryOrchestrationUtils.ts`, `sceneRecoveryOrchestrationUtils.test.mjs`):** `SceneErrorBoundary.tsx` ve `ContextLostFallback.tsx` bileşenlerinin WebGL bağlam kesilmesi, çökme yakalama, yeniden başlatma butonu konfigürasyonu ve erişilebilirlik rollerini saf motora ayrıştırma.
-- [ ] **SceneErrorBoundary ve ContextLostFallback Sadeleşmesi:** Hata ve kurtarma bileşenlerini saf orkestrasyon motoruna bağlayarak deklaratif sunuma dönüştürme.
-- [ ] **200. Faz Dönüm Noktası Doğrulaması:** Kapsamlı test süitiyle monorepo genelinde 820+ test hedefine ulaşma, tam derleme ve git push.
+### Faz 200: 3B WebGL Hata ve Bağlam Kurtarma (SceneErrorBoundary & ContextLostFallback) Orkestrasyon Motoru (Tamamlandı)
+- [x] **3B Sahne Kurtarma Orkestrasyon Motoru (`sceneRecoveryOrchestrationUtils.ts`, `sceneRecoveryOrchestrationUtils.test.mjs`):** `getSceneRecoveryConfig`, `resolveSceneRecoveryContainerProps`, `formatSceneRecoveryTelemetry`, `resolveSceneRecoveryState` fonksiyonları saf mimariyle geliştirildi; 9 yeni birim test ile %100 doğrulandı (toplam 770 istemci testi, 49 sunucu testi, 6 shared testi, **825 monorepo testi** - 200. Faz jübilesi).
+- [x] **Modüler Kurtarma Kartı ve Bileşen Sadeleşmesi (`SceneRecoveryCard.tsx`, `ContextLostFallback.tsx`, `SceneErrorBoundary.tsx`):** WebGL bağlam kaybı (`context_lost`) ve başlatma hataları (`init_error`) için paylaşılan erişilebilir `SceneRecoveryCard` geliştirilerek her iki bileşen saf motora bağlandı.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/sceneRecoveryOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 761'den **770'e**, monorepo testleri 816'dan **825'e** çıkarıldı.
+
+### Faz 201: Masaüstü Sahne Yükleme Arayüzü (DesktopSceneLoader) Orkestrasyon Motoru (Sıradaki)
+- [ ] **Masaüstü Yükleme Orkestrasyon Motoru (`desktopSceneLoaderOrchestrationUtils.ts`, `desktopSceneLoaderOrchestrationUtils.test.mjs`):** `DesktopSceneLoader.tsx` ve CSR dinamik yükleme durumunun spinner, kapsayıcı, erişilebilirlik (`role="status"`, `aria-live="polite"`) ve telemetri özelliklerini saf motora ayrıştırma.
+- [ ] **DesktopSceneLoader Bileşeni Sadeleşmesi:** Yükleyici bileşenini saf orkestrasyon motoruna bağlayarak deklaratif sunuma dönüştürme.
+- [ ] **Birim Testleri ve Doğrulama:** Yeni birim testleriyle monorepo test kapsamını artırma, tam derleme ve git push.
 
 
 

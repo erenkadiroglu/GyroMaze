@@ -131,3 +131,4 @@ export function resolveSceneLightsBundle(
     telemetrySummary,
   };
 }
+

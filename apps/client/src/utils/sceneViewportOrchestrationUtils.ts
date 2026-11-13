@@ -244,3 +244,4 @@ export function resolveSceneStageProps(params: {
     onWallHit: params.onWallHit,
   };
 }
+

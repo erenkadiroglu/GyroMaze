@@ -24,3 +24,4 @@ export function useSceneLights({
     return resolveSceneLightsBundle(isLightScene, shadowMargin);
   }, [isLightScene, shadowMargin]);
 }
+
