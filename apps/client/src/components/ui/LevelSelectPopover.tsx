@@ -2,8 +2,14 @@
 
 import { AnimatePresence } from 'framer-motion';
 import { useLevelSelect } from '@/hooks/useLevelSelect';
-import { LevelSelectTrigger } from './levelselect/LevelSelectTrigger';
-import { LevelSelectMenu } from './levelselect/LevelSelectMenu';
+import {
+  getLevelSelectContainerAriaLabel,
+  isPrevLevelDisabled,
+} from '@/utils/levelSelectPopoverUtils';
+import {
+  LevelSelectTrigger,
+  LevelSelectMenu,
+} from './levelselect';
 
 /**
  * Masaüstü HUD üst çubuğunda yer alan, 5 standart bölümün yıldız ilerlemesini,
@@ -30,14 +36,19 @@ export function LevelSelectPopover() {
   } = useLevelSelect();
 
   return (
-    <div ref={popoverRef} className="relative flex items-center">
+    <div
+      ref={popoverRef}
+      className="relative flex items-center"
+      role="region"
+      aria-label={getLevelSelectContainerAriaLabel()}
+    >
       {/* Üst Çubuk Tetikleyici ve Bölüm Değiştirme Okları */}
       <LevelSelectTrigger
         isOpen={isOpen}
         onToggle={toggleOpen}
         onPrevLevel={handlePrevLevel}
         onNextLevel={handleNextLevel}
-        prevDisabled={activeNumericLevel <= 1 && level !== 99}
+        prevDisabled={isPrevLevelDisabled(activeNumericLevel, level)}
         shortLevelTag={shortLevelTag}
         cleanTitle={cleanTitle}
         subtitle={currentLevelInfo.subtitle}

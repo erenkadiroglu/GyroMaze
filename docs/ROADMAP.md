@@ -778,10 +778,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Kontrolcü Görünüm Orkestratörü (`MobileControllerView.tsx`, `controller/index.ts`):** `page.tsx` içindeki monolitik kontrolcü JSX yapısı bağımsız `MobileControllerView` bileşenine taşındı; `controller/index.ts` üzerinden merkezi re-export mimarisi tamamlandı.
 - [x] **Yalın Next.js 15 App Router Sayfası (`controller/page.tsx`):** `page.tsx` bileşeni 163 satırdan **30 satıra** indirilerek saf ve standart bir Next.js 15 Suspense sayfa sarmalayıcısı haline getirildi.
 
-### Faz 160: Ayarlar Modalı ve Bölüm Bileşenleri Konsolidasyonu (Tamamlandı)
-- [x] **Ayarlar Çekmecesi Görünüm ve Özet Motoru (`settingsModalViewUtils.ts`, `settingsModalViewUtils.test.mjs`):** Standart başlık `getSettingsModalTitle`, açıklama `getSettingsModalDescription`, kapsayıcı aria etiketi `getSettingsContainerAriaLabel`, modal açık durum denetimi `isSettingsModalOpen`, alt bölüm etiket formatlayıcı `formatSettingsSectionAriaLabel` ve tek satırlık aktif tercih telemetrisi `formatActivePreferencesSummary` saf yardımcıları geliştirildi; 7 yeni birim test ile doğrulandı (toplam 480 istemci testi, 508 monorepo testi).
-- [x] **Ayarlar Bölümleri Hiyerarşik Barrel Mimarisi (`appearance/index.ts`, `audio/index.ts`, `gamemode/index.ts`, `physics/index.ts`, `settings/index.ts`):** Görünüm/kamera/kaplama, ses/katman anahtarları, oyun modu/kurallar ve fizik ivmesi alt bileşenleri tam hiyerarşik re-export modül sistemine bağlandı.
-- [x] **Yalın ve Semantik Ayarlar Çekmecesi (`SettingsModal.tsx`):** Saf yardımcı motorundan beslenen çekmece yapılandırması ve `role="region"` arayüz semantiğiyle konsolide edildi.
+### Faz 161: Bölüm Seçici Popover ve Ana UI Barrel Konsolidasyonu (Tamamlandı)
+- [x] **Bölüm Seçici Popover Yardımcı Motoru (`levelSelectPopoverUtils.ts`, `levelSelectPopoverUtils.test.mjs`):** Standart kapsayıcı etiketi `getLevelSelectContainerAriaLabel`, menü açık durum denetimi `isLevelSelectOpen`, önceki bölüm butonu devre dışı bırakma kuralı `isPrevLevelDisabled`, tetikleyici tooltip formatlayıcı `formatLevelSelectTriggerTooltip` ve genişletilmiş durum çözücü `resolveLevelPopoverAriaExpanded` saf yardımcıları geliştirildi; 6 yeni birim test ile doğrulandı (toplam 486 istemci testi, 514 monorepo testi).
+- [x] **Bölüm Seçici ve Ana UI Hiyerarşik Barrel Mimarisi (`levelselect/index.ts`, `ui/index.ts`):** Bölüm seçici alt bileşenleri (`LevelSelectActionList`, `LevelSelectCampaignSummary`, `LevelSelectMenu`, `LevelSelectStandardGrid`, `LevelSelectTrigger`) ve tüm masaüstü UI bileşenleri tekil giriş noktası üzerinden derli toplu re-export mimarisine kavuşturuldu.
+- [x] **Yalın ve Semantik Bölüm Seçici Popover (`LevelSelectPopover.tsx`):** Saf yardımcı motorundan beslenen durum yönetimi ve `role="region"` arayüz semantiğiyle konsolide edildi.
+
 
 
 
