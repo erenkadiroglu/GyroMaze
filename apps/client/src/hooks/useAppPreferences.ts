@@ -1,18 +1,21 @@
 'use client';
 
 import { useEffect } from 'react';
-import {
-  CUSTOM_MAP_URL_PARAM,
-  decodeCustomMazeLevelFromUrl,
-} from '@/components/scene/mazeLevels';
+import { CUSTOM_MAP_URL_PARAM } from '@/components/scene/mazeLevels';
 import { useGameStore } from '@/store/useGameStore';
 import { soundEngine } from '@/utils/soundEngine';
+import {
+  resolveEffectiveColorScheme,
+  resolveEffectiveSoundVolume,
+  resolveCustomMapImport,
+  stripUrlParam,
+} from '@/utils/settingsDrawerUtils';
 
 /**
  * Kalıcı kullanıcı tercihlerini istemcide geri yükler ve uygulama geneline uygular:
- * - `localStorage` üzerindeki ayarları (tema, fizik, ses, katmanlar) depoya aktarır,
- * - URL `?map=` parametresi varsa paylaşılan özel haritayı otomatik yükler,
- * - `<html data-scheme>` özniteliğini aydınlık/karanlık moda göre günceller,
+ * - `localStorage` üzerindeki ayarları depoya aktarır,
+ * - URL `?map=` parametresi varsa paylaşılan özel haritayı güvenle çözer ve yükler,
+ * - `<html data-scheme>` özniteliğini temaya göre günceller,
  * - Web Audio ses seviyesini senkronize eder.
  */
 export function useAppPreferences() {
@@ -26,36 +29,32 @@ export function useAppPreferences() {
     const store = useGameStore.getState();
     store.hydrateLocalRecords();
 
-    const url = new URL(window.location.href);
-    const encodedMap = url.searchParams.get(CUSTOM_MAP_URL_PARAM);
+    const encodedMap = new URL(window.location.href).searchParams.get(
+      CUSTOM_MAP_URL_PARAM,
+    );
     if (encodedMap) {
-      const imported = decodeCustomMazeLevelFromUrl(encodedMap);
-      if (imported) {
-        store.setCustomLevel(imported);
-        store.showHudNotification(
-          `“${imported.title}” paylaşılan bağlantıdan yüklendi.`,
-          'success',
-        );
-      } else {
-        store.showHudNotification(
-          'Paylaşılan özel harita bağlantısı geçersiz veya bozuk.',
-          'warn',
-        );
+      const { level, notification } = resolveCustomMapImport(encodedMap);
+      if (level) {
+        store.setCustomLevel(level);
       }
-      url.searchParams.delete(CUSTOM_MAP_URL_PARAM);
-      const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+      if (notification) {
+        store.showHudNotification(notification.message, notification.tone);
+      }
+      const nextUrl = stripUrlParam(window.location.href, CUSTOM_MAP_URL_PARAM);
       window.history.replaceState(null, '', nextUrl);
     }
   }, []);
 
   useEffect(() => {
-    const scheme =
-      colorScheme === 'light' || boardTheme === 'daylight' ? 'light' : 'dark';
-    document.documentElement.dataset.scheme = scheme;
+    document.documentElement.dataset.scheme = resolveEffectiveColorScheme(
+      colorScheme,
+      boardTheme,
+    );
   }, [colorScheme, boardTheme]);
 
   useEffect(() => {
-    soundEngine.setVolume(isSoundMuted ? 0 : soundVolume);
+    soundEngine.setVolume(
+      resolveEffectiveSoundVolume(isSoundMuted, soundVolume),
+    );
   }, [isSoundMuted, soundVolume]);
 }
-

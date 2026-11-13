@@ -852,9 +852,14 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Kancaların Sadeleşmesi (`useWakeLock.ts`, `useWebGLContextRecovery.ts`):** WakeLock talep ve serbest bırakma döngüsü ile WebGL bağlam kopma/kurtarma olay dinleyicisi yönetimi saf motorlara bağlandı.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/wakeLockUtils.test.mjs test/webGLRecoveryUtils.test.mjs` dahil edilerek test sayısı 607'den **621'e**, monorepo testleri **676'ya** çıkarıldı.
 
-### Faz 181: Ayarlar Çekmecesi ve Ses/Fizik Tercihleri Motoru (Sıradaki)
-- [ ] **Ayarlar Çekmecesi Yardımcı Motoru (`settingsDrawerUtils.ts`, `settingsDrawerUtils.test.mjs`):** `useSettingsDrawer.ts` ve `useAppPreferences.ts` kancalarındaki ses seviyesi basamaklama, dokunmatik geçersiz kılma, hassasiyet kademeleri ve hızlı ayar geçiş mantıklarını saf yardımcı motora ayrıştırma.
-- [ ] **Kancaların Sadeleşmesi:** Kancaları doğrudan Zustand seçicileri ve saf motor çağrılarına indirgeme.
+### Faz 181: Ayarlar Çekmecesi ve Ses/Fizik Tercihleri Motoru (Tamamlandı)
+- [x] **Ayarlar Çekmecesi Yardımcı Motoru (`settingsDrawerUtils.ts`, `settingsDrawerUtils.test.mjs`):** `resolveEffectiveColorScheme`, `resolveEffectiveSoundVolume`, `resolveCustomMapImport`, `stripUrlParam`, `resolveSettingsModalNavigation`, `resolveNextCycleOption` fonksiyonları saf mimariyle geliştirildi; 14 yeni birim test ile %100 doğrulandı (toplam 635 istemci testi, 49 sunucu testi, 6 shared testi, **690 monorepo testi**).
+- [x] **Kancaların Sadeleşmesi (`useSettingsDrawer.ts`, `useAppPreferences.ts`):** Efektif renk düzeni ve Web Audio ses seviyesi hesaplaması, paylaşılan harita bağlantısı ayrıştırma ve URL temizleme ile modal gezinme durumları saf yardımcı motora bağlandı.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/settingsDrawerUtils.test.mjs` dahil edilerek test sayısı 621'den **635'e**, monorepo testleri **690'a** çıkarıldı.
+
+### Faz 182: Oyun Süresi ve Geri Sayım Zamanlayıcı Motoru (Sıradaki)
+- [ ] **Zamanlayıcı Yardımcı Motoru (`gameTimerUtils.ts`, `gameTimerUtils.test.mjs`):** `useGameTimer.ts` kancasındaki standart artan kronometre, Time Attack geri sayımı, süre tükenme (game_over) koşulu, aralık (interval) adımları ve biçimlendirme mantığını saf motora ayrıştırma.
+- [ ] **useGameTimer Kancası Sadeleşmesi:** Kancayı salt React `useEffect` ve `window.setInterval` yaşam döngüsüne indirgeme.
 - [ ] **Birim Testleri ve Doğrulama:** Yeni testlerle kapsamı artırma, derleme ve git push.
 
 

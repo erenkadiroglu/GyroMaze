@@ -4,6 +4,7 @@ import { useCallback } from 'react';
 import { useGameStore } from '@/store/useGameStore';
 import { soundEngine } from '@/utils/soundEngine';
 import { resolveVolumeTransition } from '@/utils/settingsUtils';
+import { resolveSettingsModalNavigation } from '@/utils/settingsDrawerUtils';
 
 /**
  * Ayarlar çekmecesi (SettingsDrawer) için durum yönetimi,
@@ -59,13 +60,15 @@ export function useSettingsDrawer() {
   );
 
   const handleOpenEditor = useCallback(() => {
-    setSettingsOpen(false);
-    setEditorOpen(true);
+    const nav = resolveSettingsModalNavigation('editor');
+    setSettingsOpen(nav.isSettingsOpen);
+    setEditorOpen(nav.isEditorOpen);
   }, [setSettingsOpen, setEditorOpen]);
 
   const handleOpenLeaderboard = useCallback(() => {
-    setSettingsOpen(false);
-    setLeaderboardOpen(true);
+    const nav = resolveSettingsModalNavigation('leaderboard');
+    setSettingsOpen(nav.isSettingsOpen);
+    setLeaderboardOpen(nav.isLeaderboardOpen);
   }, [setSettingsOpen, setLeaderboardOpen]);
 
   const handleClose = useCallback(() => {
@@ -102,4 +105,3 @@ export function useSettingsDrawer() {
     resetPreferencesToDefaults,
   };
 }
-
