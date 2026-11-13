@@ -1,33 +1,37 @@
 'use client';
 
-interface SceneLightsProps {
+import { useSceneLights } from '@/hooks/useSceneLights';
+
+export interface SceneLightsProps {
   isLightScene: boolean;
   shadowMargin: number;
 }
 
 /**
  * 3B Sahne aydınlatması: Ortam ışığı, gölgeli yönsel güneş ışığı ve noktasal dolgu ışığı.
+ * useSceneLights kancası üzerinden saf orkestrasyon motoru tarafından beslenir.
  */
-export function SceneLights({ isLightScene, shadowMargin }: SceneLightsProps) {
+export function SceneLights(props: SceneLightsProps) {
+  const { ambient, sun, fill } = useSceneLights(props);
+
   return (
     <>
-      <ambientLight intensity={isLightScene ? 1.25 : 0.7} />
+      <ambientLight intensity={ambient.intensity} />
       <directionalLight
-        position={[8, 16, 10]}
-        intensity={isLightScene ? 2.1 : 1.75}
-        castShadow
-        shadow-mapSize={[1024, 1024]}
-        shadow-camera-left={-shadowMargin}
-        shadow-camera-right={shadowMargin}
-        shadow-camera-top={shadowMargin}
-        shadow-camera-bottom={-shadowMargin}
+        position={sun.position}
+        intensity={sun.intensity}
+        castShadow={sun.castShadow}
+        shadow-mapSize={sun.mapSize}
+        shadow-camera-left={sun.cameraBounds.left}
+        shadow-camera-right={sun.cameraBounds.right}
+        shadow-camera-top={sun.cameraBounds.top}
+        shadow-camera-bottom={sun.cameraBounds.bottom}
       />
       <pointLight
-        position={[-8, 6, -8]}
-        intensity={isLightScene ? 0.65 : 1.1}
-        color="#38bdf8"
+        position={fill.position}
+        intensity={fill.intensity}
+        color={fill.color}
       />
     </>
   );
 }
-

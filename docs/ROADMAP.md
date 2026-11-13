@@ -942,10 +942,15 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **useSceneViewport Kancası ve MazeScene Sadeleşmesi (`apps/client/src/hooks/useSceneViewport.ts`, `apps/client/src/components/scene/MazeScene.tsx`):** WebGL bağlam kurtarma, sahne olayları, aydınlatma, tuval ve Rapier fizik yapılandırması tekil orkestrasyon kancasına devredilerek bileşen 111 satırdan **55 satıra** indirgendi.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/sceneViewportOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 747'den **755'e**, monorepo testleri 802'den **810'a** çıkarıldı.
 
-### Faz 199: 3B Labirent Sahnesi Işık ve Gölgeleri (SceneLights) Orkestrasyon Motoru (Sıradaki)
-- [ ] **3B Sahne Işıkları Orkestrasyon Motoru (`sceneLightsOrchestrationUtils.ts`, `sceneLightsOrchestrationUtils.test.mjs`):** `SceneLights.tsx` bileşenindeki ortam ışığı şiddeti, yönlü güneş pozisyonu, gölge kamera sınırları, gölge haritası çözünürlüğü ve dolgu ışığı yapılandırmasını saf motora ayrıştırma.
-- [ ] **SceneLights Bileşeni Sadeleşmesi:** Görsel ışık bileşenini saf orkestrasyon motoruna bağlayarak deklaratif sunuma dönüştürme.
-- [ ] **Birim Testleri ve Doğrulama:** Yeni birim testleriyle monorepo test kapsamını artırma, tam derleme ve git push.
+### Faz 199: 3B Labirent Sahnesi Işık ve Gölgeleri (SceneLights) Orkestrasyon Motoru (Tamamlandı)
+- [x] **3B Sahne Işıkları Orkestrasyon Motoru (`sceneLightsOrchestrationUtils.ts`, `sceneLightsOrchestrationUtils.test.mjs`):** `resolveAmbientLightConfig`, `resolveDirectionalSunLightConfig`, `resolvePointFillLightConfig`, `formatSceneLightsTelemetry`, `resolveSceneLightsBundle` fonksiyonları saf mimariyle geliştirildi; 6 yeni birim test ile %100 doğrulandı (toplam 761 istemci testi, 49 sunucu testi, 6 shared testi, **816 monorepo testi**).
+- [x] **useSceneLights Kancası ve SceneLights Sadeleşmesi (`apps/client/src/hooks/useSceneLights.ts`, `apps/client/src/components/scene/SceneLights.tsx`):** Sahne aydınlatma şiddetleri, gölge kamera sınırları ve dolgu ışığı ayarları tekil orkestrasyon kancasına devredilerek bileşen 33 satırdan **30 satıra** indirgendi ve deklaratif sunum sağlandı.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/sceneLightsOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 755'ten **761'e**, monorepo testleri 810'dan **816'ya** çıkarıldı.
+
+### Faz 200: 3B WebGL Hata ve Bağlam Kurtarma (SceneErrorBoundary & ContextLostFallback) Orkestrasyon Motoru (Sıradaki)
+- [ ] **3B Sahne Kurtarma Orkestrasyon Motoru (`sceneRecoveryOrchestrationUtils.ts`, `sceneRecoveryOrchestrationUtils.test.mjs`):** `SceneErrorBoundary.tsx` ve `ContextLostFallback.tsx` bileşenlerinin WebGL bağlam kesilmesi, çökme yakalama, yeniden başlatma butonu konfigürasyonu ve erişilebilirlik rollerini saf motora ayrıştırma.
+- [ ] **SceneErrorBoundary ve ContextLostFallback Sadeleşmesi:** Hata ve kurtarma bileşenlerini saf orkestrasyon motoruna bağlayarak deklaratif sunuma dönüştürme.
+- [ ] **200. Faz Dönüm Noktası Doğrulaması:** Kapsamlı test süitiyle monorepo genelinde 820+ test hedefine ulaşma, tam derleme ve git push.
 
 
 
