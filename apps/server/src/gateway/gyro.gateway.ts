@@ -14,40 +14,18 @@ import {
   JoinRoomPayload,
   GyroUpdatePayload,
   GameStatePayload,
-  GameStatus,
   ChangeLevelPayload,
   HapticPayload,
-  HapticType,
   SubmitScorePayload,
 } from '@gyromaze/shared';
 import { RoomService } from './room.service';
-
-const VALID_HAPTIC_TYPES: ReadonlySet<string> = new Set<HapticType>([
-  'wall',
-  'hole',
-  'goal',
-  'calibrate',
-  'crystal',
-  'laser',
-  'boost',
-  'teleport',
-]);
-
-const VALID_GAME_STATUSES: ReadonlySet<string> = new Set<GameStatus>([
-  'waiting',
-  'ready',
-  'playing',
-  'paused',
-  'won',
-  'lost',
-]);
-
-function matchesOptionalRoomId(roomId: unknown, expectedRoomId: string): boolean {
-  if (roomId === undefined || roomId === '') {
-    return true;
-  }
-  return typeof roomId === 'string' && roomId.trim() === expectedRoomId;
-}
+import {
+  isValidHapticType,
+  isValidGameStatus,
+  matchesOptionalRoomId,
+  sanitizeGyroSyncData,
+  sanitizeChangeLevelPayload,
+} from './gatewayValidationUtils';
 
 /**
  * GyroMaze gerçek zamanlı WebSocket ağ geçidi.
@@ -219,33 +197,13 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
-    const { beta, gamma, alpha, timestamp } = payload.data;
-    if (
-      typeof beta !== 'number' ||
-      !Number.isFinite(beta) ||
-      typeof gamma !== 'number' ||
-      !Number.isFinite(gamma)
-    ) {
+    const slot: 1 | 2 = membership.playerSlot === 2 ? 2 : 1;
+    const sanitizedData = sanitizeGyroSyncData(payload.data, slot);
+    if (!sanitizedData) {
       return;
     }
 
-    const clampedBeta = Math.max(-45, Math.min(45, beta));
-    const clampedGamma = Math.max(-45, Math.min(45, gamma));
-    const safeAlpha =
-      typeof alpha === 'number' && Number.isFinite(alpha) ? alpha : 0;
-    const safeTimestamp =
-      typeof timestamp === 'number' && Number.isFinite(timestamp)
-        ? timestamp
-        : Date.now();
-
-    const slot: 1 | 2 = membership.playerSlot === 2 ? 2 : 1;
-    this.server.to(room.hostSocketId).volatile.emit(RoomEvents.GYRO_SYNC, {
-      alpha: safeAlpha,
-      beta: clampedBeta,
-      gamma: clampedGamma,
-      timestamp: safeTimestamp,
-      playerSlot: slot,
-    });
+    this.server.to(room.hostSocketId).volatile.emit(RoomEvents.GYRO_SYNC, sanitizedData);
   }
 
   /**
@@ -292,8 +250,7 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
       !membership ||
       membership.role !== 'host' ||
       !payload ||
-      typeof payload.type !== 'string' ||
-      !VALID_HAPTIC_TYPES.has(payload.type)
+      !isValidHapticType(payload.type)
     ) {
       return;
     }
@@ -336,8 +293,7 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
       !membership ||
       membership.role !== 'host' ||
       !payload ||
-      typeof payload.status !== 'string' ||
-      !VALID_GAME_STATUSES.has(payload.status)
+      !isValidGameStatus(payload.status)
     ) {
       return;
     }
@@ -373,31 +329,17 @@ export class GyroGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: ChangeLevelPayload,
   ): void {
     const membership = this.roomService.getMembership(client.id);
-    if (!membership || membership.role !== 'controller' || !payload) {
-      return;
-    }
-    if (!matchesOptionalRoomId(payload.roomId, membership.roomId)) {
+    if (!membership || membership.role !== 'controller') {
       return;
     }
 
-    const validDirection =
-      payload.direction === 'next' || payload.direction === 'prev';
-    const validLevel =
-      typeof payload.level === 'number' &&
-      Number.isSafeInteger(payload.level) &&
-      payload.level >= 1 &&
-      payload.level <= 9999;
-    if (!validDirection && !validLevel) {
+    const sanitizedPayload = sanitizeChangeLevelPayload(payload, membership.roomId);
+    if (!sanitizedPayload) {
       return;
     }
 
     const room = this.roomService.getRoom(membership.roomId);
     if (room) {
-      const sanitizedPayload: ChangeLevelPayload = {
-        roomId: membership.roomId,
-        ...(validDirection ? { direction: payload.direction } : {}),
-        ...(validLevel ? { level: payload.level } : {}),
-      };
       this.server
         .to(room.hostSocketId)
         .emit(RoomEvents.GAME_CHANGE_LEVEL, sanitizedPayload);

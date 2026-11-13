@@ -10,7 +10,7 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
-    "test": "node --test test/roomServiceUtils.test.mjs test/room.service.test.mjs test/socket.e2e.test.mjs",
+    "test": "node --test test/gatewayValidationUtils.test.mjs test/roomServiceUtils.test.mjs test/room.service.test.mjs test/socket.e2e.test.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

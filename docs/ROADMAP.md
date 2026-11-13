@@ -783,6 +783,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **NestJS Gateway ve Kök Barrel Mimarisi (`gateway/index.ts`, `server/src/index.ts`):** `RoomService`, `GyroGateway`, `roomServiceUtils` ve HTTP kontrolcüleri hiyerarşik modül dışa aktarım düzenine bağlandı; `room.service.ts` 595 satırdan 470 satıra indirildi.
 - [x] **Sunucu Test Paketi Genişletmesi (`apps/server/package.json`):** Sunucu testlerine `test/roomServiceUtils.test.mjs` eklenerek sunucu test kapsamı 28'den 34'e çıkarıldı.
 
+### Faz 166: Sunucu WebSocket Ağ Geçidi Doğrulama Motoru ve Gateway Sadeleşmesi (Tamamlandı)
+- [x] **Ağ Geçidi Güvenlik ve Doğrulama Motoru (`gatewayValidationUtils.ts`, `gatewayValidationUtils.test.mjs`):** `matchesOptionalRoomId`, `isValidHapticType`, `isValidGameStatus`, açı sınırlama ve NaN/Infinity filtreleyen `sanitizeGyroSyncData` ile `sanitizeChangeLevelPayload` saf yardımcıları geliştirildi; 7 yeni birim test ile %100 doğrulandı (toplam 41 sunucu testi, 498 istemci testi, 6 shared testi, **545 monorepo testi**).
+- [x] **WebSocket Ağ Geçidi Sadeleşmesi (`gyro.gateway.ts`, `gateway/index.ts`):** `GyroGateway` içindeki ham veri doğrulama mantığı saf motor fonksiyonlarına devredildi; `gateway/index.ts` üzerinden `gatewayValidationUtils` dışa aktarıldı.
+- [x] **Sunucu Test Otomasyonu (`apps/server/package.json`):** Sunucu test script'ine `test/gatewayValidationUtils.test.mjs` dahil edilerek sunucu test sayısı 34'ten 41'e yükseltildi.
+
 
 
 

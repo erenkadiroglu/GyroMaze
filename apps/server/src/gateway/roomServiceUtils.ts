@@ -187,3 +187,4 @@ export function validateScorePayload(payload: SubmitScorePayload): {
     normalizedPlayer: safeName,
   };
 }
+
