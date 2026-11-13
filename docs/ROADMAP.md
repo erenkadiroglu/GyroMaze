@@ -571,6 +571,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Radar İşaretçi Bileşenleri (`RadarGoalMarker.tsx`, `RadarCrystalMarkers.tsx`, `RadarPlayerMarkers.tsx`):** Hedef portalı rengi, kalan kristallerin döngüsü ve 1P/2P bilye transform noktaları bağımsız alt bileşenlere ayrıştırıldı.
 - [x] **Yalın 2B Radar Bileşeni (`MiniMapRadar.tsx`):** DOM işaretçileri alt bileşenlere devredilerek `MiniMapRadar.tsx` 85 satırdan **56 satıra** indirildi.
 
+### Faz 114: 3B Sahne Fizik Küreleri ve Tahta Taban Geometrisi Ayrıştırması (Tamamlandı)
+- [x] **3B Sahne Geometrisi ve Fizik Başlangıç Yardımcı Motoru (`stageUtils.ts`, `stageUtils.test.mjs`):** `resolveBoardBaseConfig`, `resolveGridHelperConfig` ve `resolveBallSpawnPosition` saf yardımcıları geliştirildi; 4 yeni birim test ile doğrulandı (toplam 253 istemci testi, 281 monorepo testi).
+- [x] **Modüler Sahne Tabanı ve Fizik Bilyeleri (`MazeStageBoardBase.tsx`, `MazeStagePhysicsBalls.tsx`):** Zemin mesh'i, aydınlık/karanlık ızgara yardımcısı ve 1P/2P sıfır zıplamalı dinamik Rapier fizik küreleri bağımsız bileşenlere ayrıştırıldı.
+- [x] **Daha Sade 3B Sahne Orkestratörü (`MazeStage.tsx`):** Zemin ve dinamik küre blokları alt bileşenlere devredilerek `MazeStage.tsx` 509 satırdan **460 satıra** indirildi.
+
+
 
 
 

@@ -2,11 +2,7 @@
 
 import { useRef, useEffect, useMemo, useCallback } from 'react';
 import { useFrame } from '@react-three/fiber';
-import {
-  RigidBody,
-  BallCollider,
-  RapierRigidBody,
-} from '@react-three/rapier';
+import { type RapierRigidBody } from '@react-three/rapier';
 import type * as THREE from 'three';
 import {
   useGameStore,
@@ -33,7 +29,6 @@ import {
   _targetQuat,
   _currentQuat,
   _currentEuler,
-  _boardMaterial,
   BALL_RADIUS,
   applySceneThemeMaterials,
 } from './sceneMaterials';
@@ -42,6 +37,8 @@ import { MazeStageHazards } from './MazeStageHazards';
 import { MazeStageCollectibles } from './MazeStageCollectibles';
 import { MazeStageActors } from './MazeStageActors';
 import { MazeStageColliders } from './MazeStageColliders';
+import { MazeStageBoardBase } from './stage/MazeStageBoardBase';
+import { MazeStagePhysicsBalls } from './stage/MazeStagePhysicsBalls';
 import { calculateSlerpAlpha } from '@/utils/sceneColliderUtils';
 import {
   calculateClampedTiltAngles,
@@ -397,69 +394,23 @@ export function MazeStage({
         resetBallAndBoard={resetBallAndBoard}
       />
 
-      {/* 1. Oyuncu Dinamik Fizik Küresi (Y ekseni kilitli -> Sıfır Zıplama!) */}
-      <RigidBody
-        ref={ballBodyRef}
-        name="ball-p1"
-        type="dynamic"
-        colliders={false}
-        position={[
-          levelData.startPosition[0],
-          BALL_RADIUS,
-          levelData.startPosition[2],
-        ]}
-        enabledTranslations={[true, false, true]}
-        enabledRotations={[false, false, false]}
-        restitution={0.22}
-        friction={0.08}
-        ccd={true}
-        onCollisionEnter={() => handleBallCollision(1)}
-      >
-        <BallCollider args={[BALL_RADIUS]} />
-      </RigidBody>
-
-      {/* Çok Oyunculu Modda 2. Oyuncu Dinamik Fizik Küresi */}
-      {isMultiplayer && (
-        <RigidBody
-          ref={ball2BodyRef}
-          name="ball-p2"
-          type="dynamic"
-          colliders={false}
-          position={[
-            levelData.startPosition[0] + p2SpawnOffsetX,
-            BALL_RADIUS,
-            levelData.startPosition[2] + p2SpawnOffsetZ,
-          ]}
-          enabledTranslations={[true, false, true]}
-          enabledRotations={[false, false, false]}
-          restitution={0.22}
-          friction={0.08}
-          ccd={true}
-          onCollisionEnter={() => handleBallCollision(2)}
-        >
-          <BallCollider args={[BALL_RADIUS]} />
-        </RigidBody>
-      )}
+      {/* 1. ve 2. Oyuncu Dinamik Fizik Küreleri (Y ekseni kilitli -> Sıfır Zıplama!) */}
+      <MazeStagePhysicsBalls
+        ballBodyRef={ballBodyRef}
+        ball2BodyRef={ball2BodyRef}
+        startPosition={levelData.startPosition}
+        p2SpawnOffsetX={p2SpawnOffsetX}
+        p2SpawnOffsetZ={p2SpawnOffsetZ}
+        isMultiplayer={isMultiplayer}
+        onBallCollision={handleBallCollision}
+      />
 
       {/* 2. GÖRSEL 3B SAHNE GRUBU */}
       <group ref={visualTiltGroupRef}>
-        <mesh
-          position={[0, -0.25, 0]}
-          material={_boardMaterial}
-          receiveShadow
-        >
-          <boxGeometry args={[levelData.boardSize, 0.5, levelData.boardSize]} />
-        </mesh>
-
-        <gridHelper
-          key={isLightBoard ? 'grid-light' : 'grid-dark'}
-          args={[
-            levelData.boardSize - 0.4,
-            12,
-            isLightBoard ? '#cbd5e1' : '#27272a',
-            isLightBoard ? '#e2e8f0' : '#27272a',
-          ]}
-          position={[0, 0.01, 0]}
+        {/* Tahta Tabanı ve Izgara Yardımcısı */}
+        <MazeStageBoardBase
+          boardSize={levelData.boardSize}
+          isLightBoard={isLightBoard}
         />
 
         {/* İç ve Dış Duvarlar */}
