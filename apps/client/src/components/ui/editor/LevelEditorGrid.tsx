@@ -2,8 +2,8 @@
 
 import { useRef, type KeyboardEvent } from 'react';
 import type { CellTool } from '@/utils/editorUtils';
-import { TOOL_BY_ID } from './LevelEditorToolbar';
-import { cx } from '../primitives';
+import { calculateNextGridCoords } from '@/utils/editorGridUtils';
+import { EditorGridCell } from './grid/EditorGridCell';
 
 interface LevelEditorGridProps {
   grid: CellTool[][];
@@ -11,6 +11,10 @@ interface LevelEditorGridProps {
   onCellClick: (r: number, c: number) => void;
 }
 
+/**
+ * Harita editörü 8x8 interaktif çizim ızgarası:
+ * Erişilebilir iki boyutlu grid semantiği ve ok/home/end tuşlarıyla gezinim.
+ */
 export function LevelEditorGrid({
   grid,
   gridSize,
@@ -23,18 +27,17 @@ export function LevelEditorGrid({
     rIdx: number,
     cIdx: number,
   ) => {
-    let nextR = rIdx;
-    let nextC = cIdx;
-    if (e.key === 'ArrowRight') nextC = Math.min(gridSize - 1, cIdx + 1);
-    else if (e.key === 'ArrowLeft') nextC = Math.max(0, cIdx - 1);
-    else if (e.key === 'ArrowDown') nextR = Math.min(gridSize - 1, rIdx + 1);
-    else if (e.key === 'ArrowUp') nextR = Math.max(0, rIdx - 1);
-    else if (e.key === 'Home') nextC = 0;
-    else if (e.key === 'End') nextC = gridSize - 1;
-    else return;
+    const { nextR, nextC, handled } = calculateNextGridCoords(
+      e.key,
+      rIdx,
+      cIdx,
+      gridSize,
+    );
 
-    e.preventDefault();
-    cellRefs.current[nextR * gridSize + nextC]?.focus();
+    if (handled) {
+      e.preventDefault();
+      cellRefs.current[nextR * gridSize + nextC]?.focus();
+    }
   };
 
   return (
@@ -45,35 +48,25 @@ export function LevelEditorGrid({
     >
       {grid.map((row, rIdx) =>
         row.map((cell, cIdx) => {
-          const tool = TOOL_BY_ID[cell];
           const flatIdx = rIdx * gridSize + cIdx;
           const isInitialTab = rIdx === 0 && cIdx === 0;
 
           return (
-            <button
+            <EditorGridCell
               key={`${rIdx}-${cIdx}`}
-              ref={(el) => {
+              rIdx={rIdx}
+              cIdx={cIdx}
+              cell={cell}
+              isInitialTab={isInitialTab}
+              onCellClick={onCellClick}
+              onKeyDown={handleGridKeyDown}
+              cellRef={(el) => {
                 cellRefs.current[flatIdx] = el;
               }}
-              type="button"
-              role="gridcell"
-              tabIndex={isInitialTab ? 0 : -1}
-              aria-label={`Hücre Satır ${rIdx + 1}, Sütun ${cIdx + 1}: ${tool.label}`}
-              onClick={() => onCellClick(rIdx, cIdx)}
-              onKeyDown={(e) => handleGridKeyDown(e, rIdx, cIdx)}
-              className={cx(
-                'aspect-square rounded-lg border text-xs font-mono font-semibold transition-all flex items-center justify-center select-none',
-                cell === 'erase'
-                  ? 'border-line/60 bg-surface hover:border-fg/30 hover:bg-surface-2'
-                  : tool.cellClass,
-              )}
-            >
-              {tool.symbol}
-            </button>
+            />
           );
         }),
       )}
     </div>
   );
 }
-

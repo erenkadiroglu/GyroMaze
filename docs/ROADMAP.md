@@ -646,6 +646,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Şablon Bileşenleri (`EditorTemplatesHeader.tsx`, `EditorTemplateCard.tsx`):** "Hazır şablonlar" + "Hızlı başla" rozet başlığı ve tekil şablon seçim butonu bağımsız bileşenlere ayrıştırıldı.
 - [x] **Yalın Şablonlar Paleti (`LevelEditorTemplatesList.tsx`):** Alt bileşen mimarisine geçirilerek `LevelEditorTemplatesList.tsx` 42 satırdan **31 satıra** indirildi.
 
+### Faz 130: Harita Editörü 8x8 Izgara Hücresi ve Çizim Ayrıştırması (Tamamlandı)
+- [x] **Izgara Gezinim ve Hücre Yardımcı Motoru (`editorGridUtils.ts`, `editorGridUtils.test.mjs`):** 2B klavye ok ve Home/End tuş gezinimi `calculateNextGridCoords`, hücre ARIA etiketi formatlayıcı `formatCellAriaLabel` ve dinamik stil hesaplayıcı `resolveGridCellClass` saf yardımcıları geliştirildi; 4 yeni birim test ile doğrulandı (toplam 320 istemci testi, 348 monorepo testi).
+- [x] **Modüler Izgara Hücre Bileşeni (`EditorGridCell.tsx`):** 8x8 ızgaradaki tekil hücre butonu, erişilebilir gridcell rolü ve tık/tuş olayları bağımsız bileşene ayrıştırıldı.
+- [x] **Yalın Editör Çizim Izgarası (`LevelEditorGrid.tsx`):** Grid JSX haritalaması ve hücre durumları sadeleştirilerek `LevelEditorGrid.tsx` 79 satırdan **45 satıra** indirildi.
+
 
 
 
