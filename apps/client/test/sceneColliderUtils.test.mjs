@@ -7,6 +7,9 @@ import {
   resolveSensorSlot,
   shouldTriggerHoleFall,
   calculateSlerpAlpha,
+  isAnyOverlayModalOpen,
+  resolveTargetBallBody,
+  resolveGoalRunPath,
 } from '../src/utils/sceneColliderUtils.ts';
 
 test('calculateCuboidHalfExtents: tam boyutlari yari-boyut formatina cevirir', () => {
@@ -80,4 +83,36 @@ test('calculateSlerpAlpha: tepkisellik ve kare suresine gore slerp katsayisi ure
   const alphaMaxExpected = 1 - Math.exp(-1.0 * 0.05);
   assert.ok(Math.abs(alphaLargeDelta - alphaMaxExpected) < 1e-6);
 });
+
+test('isAnyOverlayModalOpen: herhangi bir modal acikken true, hepsi kapaliyken false doner', () => {
+  assert.equal(isAnyOverlayModalOpen({}), false);
+  assert.equal(
+    isAnyOverlayModalOpen({
+      isPairingModalOpen: false,
+      isSettingsOpen: false,
+      isEditorOpen: false,
+      isLeaderboardOpen: false,
+    }),
+    false,
+  );
+  assert.equal(isAnyOverlayModalOpen({ isPairingModalOpen: true }), true);
+  assert.equal(isAnyOverlayModalOpen({ isSettingsOpen: true }), true);
+  assert.equal(isAnyOverlayModalOpen({ isEditorOpen: true }), true);
+  assert.equal(isAnyOverlayModalOpen({ isLeaderboardOpen: true }), true);
+});
+
+test('resolveTargetBallBody: yuvaya gore 1P veya 2P bilye govdesini cozumler', () => {
+  const b1 = { id: 'p1' };
+  const b2 = { id: 'p2' };
+  assert.equal(resolveTargetBallBody(1, b1, b2), b1);
+  assert.equal(resolveTargetBallBody(2, b1, b2), b2);
+});
+
+test('resolveGoalRunPath: yuvaya gore ilgili bilyenin rota gecmisini secer', () => {
+  const path1 = [[0, 0], [1, 1]];
+  const path2 = [[2, 2], [3, 3]];
+  assert.equal(resolveGoalRunPath(1, path1, path2), path1);
+  assert.equal(resolveGoalRunPath(2, path1, path2), path2);
+});
+
 

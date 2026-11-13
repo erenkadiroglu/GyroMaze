@@ -596,6 +596,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Tehlike ve Dinamik Alan Bileşenleri (`HazardVoidHoles.tsx`, `HazardBoostPads.tsx`, `HazardTeleporters.tsx`, `HazardLaserGates.tsx`, `HazardMovingObstacles.tsx`):** Tuzak delikleri, hızlandırma rampaları, kuantum portalları, lazer kapıları ve kinetik devriye engelleri bağımsız alt bileşenlere ayrıştırıldı.
 - [x] **Yalın Tehlikeler Orkestratörü (`MazeStageHazards.tsx`):** Karmaşık gömülü Three.js geometrileri alt bileşenlere devredilerek `MazeStageHazards.tsx` 170 satırdan **53 satıra** indirildi.
 
+### Faz 119: 3B Sabit Fizik Çarpıştırıcıları ve Sensörler Ayrıştırması (Tamamlandı)
+- [x] **Çarpıştırıcı ve Sensör Yardımcı Motoru (`sceneColliderUtils.ts`, `sceneColliderUtils.test.mjs`):** Modal açık kontrolü `isAnyOverlayModalOpen`, hedef bilye çözücü `resolveTargetBallBody` ve bitiş rotası seçici `resolveGoalRunPath` saf yardımcıları geliştirildi; 3 yeni birim test ile doğrulandı (toplam 271 istemci testi, 299 monorepo testi).
+- [x] **Modüler Fizik Çarpıştırıcı Bileşenleri (`ColliderWalls.tsx`, `ColliderGoalSensor.tsx`, `ColliderHoleSensors.tsx`):** Katı duvarlar, bitiş portalı temas sensörü ve tuzak deliği tetikleyicileri Rapier alt bileşenlerine ayrıştırıldı.
+- [x] **Yalın Çarpıştırıcılar Orkestratörü (`MazeStageColliders.tsx`):** Sabit Rapier RigidBody orkestrasyonu yalınlaştırılarak `MazeStageColliders.tsx` 140 satırdan **68 satıra** indirildi.
+
+
 
 
 

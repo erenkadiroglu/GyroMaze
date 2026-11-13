@@ -58,3 +58,39 @@ export function calculateSlerpAlpha(
   return 1 - Math.exp(-Math.max(0.1, responsiveness) * safeDelta);
 }
 
+/**
+ * Oyunun üstünde tam ekran/katman açan herhangi bir modilin açık olup olmadığını denetler.
+ */
+export function isAnyOverlayModalOpen(state: {
+  isPairingModalOpen?: boolean;
+  isSettingsOpen?: boolean;
+  isEditorOpen?: boolean;
+  isLeaderboardOpen?: boolean;
+}): boolean {
+  return Boolean(
+    state.isPairingModalOpen ||
+    state.isSettingsOpen ||
+    state.isEditorOpen ||
+    state.isLeaderboardOpen,
+  );
+}
+
+/**
+ * Oyuncu yuvasına göre (1P veya 2P) hedef bilye gövdesini çözümler.
+ */
+export function resolveTargetBallBody<T>(slot: 1 | 2, ball1: T, ball2: T): T {
+  return slot === 2 ? ball2 : ball1;
+}
+
+/**
+ * Oyuncu yuvasına göre (1P veya 2P) ilgili bilyenin takip rota (runPath) geçmişini döner.
+ */
+export function resolveGoalRunPath(
+  slot: 1 | 2,
+  pathP1: Array<[number, number]>,
+  pathP2: Array<[number, number]>,
+): Array<[number, number]> {
+  return slot === 2 ? pathP2 : pathP1;
+}
+
+

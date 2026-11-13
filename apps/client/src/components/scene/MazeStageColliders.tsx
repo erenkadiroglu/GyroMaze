@@ -1,20 +1,11 @@
 'use client';
 
 import { MutableRefObject } from 'react';
-import {
-  RigidBody,
-  CuboidCollider,
-  CylinderCollider,
-  RapierRigidBody,
-} from '@react-three/rapier';
-import { useGameStore } from '@/store/useGameStore';
+import { RigidBody, RapierRigidBody } from '@react-three/rapier';
 import type { MazeLevelDefinition } from './mazeLevels';
-import {
-  calculateCuboidHalfExtents,
-  calculateHoleSensorRadius,
-  resolveSensorSlot,
-  shouldTriggerHoleFall,
-} from '../../utils/sceneColliderUtils.ts';
+import { ColliderWalls } from './colliders/ColliderWalls';
+import { ColliderGoalSensor } from './colliders/ColliderGoalSensor';
+import { ColliderHoleSensors } from './colliders/ColliderHoleSensors';
 
 interface MazeStageCollidersProps {
   levelRevisionKey: string;
@@ -56,85 +47,28 @@ export function MazeStageColliders({
 }: MazeStageCollidersProps) {
   return (
     <RigidBody type="fixed" colliders={false} friction={0.12} restitution={0.18}>
-      {/* Çevreleyen Dış Duvar Çarpıştırıcıları */}
-      {outerWalls.map((wall, idx) => (
-        <CuboidCollider
-          key={`phys-outer-${idx}`}
-          args={calculateCuboidHalfExtents(wall.size)}
-          position={wall.position}
-        />
-      ))}
-
-      {/* İç Labirent Duvar Çarpıştırıcıları */}
-      {levelData.innerWalls.map((wall, idx) => (
-        <CuboidCollider
-          key={`phys-inner-${levelRevisionKey}-${idx}`}
-          args={calculateCuboidHalfExtents(wall.size)}
-          position={wall.position}
-        />
-      ))}
-
-      {/* Hedef Portalı Sensörü */}
-      <CylinderCollider
-        args={[0.4, 0.46]}
-        position={levelData.goalPosition}
-        sensor
-        onIntersectionEnter={(payload) => {
-          const slot = resolveSensorSlot(payload.other.rigidBodyObject?.name);
-          onReachGoal(
-            slot === 2 ? runPathP2Ref.current : runPathRef.current,
-            slot,
-          );
-        }}
+      <ColliderWalls
+        outerWalls={outerWalls}
+        innerWalls={levelData.innerWalls}
+        levelRevisionKey={levelRevisionKey}
       />
-
-      {/* Tuzak Delikleri (Void Holes) Sensörleri */}
-      {levelData.voidHoles.map((hole, idx) => (
-        <CylinderCollider
-          key={`phys-hole-${levelRevisionKey}-${idx}`}
-          args={[0.4, calculateHoleSensorRadius(hole.radius)]}
-          position={[hole.position[0], 0.25, hole.position[1]]}
-          sensor
-          onIntersectionEnter={(payload) => {
-            const state = useGameStore.getState();
-            const isPageHidden =
-              typeof document !== 'undefined' && document.hidden;
-            const isAnyModalOpen =
-              state.isPairingModalOpen ||
-              state.isSettingsOpen ||
-              state.isEditorOpen ||
-              state.isLeaderboardOpen;
-
-            const slot = resolveSensorSlot(payload.other.rigidBodyObject?.name);
-            const nowMs = performance.now();
-
-            if (
-              !shouldTriggerHoleFall(
-                state.gameStatus,
-                isPageHidden,
-                isAnyModalOpen,
-                nowMs,
-                lastHoleHitMsRef.current[slot],
-              )
-            ) {
-              return;
-            }
-
-            lastHoleHitMsRef.current[slot] = nowMs;
-            onFallIntoHole(slot);
-
-            if (isMultiplayer) {
-              resetSingleBall(
-                slot === 2 ? ball2BodyRef.current : ballBodyRef.current,
-                slot,
-              );
-            } else {
-              resetBallAndBoard();
-            }
-          }}
-        />
-      ))}
+      <ColliderGoalSensor
+        goalPosition={levelData.goalPosition}
+        runPathRef={runPathRef}
+        runPathP2Ref={runPathP2Ref}
+        onReachGoal={onReachGoal}
+      />
+      <ColliderHoleSensors
+        voidHoles={levelData.voidHoles}
+        levelRevisionKey={levelRevisionKey}
+        lastHoleHitMsRef={lastHoleHitMsRef}
+        isMultiplayer={isMultiplayer}
+        ballBodyRef={ballBodyRef}
+        ball2BodyRef={ball2BodyRef}
+        onFallIntoHole={onFallIntoHole}
+        resetSingleBall={resetSingleBall}
+        resetBallAndBoard={resetBallAndBoard}
+      />
     </RigidBody>
   );
 }
-
