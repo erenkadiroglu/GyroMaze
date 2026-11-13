@@ -449,6 +449,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Mobil Kontrolcü Mantık ve Durum Motoru (`controllerUtils.ts`, `controllerUtils.test.mjs`):** 8 Hz metin güncelleme filtresi `shouldUpdateAngleText`, işaretçi kimlik eşleşmesi `isPointerEventMatching`, sürükleme bırakma denetleyicisi `shouldResetPointerDrag` ve yuva değiştirme çözümleyicisi `resolveSlotChange` geliştirildi; 1 yeni birim test ile doğrulandı (toplam 169 istemci testi, 197 monorepo testi).
 - [x] **Bağımsız Sanal Gimbal ve Oda Bağlantı Kancaları (`useGimbalInteraction.ts`, `useControllerRoom.ts`, `controller/page.tsx`):** Sanal gimbal işaretçi yakalama, ufuk küresi 60 FPS GPU animasyonu `useGimbalInteraction` kancasına; oda kodu parametreleri ve manuel bağlantı doğrulama formu `useControllerRoom` kancasına devredildi; `controller/page.tsx` bileşeni 520 satırdan 341 satıra indirildi.
 
+### Faz 89: Mobil Kontrolcü Sensör Yaşam Döngüsü Kancası, Güvenlik ve Zaman Aşımı Motoru (Tamamlandı)
+- [x] **Kontrolcü Sensör ve Bağlam Güvenlik Motoru (`controllerUtils.ts`, `controllerUtils.test.mjs`):** Sensör zaman aşımı koşulu `shouldTriggerSensorTimeout`, izin sonucu aksiyon çözümleyicisi `resolveSensorActivation`, dokunmatik geçiş anahtarı `resolveTouchOverrideToggle` ve güvenli bağlam denetleyicisi `isContextInsecure` saf yardımcıları geliştirildi; 1 yeni birim test ile doğrulandı (toplam 170 istemci testi, 198 monorepo testi).
+- [x] **Bağımsız Sensör Yaşam Döngüsü ve İzin Kancası (`useControllerSensors.ts`, `controller/page.tsx`):** HTML5 jiroskop sensör yaşam döngüsü, izin istekleri, güvensiz bağlam tespiti, 1500ms sinyal zaman aşımı, kalibrasyon ve ekran uyku kilidi (`useWakeLock`) bağımsız `useControllerSensors` kancasına devredildi; `controller/page.tsx` bileşeni 341 satırdan **249 satıra** indirildi.
+
+
 
 
 

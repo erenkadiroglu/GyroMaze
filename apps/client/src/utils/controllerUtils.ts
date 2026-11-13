@@ -264,6 +264,69 @@ export function resolveSlotChange(
   };
 }
 
+/**
+ * Sensör sinyali zaman aşımı sayacının aktif olması gerekip gerekmediğini denetler.
+ */
+export function shouldTriggerSensorTimeout(
+  controllerTouchOverride: boolean,
+  isRoomEditorOpen: boolean,
+  permissionState: string,
+  hasSensorSignal: boolean,
+): boolean {
+  if (
+    controllerTouchOverride ||
+    isRoomEditorOpen ||
+    permissionState !== 'granted' ||
+    hasSensorSignal
+  ) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Sensör izin isteme sonucuna göre dokunmatik geçersiz kılma ve kalibrasyon aksiyonunu belirler.
+ */
+export function resolveSensorActivation(granted: boolean): {
+  setTouchOverride: boolean;
+  shouldCalibrate: boolean;
+} {
+  return {
+    setTouchOverride: !granted,
+    shouldCalibrate: granted,
+  };
+}
+
+/**
+ * Dokunmatik mod anahtarı tetiklendiğinde gerekli sensör ve kalibrasyon eylemini belirler.
+ */
+export function resolveTouchOverrideToggle(
+  targetTouch: boolean,
+  permissionState: string,
+): {
+  touchOverride: boolean;
+  action: 'none' | 'activateSensors' | 'calibrate';
+} {
+  if (targetTouch) {
+    return { touchOverride: true, action: 'none' };
+  }
+  if (permissionState === 'granted') {
+    return { touchOverride: false, action: 'calibrate' };
+  }
+  return { touchOverride: false, action: 'activateSensors' };
+}
+
+/**
+ * Çalışma ortamının güvenli bağlam (isSecureContext) olup olmadığını güvenle denetler.
+ */
+export function isContextInsecure(
+  windowObj?: { isSecureContext?: boolean },
+): boolean {
+  if (!windowObj) return false;
+  return windowObj.isSecureContext === false;
+}
+
+
 
 
 

@@ -1,19 +1,14 @@
 'use client';
 
-import { Suspense, useState, useEffect, useRef, useCallback } from 'react';
+import { Suspense, useRef, useCallback } from 'react';
 import { GyroData } from '@gyromaze/shared';
 import { useGameStore } from '@/store/useGameStore';
 import { useSocket } from '@/hooks/useSocket';
-import { useDeviceOrientation } from '@/hooks/useDeviceOrientation';
 import { useAppPreferences } from '@/hooks/useAppPreferences';
-import { useWakeLock } from '@/hooks/useWakeLock';
-import {
-  scaleGyroAngles,
-  resolveGimbalSurfaceVisibility,
-  resolveSlotChange,
-} from '@/utils/controllerUtils';
+import { scaleGyroAngles, resolveSlotChange } from '@/utils/controllerUtils';
 import { useControllerRoom } from '@/hooks/useControllerRoom';
 import { useGimbalInteraction } from '@/hooks/useGimbalInteraction';
+import { useControllerSensors } from '@/hooks/useControllerSensors';
 import { ControllerHeader } from './ControllerHeader';
 import { ControllerStatusBanners } from './ControllerStatusBanners';
 import { ControllerRoomCard } from './ControllerRoomCard';
@@ -55,9 +50,6 @@ function MobileControllerContent() {
   const setControllerTouchOverride = useGameStore(
     (s) => s.setControllerTouchOverride,
   );
-
-  const [isInsecureContext, setIsInsecureContext] = useState(false);
-  const [sensorSignalTimedOut, setSensorSignalTimedOut] = useState(false);
 
   const sensitivityRef = useRef<number>(controllerSensitivity);
   sensitivityRef.current = controllerSensitivity;
@@ -129,7 +121,7 @@ function MobileControllerContent() {
         emitGyroUpdate(activeRoomCodeRef.current, liveGyroRef.current);
       }
     },
-    [emitGyroUpdate],
+    [emitGyroUpdate, playerSlotRef],
   );
 
   const {
@@ -147,77 +139,24 @@ function MobileControllerContent() {
     pushGyroSample,
   });
 
-  const handleOrientationData = useCallback(
-    (data: GyroData) => {
-      if (isPointerDraggingRef.current) return;
-      pushGyroSample(data.beta, data.gamma);
-    },
-    [isPointerDraggingRef, pushGyroSample],
-  );
-
   const {
+    isInsecureContext,
+    sensorSignalTimedOut,
     permissionState,
     hasSensorSignal,
-    requestSensorPermission,
-    calibrate,
-  } = useDeviceOrientation({
-    onOrientationData: handleOrientationData,
-    enabled: !controllerTouchOverride && !isRoomEditorOpen,
-  });
-
-  useEffect(() => {
-    if (
-      controllerTouchOverride ||
-      isRoomEditorOpen ||
-      permissionState !== 'granted' ||
-      hasSensorSignal
-    ) {
-      setSensorSignalTimedOut(false);
-      return;
-    }
-    const timer = window.setTimeout(() => {
-      setSensorSignalTimedOut(true);
-    }, 1500);
-    return () => window.clearTimeout(timer);
-  }, [
+    showGimbalSurface,
+    handleActivateSensors,
+    handleRecalibrate,
+    handleToggleTouchOverride,
+  } = useControllerSensors({
     controllerTouchOverride,
+    setControllerTouchOverride,
     isRoomEditorOpen,
-    permissionState,
-    hasSensorSignal,
-  ]);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && !window.isSecureContext) {
-      setIsInsecureContext(true);
-    }
-  }, []);
-
-  const showGimbalSurface = resolveGimbalSurfaceVisibility(
-    permissionState,
-    controllerTouchOverride,
     activeRoomCode,
-    isRoomEditorOpen,
-  );
-
-  // Kontrolcü aktifken telefon ekranının kapanmasını Wake Lock API ile engelle
-  useWakeLock(showGimbalSurface);
-
-  const handleActivateSensors = async () => {
-    const granted = await requestSensorPermission();
-    if (granted) {
-      setControllerTouchOverride(false);
-      calibrate();
-      emitCalibrate();
-    } else {
-      setControllerTouchOverride(true);
-    }
-  };
-
-  const handleRecalibrate = () => {
-    calibrate();
-    emitCalibrate();
-    pushGyroSample(0, 0);
-  };
+    isPointerDraggingRef,
+    pushGyroSample,
+    emitCalibrate,
+  });
 
   return (
     <main className="flex min-h-dvh flex-col justify-between bg-base px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] text-fg select-none">
@@ -285,19 +224,7 @@ function MobileControllerContent() {
               }
             }}
             controllerTouchOverride={controllerTouchOverride}
-            onToggleTouchOverride={async (touch) => {
-              if (!touch) {
-                if (permissionState === 'granted') {
-                  setControllerTouchOverride(false);
-                  pushGyroSample(0, 0);
-                } else {
-                  await handleActivateSensors();
-                }
-              } else {
-                setControllerTouchOverride(true);
-                pushGyroSample(0, 0);
-              }
-            }}
+            onToggleTouchOverride={handleToggleTouchOverride}
             controllerSensitivity={controllerSensitivity}
             onSelectSensitivity={setControllerSensitivity}
             isControllerPaired={isControllerPaired}

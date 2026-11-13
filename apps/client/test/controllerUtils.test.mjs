@@ -17,6 +17,10 @@ import {
   isPointerEventMatching,
   shouldResetPointerDrag,
   resolveSlotChange,
+  shouldTriggerSensorTimeout,
+  resolveSensorActivation,
+  resolveTouchOverrideToggle,
+  isContextInsecure,
 } from '../src/utils/controllerUtils.ts';
 
 describe('controllerUtils — Mobil Kontrolcü ve Sanal Gimbal Motoru', () => {
@@ -208,5 +212,47 @@ describe('controllerUtils — Mobil Kontrolcü ve Sanal Gimbal Motoru', () => {
     assert.equal(changed.changed, true);
     assert.equal(changed.nextSlot, 2);
   });
+
+  it('shouldTriggerSensorTimeout, resolveSensorActivation, resolveTouchOverrideToggle ve isContextInsecure kurallarını uygular', () => {
+    // 1. shouldTriggerSensorTimeout
+    // Touch mod açıkken veya izin verilmemişken veya sinyal varken tetiklenmemeli
+    assert.equal(shouldTriggerSensorTimeout(true, false, 'granted', false), false);
+    assert.equal(shouldTriggerSensorTimeout(false, true, 'granted', false), false);
+    assert.equal(shouldTriggerSensorTimeout(false, false, 'prompt', false), false);
+    assert.equal(shouldTriggerSensorTimeout(false, false, 'granted', true), false);
+    // İzin verilmiş, touch kapalı, sinyal henüz yokken tetiklenmeli
+    assert.equal(shouldTriggerSensorTimeout(false, false, 'granted', false), true);
+
+    // 2. resolveSensorActivation
+    const grantedAction = resolveSensorActivation(true);
+    assert.equal(grantedAction.setTouchOverride, false);
+    assert.equal(grantedAction.shouldCalibrate, true);
+
+    const deniedAction = resolveSensorActivation(false);
+    assert.equal(deniedAction.setTouchOverride, true);
+    assert.equal(deniedAction.shouldCalibrate, false);
+
+    // 3. resolveTouchOverrideToggle
+    // Dokunmatik açılmak isteniyor
+    const touchOn = resolveTouchOverrideToggle(true, 'granted');
+    assert.equal(touchOn.touchOverride, true);
+    assert.equal(touchOn.action, 'none');
+
+    // Dokunmatik kapatılmak isteniyor ve izin zaten var -> calibrate
+    const touchOffGranted = resolveTouchOverrideToggle(false, 'granted');
+    assert.equal(touchOffGranted.touchOverride, false);
+    assert.equal(touchOffGranted.action, 'calibrate');
+
+    // Dokunmatik kapatılmak isteniyor ama izin yok -> activateSensors
+    const touchOffPrompt = resolveTouchOverrideToggle(false, 'prompt');
+    assert.equal(touchOffPrompt.touchOverride, false);
+    assert.equal(touchOffPrompt.action, 'activateSensors');
+
+    // 4. isContextInsecure
+    assert.equal(isContextInsecure(undefined), false);
+    assert.equal(isContextInsecure({ isSecureContext: true }), false);
+    assert.equal(isContextInsecure({ isSecureContext: false }), true);
+  });
 });
+
 
