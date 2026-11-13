@@ -1,6 +1,13 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import {
+  isWakeLockSupported,
+  shouldAcquireWakeLock,
+  requestScreenWakeLock,
+  releaseWakeLock,
+  type WakeLockSentinelLike,
+} from '@/utils/wakeLockUtils';
 
 /**
  * Mobil cihazlarda oyun oynanırken ekranın kararmasını veya uykuya geçmesini
@@ -8,31 +15,25 @@ import { useEffect, useRef } from 'react';
  * Sekme arka plana geçtiğinde ve geri geldiğinde kilidi otomatik yeniden kazanır.
  */
 export function useWakeLock(enabled: boolean): void {
-  const sentinelRef = useRef<{ release: () => Promise<void> } | null>(null);
+  const sentinelRef = useRef<WakeLockSentinelLike | null>(null);
 
   useEffect(() => {
-    if (!enabled || typeof navigator === 'undefined') return;
+    if (typeof navigator === 'undefined') return;
 
-    const nav = navigator as Navigator & {
-      wakeLock?: {
-        request: (type: 'screen') => Promise<{ release: () => Promise<void> }>;
-      };
-    };
-
-    if (!nav.wakeLock) return;
+    const supported = isWakeLockSupported(navigator);
+    if (!supported) return;
 
     let cancelled = false;
 
     const acquireLock = async () => {
-      try {
-        const lock = await nav.wakeLock!.request('screen');
-        if (cancelled) {
-          void lock.release().catch(() => {});
-        } else {
-          sentinelRef.current = lock;
-        }
-      } catch {
-        // Pil tasarruf modu veya işletim sistemi kısıtlamasında sessizce geç
+      const visibility = typeof document !== 'undefined' ? document.visibilityState : 'visible';
+      if (!shouldAcquireWakeLock(enabled, supported, visibility)) return;
+
+      const lock = await requestScreenWakeLock(navigator);
+      if (cancelled) {
+        void releaseWakeLock(lock);
+      } else {
+        sentinelRef.current = lock;
       }
     };
 
@@ -49,10 +50,9 @@ export function useWakeLock(enabled: boolean): void {
       cancelled = true;
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       if (sentinelRef.current) {
-        void sentinelRef.current.release().catch(() => {});
+        void releaseWakeLock(sentinelRef.current);
         sentinelRef.current = null;
       }
     };
   }, [enabled]);
 }
-

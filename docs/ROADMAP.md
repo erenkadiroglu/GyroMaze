@@ -847,10 +847,15 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **useMotionTrail Kancası Sadeleşmesi (`apps/client/src/hooks/useMotionTrail.ts`):** Sıfır bellek tahsisiyle (Zero GC) geriye doğru enterpolasyon, halka ölçekleme ve Three.js mesh transformasyonu saf yardımcı motora devredildi.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/motionTrailUtils.test.mjs` dahil edilerek test sayısı 598'den **607'ye**, monorepo testleri **662'ye** yükseltildi.
 
-### Faz 180: Mobil Ekran Uyanık Kalma ve WebGL Bağlam Kurtarma Motorları (Sıradaki)
-- [ ] **WakeLock & WebGL Yardımcı Motorları (`wakeLockUtils.ts`, `webGLRecoveryUtils.ts`):** `useWakeLock.ts` ve `useWebGLContextRecovery.ts` kancalarındaki tarayıcı Screen Wake Lock API desteği, görünürlük değişimi yeniden bağlama, WebGL `webglcontextlost`/`webglcontextrestored` olayları ve sayfa görünürlüğü kurtarma mantıklarını saf motorlara ayrıştırma.
-- [ ] **Kancaların Sadeleşmesi:** Kancaları salt tarayıcı olay dinleyicisi yaşam döngüsüne indirgeme.
-- [ ] **Birim Testleri ve Doğrulama:** Yeni birim testlerle monorepo kapsamını artırma, derleme ve git push.
+### Faz 180: Mobil Ekran Uyanık Kalma ve WebGL Bağlam Kurtarma Motorları (Tamamlandı)
+- [x] **WakeLock & WebGL Yardımcı Motorları (`wakeLockUtils.ts`, `webGLRecoveryUtils.ts`, testler):** `isWakeLockSupported`, `shouldAcquireWakeLock`, `requestScreenWakeLock`, `releaseWakeLock`, `resolveWakeLockAriaLabel`, `createContextLostHandler`, `createContextRestoredHandler`, `resolveCanvasKey`, `resolveNextCanvasRevision`, `getRecoveryBannerConfig` fonksiyonları saf mimariyle geliştirildi; 14 yeni birim test ile %100 doğrulandı (toplam 621 istemci testi, 49 sunucu testi, 6 shared testi, **676 monorepo testi**).
+- [x] **Kancaların Sadeleşmesi (`useWakeLock.ts`, `useWebGLContextRecovery.ts`):** WakeLock talep ve serbest bırakma döngüsü ile WebGL bağlam kopma/kurtarma olay dinleyicisi yönetimi saf motorlara bağlandı.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/wakeLockUtils.test.mjs test/webGLRecoveryUtils.test.mjs` dahil edilerek test sayısı 607'den **621'e**, monorepo testleri **676'ya** çıkarıldı.
+
+### Faz 181: Ayarlar Çekmecesi ve Ses/Fizik Tercihleri Motoru (Sıradaki)
+- [ ] **Ayarlar Çekmecesi Yardımcı Motoru (`settingsDrawerUtils.ts`, `settingsDrawerUtils.test.mjs`):** `useSettingsDrawer.ts` ve `useAppPreferences.ts` kancalarındaki ses seviyesi basamaklama, dokunmatik geçersiz kılma, hassasiyet kademeleri ve hızlı ayar geçiş mantıklarını saf yardımcı motora ayrıştırma.
+- [ ] **Kancaların Sadeleşmesi:** Kancaları doğrudan Zustand seçicileri ve saf motor çağrılarına indirgeme.
+- [ ] **Birim Testleri ve Doğrulama:** Yeni testlerle kapsamı artırma, derleme ve git push.
 
 
 

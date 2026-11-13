@@ -2,6 +2,11 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type * as THREE from 'three';
+import {
+  createContextLostHandler,
+  createContextRestoredHandler,
+  resolveNextCanvasRevision,
+} from '@/utils/webGLRecoveryUtils';
 
 /**
  * WebGL grafik bağlamı kesilme ve geri yükleme döngüsü yönetim kancası.
@@ -20,7 +25,7 @@ export function useWebGLContextRecovery() {
 
   const handleSceneRetry = useCallback(() => {
     setIsContextLost(false);
-    setCanvasRevision((prev) => prev + 1);
+    setCanvasRevision((prev) => resolveNextCanvasRevision(prev));
   }, []);
 
   const attachContextListeners = useCallback((gl: THREE.WebGLRenderer) => {
@@ -28,14 +33,13 @@ export function useWebGLContextRecovery() {
     const dom = gl.domElement;
     if (!dom) return;
 
-    const handleContextLost = (e: Event) => {
-      e.preventDefault();
+    const handleContextLost = createContextLostHandler(() => {
       setIsContextLost(true);
-    };
+    });
 
-    const handleContextRestored = () => {
+    const handleContextRestored = createContextRestoredHandler(() => {
       setIsContextLost(false);
-    };
+    });
 
     dom.addEventListener('webglcontextlost', handleContextLost);
     dom.addEventListener('webglcontextrestored', handleContextRestored);
@@ -53,4 +57,3 @@ export function useWebGLContextRecovery() {
     attachContextListeners,
   };
 }
-
