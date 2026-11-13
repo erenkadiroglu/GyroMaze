@@ -216,3 +216,4 @@ export function useMazeStageOrchestration({
     handleBallCollision,
   };
 }
+

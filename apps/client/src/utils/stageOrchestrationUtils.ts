@@ -40,3 +40,4 @@ export function shouldTriggerWallSound(
   }
   return isBallSpeedSufficientForWallHit(speed, minSpeed);
 }
+
