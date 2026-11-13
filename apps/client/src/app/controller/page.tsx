@@ -1,162 +1,72 @@
 'use client';
 
-import { Suspense, useRef, useCallback } from 'react';
-import { GyroData } from '@gyromaze/shared';
-import { useGameStore } from '@/store/useGameStore';
-import { useSocket } from '@/hooks/useSocket';
-import { useAppPreferences } from '@/hooks/useAppPreferences';
-import { scaleGyroAngles, resolveSlotChange } from '@/utils/controllerUtils';
-import { useControllerRoom } from '@/hooks/useControllerRoom';
-import { useGimbalInteraction } from '@/hooks/useGimbalInteraction';
-import { useControllerSensors } from '@/hooks/useControllerSensors';
+import { Suspense } from 'react';
+import { useMobileController } from '@/hooks/useMobileController';
 import { ControllerHeader } from './ControllerHeader';
 import { ControllerStatusBanners } from './ControllerStatusBanners';
-import { ControllerRoomCard } from './ControllerRoomCard';
-import { ControllerSensorCard } from './ControllerSensorCard';
-import { ControllerGimbalPad } from './ControllerGimbalPad';
+import { ControllerCenterStage } from './ControllerCenterStage';
 import { ControllerFooter } from './ControllerFooter';
 
 /**
  * Mobil cihazın HTML5 jiroskop sensörlerini ve dokunmatik (touch) sanal gimbal
  * hareketlerini sıfır DOM reflow ve <10ms WebSocket gecikmesiyle masaüstü 3B
- * sahnesine ileten kontrolcü arayüzü.
+ * sahnesine ileten modüler kontrolcü arayüzü.
  */
 function MobileControllerContent() {
-  useAppPreferences();
-
-  const isSocketConnected = useGameStore((s) => s.isSocketConnected);
-  const isControllerPaired = useGameStore((s) => s.isControllerPaired);
-  const gameStatus = useGameStore((s) => s.gameStatus);
-  const level = useGameStore((s) => s.level);
-  const remoteCrystalsCollected = useGameStore(
-    (s) => s.remoteCrystalsCollected,
-  );
-  const remoteCrystalsTotal = useGameStore((s) => s.remoteCrystalsTotal);
-  const errorMessage = useGameStore((s) => s.errorMessage);
-  const setErrorMessage = useGameStore((s) => s.setErrorMessage);
-  const colorScheme = useGameStore((s) => s.colorScheme);
-  const toggleColorScheme = useGameStore((s) => s.toggleColorScheme);
-  const latencyMs = useGameStore((s) => s.latencyMs);
-  const isHapticEnabled = useGameStore((s) => s.isHapticEnabled);
-  const toggleHapticEnabled = useGameStore((s) => s.toggleHapticEnabled);
-  const recentRooms = useGameStore((s) => s.recentRooms);
-  const controllerSensitivity = useGameStore((s) => s.controllerSensitivity);
-  const setControllerSensitivity = useGameStore(
-    (s) => s.setControllerSensitivity,
-  );
-  const controllerTouchOverride = useGameStore(
-    (s) => s.controllerTouchOverride,
-  );
-  const setControllerTouchOverride = useGameStore(
-    (s) => s.setControllerTouchOverride,
-  );
-
-  const sensitivityRef = useRef<number>(controllerSensitivity);
-  sensitivityRef.current = controllerSensitivity;
-
-  const isControllerPairedRef = useRef<boolean>(isControllerPaired);
-  isControllerPairedRef.current = isControllerPaired;
-
-  const liveGyroRef = useRef<GyroData>({
-    alpha: 0,
-    beta: 0,
-    gamma: 0,
-    timestamp: 0,
-  });
-
-  const joinRoomRef = useRef<((code: string) => void) | null>(null);
-
   const {
+    // Header
     activeRoomCode,
-    manualRoomInput,
-    setManualRoomInput,
     playerSlot,
-    setPlayerSlot,
-    playerSlotRef,
+    isHapticEnabled,
+    toggleHapticEnabled,
+    colorScheme,
+    toggleColorScheme,
     isRoomEditorOpen,
-    roomFormError,
-    setRoomFormError,
     openRoomEditor,
     closeRoomEditor,
-    handleManualConnect,
-  } = useControllerRoom({
-    isSocketConnected,
     isControllerPaired,
-    joinRoomByCode: (code) => joinRoomRef.current?.(code),
-    setErrorMessage,
-  });
+    isSocketConnected,
+    latencyMs,
 
-  const activeRoomCodeRef = useRef<string>(activeRoomCode);
-  activeRoomCodeRef.current = activeRoomCode;
-
-  const {
-    emitGyroUpdate,
-    joinRoomByCode,
-    emitCalibrate,
-    emitResetBall,
+    // Status banners
+    errorMessage,
+    level,
+    remoteCrystalsCollected,
+    remoteCrystalsTotal,
+    gameStatus,
     emitChangeLevel,
-  } = useSocket({
-    role: 'controller',
-    targetRoomId: activeRoomCode || null,
-    playerSlot,
-  });
-  joinRoomRef.current = joinRoomByCode;
+    emitResetBall,
 
-  const pushGyroSample = useCallback(
-    (beta: number, gamma: number) => {
-      const now = Date.now();
-      const { beta: scaledBeta, gamma: scaledGamma } = scaleGyroAngles(
-        beta,
-        gamma,
-        sensitivityRef.current,
-        35,
-      );
-
-      liveGyroRef.current.beta = scaledBeta;
-      liveGyroRef.current.gamma = scaledGamma;
-      liveGyroRef.current.timestamp = now;
-      liveGyroRef.current.playerSlot = playerSlotRef.current;
-
-      if (activeRoomCodeRef.current && isControllerPairedRef.current) {
-        emitGyroUpdate(activeRoomCodeRef.current, liveGyroRef.current);
-      }
-    },
-    [emitGyroUpdate, playerSlotRef],
-  );
-
-  const {
+    // Center stage
+    stageMode,
+    manualRoomInput,
+    setManualRoomInput,
+    roomFormError,
+    setRoomFormError,
+    recentRooms,
+    handleManualConnect,
+    isInsecureContext,
+    handleActivateSensors,
+    setControllerTouchOverride,
     gimbalPadRef,
     gimbalDotRef,
     pitchValueRef,
     rollValueRef,
-    isPointerDraggingRef,
+    handleSelectSlot,
+    controllerTouchOverride,
+    handleToggleTouchOverride,
+    controllerSensitivity,
+    setControllerSensitivity,
+    sensorSignalTimedOut,
+    hasSensorSignal,
     handlePointerDownOnGimbal,
     handlePointerMoveOnGimbal,
     handlePointerEndOnGimbal,
-  } = useGimbalInteraction({
-    showGimbalSurface: !isRoomEditorOpen && Boolean(activeRoomCode),
-    liveGyroRef,
-    pushGyroSample,
-  });
 
-  const {
-    isInsecureContext,
-    sensorSignalTimedOut,
-    permissionState,
-    hasSensorSignal,
+    // Footer
     showGimbalSurface,
-    handleActivateSensors,
     handleRecalibrate,
-    handleToggleTouchOverride,
-  } = useControllerSensors({
-    controllerTouchOverride,
-    setControllerTouchOverride,
-    isRoomEditorOpen,
-    activeRoomCode,
-    isPointerDraggingRef,
-    pushGyroSample,
-    emitCalibrate,
-  });
+  } = useMobileController();
 
   return (
     <main className="flex min-h-dvh flex-col justify-between bg-base px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] text-fg select-none">
@@ -190,53 +100,38 @@ function MobileControllerContent() {
         onResetBall={emitResetBall}
       />
 
-      {/* ORTA ALAN: ODA KODU / İZİN / CANLI GİMBAL */}
-      <section className="my-auto flex flex-col items-center justify-center py-3">
-        {!activeRoomCode || isRoomEditorOpen ? (
-          <ControllerRoomCard
-            manualRoomInput={manualRoomInput}
-            setManualRoomInput={setManualRoomInput}
-            roomFormError={roomFormError}
-            setRoomFormError={setRoomFormError}
-            recentRooms={recentRooms}
-            activeRoomCode={activeRoomCode}
-            onClose={activeRoomCode ? closeRoomEditor : undefined}
-            onSubmit={handleManualConnect}
-          />
-        ) : !showGimbalSurface ? (
-          <ControllerSensorCard
-            isInsecureContext={isInsecureContext}
-            onActivateSensors={handleActivateSensors}
-            onEnableTouchMode={() => setControllerTouchOverride(true)}
-          />
-        ) : (
-          <ControllerGimbalPad
-            gimbalPadRef={gimbalPadRef}
-            gimbalDotRef={gimbalDotRef}
-            pitchValueRef={pitchValueRef}
-            rollValueRef={rollValueRef}
-            playerSlot={playerSlot}
-            onSelectSlot={(slot) => {
-              const { changed, nextSlot } = resolveSlotChange(playerSlot, slot);
-              if (changed) {
-                pushGyroSample(0, 0);
-                setPlayerSlot(nextSlot);
-              }
-            }}
-            controllerTouchOverride={controllerTouchOverride}
-            onToggleTouchOverride={handleToggleTouchOverride}
-            controllerSensitivity={controllerSensitivity}
-            onSelectSensitivity={setControllerSensitivity}
-            isControllerPaired={isControllerPaired}
-            errorMessage={errorMessage}
-            sensorSignalTimedOut={sensorSignalTimedOut}
-            hasSensorSignal={hasSensorSignal}
-            onPointerDown={handlePointerDownOnGimbal}
-            onPointerMove={handlePointerMoveOnGimbal}
-            onPointerEnd={handlePointerEndOnGimbal}
-          />
-        )}
-      </section>
+      {/* ORTA ALAN: ODA KODU / İZİN / CANLI GİMBAL MERKEZ SAHNESİ */}
+      <ControllerCenterStage
+        stageMode={stageMode}
+        manualRoomInput={manualRoomInput}
+        setManualRoomInput={setManualRoomInput}
+        roomFormError={roomFormError}
+        setRoomFormError={setRoomFormError}
+        recentRooms={recentRooms}
+        activeRoomCode={activeRoomCode}
+        onCloseRoomEditor={activeRoomCode ? closeRoomEditor : undefined}
+        onSubmitRoomCode={handleManualConnect}
+        isInsecureContext={isInsecureContext}
+        onActivateSensors={handleActivateSensors}
+        onEnableTouchMode={() => setControllerTouchOverride(true)}
+        gimbalPadRef={gimbalPadRef}
+        gimbalDotRef={gimbalDotRef}
+        pitchValueRef={pitchValueRef}
+        rollValueRef={rollValueRef}
+        playerSlot={playerSlot}
+        onSelectSlot={handleSelectSlot}
+        controllerTouchOverride={controllerTouchOverride}
+        onToggleTouchOverride={handleToggleTouchOverride}
+        controllerSensitivity={controllerSensitivity}
+        onSelectSensitivity={setControllerSensitivity}
+        isControllerPaired={isControllerPaired}
+        errorMessage={errorMessage}
+        sensorSignalTimedOut={sensorSignalTimedOut}
+        hasSensorSignal={hasSensorSignal}
+        onPointerDownOnGimbal={handlePointerDownOnGimbal}
+        onPointerMoveOnGimbal={handlePointerMoveOnGimbal}
+        onPointerEndOnGimbal={handlePointerEndOnGimbal}
+      />
 
       {/* ALT EYLEMLER */}
       <ControllerFooter

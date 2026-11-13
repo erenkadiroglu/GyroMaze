@@ -522,6 +522,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Bağımsız Harita Editörü Kancası (`useLevelEditor.ts`):** Izgara durumu, araç seçimi, rastgele üretim, şablon uygulama, pano dışa/içe aktarımı ve anında oynama akışı tek kancada toplandı.
 - [x] **Modüler Harita Editörü Modalı (`LevelEditorModal.tsx`):** Araç çubuğu, ızgara, şablonlar, meta kontroller ve alt çubuk bileşenleri yalın bir deklaratif yapıyla bağlanarak `LevelEditorModal.tsx` 249 satırdan **78 satıra** indirildi.
 
+### Faz 104: Modüler Mobil Kontrolcü Orkestrasyonu, Kanca ve Merkez Sahne Ayrıştırması (Tamamlandı)
+- [x] **Mobil Orkestrasyon Yardımcı Motoru (`controllerOrchestrationUtils.ts`, `controllerOrchestrationUtils.test.mjs`):** `resolveCenterStageMode` ve `handleSlotSelection` saf yardımcıları geliştirildi; 5 yeni birim test ile doğrulandı (toplam 206 istemci testi, 234 monorepo testi).
+- [x] **Modüler Kontrolcü Merkez Sahnesi (`ControllerCenterStage.tsx`):** Oda kodu girişi, sensör izni ve canlı gimbal pad görünümleri `ControllerCenterStage` bileşeni altında modülerleştirildi.
+- [x] **Bağımsız Mobil Kontrolcü Kancası ve Yalın Sayfa (`useMobileController.ts`, `controller/page.tsx`):** Tüm sensör, oda, soket ve gimbal durumları tek kancada toplanarak `page.tsx` 268 satırdan **150 satıra** indirildi.
+
 
 
 
