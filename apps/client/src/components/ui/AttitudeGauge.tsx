@@ -1,9 +1,12 @@
 'use client';
 
 import { useAttitudeTelemetryLoop } from '@/hooks/useAttitudeTelemetryLoop';
-import { AttitudeHorizonDial } from './AttitudeHorizonDial';
-import { AttitudeTelemetryColumn } from './attitude/AttitudeTelemetryColumn';
+import { AttitudeHorizonDial, AttitudeTelemetryColumn } from './attitude';
 import { MiniMapRadar } from './MiniMapRadar';
+import {
+  resolveAttitudeBoardSize,
+  getAttitudeContainerAriaLabel,
+} from '@/utils/attitudeGaugeUtils';
 
 export interface AttitudeGaugeProps {
   /** Labirent tahtasının genişlik/uzunluk boyutu (varsayılan 12) */
@@ -26,13 +29,14 @@ export interface AttitudeGaugeProps {
  * React yeniden render'ı tetiklemeden bilye hızı, eğim açıları ve 2B radarı gösterir.
  */
 export function AttitudeGauge({
-  boardSize = 12,
+  boardSize,
   goalPosition,
   remainingCrystals,
   isPortalUnlocked,
   isMultiplayer,
   showMiniMap,
 }: AttitudeGaugeProps) {
+  const safeBoardSize = resolveAttitudeBoardSize(boardSize);
   const {
     horizonRef,
     pitchTextRef,
@@ -40,12 +44,12 @@ export function AttitudeGauge({
     speedTextRef,
     miniMapBallRef,
     miniMapBall2Ref,
-  } = useAttitudeTelemetryLoop(boardSize);
+  } = useAttitudeTelemetryLoop(safeBoardSize);
 
   return (
     <div
       className="gm-panel pointer-events-auto flex items-center gap-4 rounded-2xl px-3.5 py-2.5 shadow-lg"
-      aria-label="Canlı uçuş ve hız göstergesi"
+      aria-label={getAttitudeContainerAriaLabel()}
     >
       {/* Yapay Ufuk Kadranı */}
       <AttitudeHorizonDial ref={horizonRef} />
@@ -62,7 +66,7 @@ export function AttitudeGauge({
         <MiniMapRadar
           ref={miniMapBallRef}
           ball2Ref={miniMapBall2Ref}
-          boardSize={boardSize}
+          boardSize={safeBoardSize}
           goalPosition={goalPosition}
           remainingCrystals={remainingCrystals}
           isPortalUnlocked={isPortalUnlocked}

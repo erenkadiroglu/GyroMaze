@@ -753,6 +753,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Liste Alt Bileşenleri (`LeaderboardEmptyState.tsx`, `LeaderboardRankBadge.tsx`, `LeaderboardRowItem.tsx`):** Boş arama durumu kartı, kupa/madalya ve numara sıra rozeti ile tekil rekor satırı kartı bağımsız modüllere ayrıştırıldı; `list/index.ts` üzerinden re-export edildi.
 - [x] **Yalın ve Erişilebilir Skor Listesi Orkestratörü (`LeaderboardList.tsx`):** `role="list"` ve `role="listitem"` semantik yapıları, sanal boşluklar ve saf yardımcı mimarisi ile `LeaderboardList.tsx` 113 satırdan **44 satıra** indirildi.
 
+### Faz 153: Masaüstü Kokpit Uçuş Göstergesi Ayrıştırması (Tamamlandı)
+- [x] **Kokpit ve Ufuk Göstergesi Yardımcı Motoru (`attitudeGaugeUtils.ts`, `attitudeGaugeUtils.test.mjs`):** Güvenli tahta boyutu çözümleyici `resolveAttitudeBoardSize`, erişilebilir ana etiket `getAttitudeContainerAriaLabel`, yapay ufuk başlığı `getAttitudeHorizonDialTitle`, mini-harita başlığı `getMiniMapRadarTitle`, çok oyunculu durum denetleyicisi `isAttitudeMultiplayerActive` ve telemetri formatlayıcı `formatAttitudeGaugeSummary` saf yardımcıları geliştirildi; 5 yeni birim test ile doğrulandı (toplam 438 istemci testi, 466 monorepo testi).
+- [x] **Kokpit Modüler Bileşen ve Barrel Mimarisi (`AttitudeHorizonDial.tsx`, `attitude/index.ts`):** Yapay ufuk kadranı `attitude/` dizini altına taşındı; `AttitudeTelemetryColumn` ile birlikte `attitude/index.ts` üzerinden modüler dışa aktarıma bağlandı.
+- [x] **Yalın ve Güvenli Kokpit Uçuş Göstergesi Orkestratörü (`AttitudeGauge.tsx`):** Dinamik güvenli tahta boyutu, semantik ARIA etiketleri ve modüler barrel importları ile `AttitudeGauge.tsx` refactor edildi.
+
+
 
 
 
