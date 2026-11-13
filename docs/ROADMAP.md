@@ -822,6 +822,14 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **useDeviceOrientation Kancası Sadeleşmesi (`apps/client/src/hooks/useDeviceOrientation.ts`):** Ham açı filtreleme, mikro titreme engelleme ölü bölgesi (0.2°), EMA yumuşatma (0.72) ve açı sınırlandırma (±35°) saf yardımcı motora aktarıldı.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/orientationFilterUtils.test.mjs` dahil edilerek test sayısı 536'dan **543'e** yükseltildi.
 
+### Faz 174: 3B Labirent Bilye Etkileşim ve Bekleme Süresi Motoru (Tamamlandı)
+- [x] **Bilye Etkileşim Yardımcı Motoru (`ballInteractionUtils.ts`, `ballInteractionUtils.test.mjs`):** `INTERACTION_COOLDOWNS`, `MOVING_OBSTACLE_WALL_HIT_SPEED`, `createInteractionCooldownMap`, `resetPlayerInteractionCooldowns`, `evaluateBoostPadHit`, `evaluateTeleportHit`, `evaluateLaserGateHit`, `evaluateMovingObstacleHit` saf fonksiyonları geliştirildi; 6 yeni birim test ile %100 doğrulandı (toplam 549 istemci testi, 49 sunucu testi, 6 shared testi, **604 monorepo testi**).
+- [x] **useBallInteractions Kancası Sadeleşmesi (`apps/client/src/hooks/useBallInteractions.ts`):** Inline etkileşim, süre kontrolü ve çarpışma dallanmaları saf yardımcı motor fonksiyonlarına devredildi.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/ballInteractionUtils.test.mjs` dahil edilerek test sayısı 543'ten **549'a** çıkarıldı.
+
+
+
+
 
 
 
