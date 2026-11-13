@@ -4,11 +4,14 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useGameStore } from '@/store/useGameStore';
 import { soundEngine } from '@/utils/soundEngine';
 import {
+  GAME_TIMER_INTERVAL_MS,
   calculateTimeAttackLimit,
   shouldRunGameTimer,
-  isTimerExpired,
-  shouldWarnTimerTick,
-} from '@/utils/hudUtils';
+  calculateTimerStartTime,
+  calculateElapsedSeconds,
+  evaluateGameTimerTick,
+  resolveResetClickAction,
+} from '@/utils/gameTimerUtils';
 
 export interface UseGameTimerOptions {
   starThresholds?: [number, number];
@@ -68,12 +71,20 @@ export function useGameTimer({
     if (!shouldRunGameTimer(gameStatus, isAnyOverlayOpen, isPageHidden)) return;
 
     const baseElapsed = useGameStore.getState().elapsedSeconds;
-    const start = performance.now() - baseElapsed * 1000;
-    const interval = window.setInterval(() => {
-      const elapsed = Number(((performance.now() - start) / 1000).toFixed(1));
+    const startTimeMs = calculateTimerStartTime(baseElapsed, performance.now());
 
-      if (isTimerExpired(isTimeAttack, elapsed, timeAttackLimit)) {
-        setElapsedSeconds(timeAttackLimit);
+    const interval = window.setInterval(() => {
+      const elapsed = calculateElapsedSeconds(startTimeMs, performance.now());
+      const tick = evaluateGameTimerTick({
+        isTimeAttack,
+        elapsed,
+        timeAttackLimit,
+        lastWarnedSecond: lastWarnedSecondRef.current,
+      });
+
+      setElapsedSeconds(tick.finalElapsed);
+
+      if (tick.isExpired) {
         setGameStatus('lost');
         if (!isSoundMuted) {
           soundEngine.playDefeat();
@@ -82,24 +93,13 @@ export function useGameTimer({
         return;
       }
 
-      setElapsedSeconds(elapsed);
-
-      if (isTimeAttack) {
-        const remainingCeil = Math.ceil(timeAttackLimit - elapsed);
-        if (
-          shouldWarnTimerTick(
-            isTimeAttack,
-            remainingCeil,
-            lastWarnedSecondRef.current,
-          )
-        ) {
-          lastWarnedSecondRef.current = remainingCeil;
-          if (!isSoundMuted) {
-            soundEngine.playTimerTick(remainingCeil <= 3);
-          }
+      if (tick.shouldWarnTick) {
+        lastWarnedSecondRef.current = tick.nextWarnedSecond;
+        if (!isSoundMuted) {
+          soundEngine.playTimerTick(tick.isUrgentTick);
         }
       }
-    }, 100);
+    }, GAME_TIMER_INTERVAL_MS);
 
     return () => window.clearInterval(interval);
   }, [
@@ -118,7 +118,10 @@ export function useGameTimer({
 
   const handleResetClick = useCallback(() => {
     lastWarnedSecondRef.current = null;
-    if (!isSoundMuted) soundEngine.playCalibrate();
+    const action = resolveResetClickAction(isSoundMuted);
+    if (action.shouldPlayCalibrate) {
+      soundEngine.playCalibrate();
+    }
     triggerBallReset();
   }, [isSoundMuted, triggerBallReset]);
 
@@ -129,4 +132,3 @@ export function useGameTimer({
     handleResetClick,
   };
 }
-

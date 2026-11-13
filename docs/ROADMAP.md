@@ -857,10 +857,15 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Kancaların Sadeleşmesi (`useSettingsDrawer.ts`, `useAppPreferences.ts`):** Efektif renk düzeni ve Web Audio ses seviyesi hesaplaması, paylaşılan harita bağlantısı ayrıştırma ve URL temizleme ile modal gezinme durumları saf yardımcı motora bağlandı.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/settingsDrawerUtils.test.mjs` dahil edilerek test sayısı 621'den **635'e**, monorepo testleri **690'a** çıkarıldı.
 
-### Faz 182: Oyun Süresi ve Geri Sayım Zamanlayıcı Motoru (Sıradaki)
-- [ ] **Zamanlayıcı Yardımcı Motoru (`gameTimerUtils.ts`, `gameTimerUtils.test.mjs`):** `useGameTimer.ts` kancasındaki standart artan kronometre, Time Attack geri sayımı, süre tükenme (game_over) koşulu, aralık (interval) adımları ve biçimlendirme mantığını saf motora ayrıştırma.
-- [ ] **useGameTimer Kancası Sadeleşmesi:** Kancayı salt React `useEffect` ve `window.setInterval` yaşam döngüsüne indirgeme.
-- [ ] **Birim Testleri ve Doğrulama:** Yeni testlerle kapsamı artırma, derleme ve git push.
+### Faz 182: Oyun Süresi ve Geri Sayım Zamanlayıcı Motoru (Tamamlandı)
+- [x] **Zamanlayıcı Yardımcı Motoru (`gameTimerUtils.ts`, `gameTimerUtils.test.mjs`):** `TIMER_TICK_INTERVAL_MS`, `TIME_ATTACK_SECONDS`, `calculateElapsedSeconds`, `calculateRemainingSeconds`, `isTimeExpired`, `evaluateGameTimerTick`, `formatTimerDisplay`, `resolveTimerColorClass`, `shouldRunGameTimer` fonksiyonları saf mimariyle geliştirildi; 9 yeni birim test ile %100 doğrulandı (toplam 644 istemci testi, 49 sunucu testi, 6 shared testi, **699 monorepo testi**).
+- [x] **useGameTimer Kancası Sadeleşmesi (`apps/client/src/hooks/useGameTimer.ts`):** `useGameTimer.ts` kancasındaki standart artan kronometre, Time Attack geri sayımı, süre tükenme (game_over) koşulu ve aralık (interval) adımları saf motora aktarılarak kanca salt yaşam döngüsü yöneticisine indirgendi.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/gameTimerUtils.test.mjs` dahil edilerek test sayısı 635'ten **644'e**, monorepo testleri **699'a** çıkarıldı.
+
+### Faz 183: Skor ve Liderlik Senkronizasyon Motoru (Sıradaki)
+- [ ] **Liderlik Tablosu Senkronizasyon Motoru (`leaderboardSyncUtils.ts`, `leaderboardSyncUtils.test.mjs`):** `useLeaderboardSync.ts` kancasındaki sunucu HTTP/WebSocket skor çekme, yerel skor sıralaması, rekor karşılaştırma, hata yönetimi ve durum güncellemelerini saf motora ayrıştırma.
+- [ ] **useLeaderboardSync Kancası Sadeleşmesi:** Kancayı salt reaktif veri dinleyicisine indirgeme.
+- [ ] **Birim Testleri ve Doğrulama:** Yeni testlerle kapsamı artırarak 700+ test barajını aşma, derleme ve git push.
 
 
 
