@@ -1,11 +1,18 @@
 'use client';
 
-import { Trophy, AlertCircle } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 import { Modal } from '@/components/ui/primitives';
 import { useLeaderboardSync } from '@/hooks/useLeaderboardSync';
-import { LeaderboardLevelSelector } from './leaderboard/LeaderboardLevelSelector';
-import { LeaderboardSearchInput } from './leaderboard/LeaderboardSearchInput';
-import { LeaderboardList } from './leaderboard/LeaderboardList';
+import {
+  getLeaderboardModalTitle,
+  getLeaderboardModalDescription,
+} from '@/utils/leaderboardModalViewUtils';
+import {
+  LeaderboardLevelSelector,
+  LeaderboardSearchInput,
+  LeaderboardList,
+  LeaderboardErrorBanner,
+} from './leaderboard';
 
 export interface LeaderboardModalProps {
   open: boolean;
@@ -37,13 +44,16 @@ export function LeaderboardModal({
     initialLevel,
   });
 
+  const title = getLeaderboardModalTitle();
+  const description = getLeaderboardModalDescription();
+
   return (
     <Modal
       open={open}
       onClose={onClose}
       size="md"
-      title="Skor tablosu"
-      description="Bölümlerde kaydedilen en hızlı tamamlama süreleri"
+      title={title}
+      description={description}
       icon={<Trophy className="h-4 w-4" aria-hidden="true" />}
     >
       <div className="space-y-3">
@@ -62,15 +72,8 @@ export function LeaderboardModal({
           onChange={setSearchQuery}
         />
 
-        {fetchError && (
-          <div
-            role="alert"
-            className="flex items-center gap-2 rounded-xl border border-warn/30 bg-warn/10 px-3 py-2 text-[11px] text-warn"
-          >
-            <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-            <span>{fetchError}</span>
-          </div>
-        )}
+        {/* Hata Bildirim Çubuğu */}
+        <LeaderboardErrorBanner message={fetchError} />
 
         {/* Skor Kayıtları Listesi */}
         <LeaderboardList

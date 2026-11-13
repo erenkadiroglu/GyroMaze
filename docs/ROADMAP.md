@@ -733,6 +733,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Yardım Alt Bileşenleri (`HelpModalFooter.tsx`, `help/index.ts`):** Klavye ipucu metni (`H` / `?`) ve "Anladım" butonunu içeren alt eylem bileşeni ayrıştırıldı; `help/index.ts` üzerinden merkezi modül yapısı tamamlandı.
 - [x] **Yalın Yardım Modalı Orkestratörü (`HelpShortcutsModal.tsx`):** Alt bileşen ve saf yardımcı mimarisine devredilerek `HelpShortcutsModal.tsx` 50 satırdan **44 satıra** indirildi.
 
+### Faz 149: Masaüstü Küresel Skor Tablosu Modalı Ayrıştırması (Tamamlandı)
+- [x] **Skor Tablosu Görünüm Yardımcı Motoru (`leaderboardModalViewUtils.ts`, `leaderboardModalViewUtils.test.mjs`):** Başlık metni `getLeaderboardModalTitle`, açıklama metni `getLeaderboardModalDescription`, arama yer tutucu metni `formatLeaderboardSearchPlaceholder`, hata çubuğu görünürlük kontrolü `isErrorBannerVisible` ve erişilebilir sekme/kayıt özeti formatlayıcı `formatLeaderboardAriaLabel` saf yardımcıları geliştirildi; 5 yeni birim test ile doğrulandı (toplam 417 istemci testi, 445 monorepo testi).
+- [x] **Modüler Hata Bildirim Çubuğu ve Barrel Mimarisi (`LeaderboardErrorBanner.tsx`, `leaderboard/index.ts`):** `fetchError` durumunda beliren erişilebilir alert bileşeni bağımsız modüle ayrıştırıldı; `leaderboard/index.ts` üzerinden merkezi dışa aktarım kuruldu.
+- [x] **Yalın Skor Tablosu Orkestratörü (`LeaderboardModal.tsx`):** Alt bileşen ve saf yardımcı mimarisine devredilerek `LeaderboardModal.tsx` 84 satırdan **72 satıra** indirildi.
+
+
 
 
 
