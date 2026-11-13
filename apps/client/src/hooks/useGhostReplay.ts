@@ -2,10 +2,12 @@
 
 import { useRef, useCallback } from 'react';
 import type * as THREE from 'three';
-import { calculateGhostPlaybackCoord } from '@/utils/sceneUtils';
-import { shouldUpdateGhostSample } from '@/utils/sceneCameraUtils';
-import { formatPathPoint, canRecordPathPoint } from '@/utils/sceneTiltUtils';
-import { BALL_RADIUS } from '../components/scene/sceneMaterials';
+import {
+  createInitialGhostPaths,
+  evaluateGhostRecordingStep,
+  resolveGhostMeshTransform,
+  applyGhostMeshTransform,
+} from '@/utils/ghostReplayUtils';
 
 export interface UseGhostReplayOptions {
   startPosition: [number, number, number];
@@ -21,24 +23,24 @@ export function useGhostReplay({
   p2SpawnOffsetX,
   p2SpawnOffsetZ,
 }: UseGhostReplayOptions) {
-  const runPathRef = useRef<Array<[number, number]>>([
-    formatPathPoint(startPosition[0], startPosition[2]),
-  ]);
-  const runPathP2Ref = useRef<Array<[number, number]>>([
-    formatPathPoint(
-      startPosition[0] + p2SpawnOffsetX,
-      startPosition[2] + p2SpawnOffsetZ,
-    ),
-  ]);
+  const initial = createInitialGhostPaths(
+    startPosition,
+    p2SpawnOffsetX,
+    p2SpawnOffsetZ,
+  );
+  const runPathRef = useRef<Array<[number, number]>>(initial.runPath1);
+  const runPathP2Ref = useRef<Array<[number, number]>>(initial.runPath2);
   const runElapsedRef = useRef<number>(0);
   const lastSampleTimeRef = useRef<number>(0);
 
   const resetRunPaths = useCallback(() => {
-    const [sx, , sz] = startPosition;
-    runPathRef.current = [formatPathPoint(sx, sz)];
-    runPathP2Ref.current = [
-      formatPathPoint(sx + p2SpawnOffsetX, sz + p2SpawnOffsetZ),
-    ];
+    const paths = createInitialGhostPaths(
+      startPosition,
+      p2SpawnOffsetX,
+      p2SpawnOffsetZ,
+    );
+    runPathRef.current = paths.runPath1;
+    runPathP2Ref.current = paths.runPath2;
     runElapsedRef.current = 0;
     lastSampleTimeRef.current = 0;
   }, [startPosition, p2SpawnOffsetX, p2SpawnOffsetZ]);
@@ -53,50 +55,35 @@ export function useGhostReplay({
       showGhost: boolean,
       ghostMesh: THREE.Mesh | null,
     ) => {
-      if (!isInteractive) {
-        if (ghostMesh) {
-          ghostMesh.visible = false;
-        }
-        return;
+      const step = evaluateGhostRecordingStep({
+        safeDelta,
+        isInteractive,
+        currentElapsed: runElapsedRef.current,
+        lastSampleTime: lastSampleTimeRef.current,
+        pos1,
+        pos2,
+        path1Length: runPathRef.current.length,
+        path2Length: runPathP2Ref.current.length,
+      });
+
+      runElapsedRef.current = step.nextElapsed;
+      lastSampleTimeRef.current = step.nextSampleTime;
+
+      if (step.newPoint1) {
+        runPathRef.current.push(step.newPoint1);
+      }
+      if (step.newPoint2) {
+        runPathP2Ref.current.push(step.newPoint2);
       }
 
-      runElapsedRef.current += safeDelta;
-      const { shouldSample, nextSampleTime } = shouldUpdateGhostSample(
-        runElapsedRef.current,
-        lastSampleTimeRef.current,
-        0.1,
-      );
+      const transform = resolveGhostMeshTransform({
+        showGhost,
+        isInteractive,
+        ghostPath,
+        runElapsed: runElapsedRef.current,
+      });
 
-      if (shouldSample) {
-        lastSampleTimeRef.current = nextSampleTime;
-
-        if (canRecordPathPoint(runPathRef.current.length)) {
-          runPathRef.current.push(formatPathPoint(pos1.x, pos1.z));
-        }
-
-        if (pos2 && canRecordPathPoint(runPathP2Ref.current.length)) {
-          runPathP2Ref.current.push(formatPathPoint(pos2.x, pos2.z));
-        }
-      }
-
-      if (ghostMesh) {
-        if (showGhost) {
-          const ghost = calculateGhostPlaybackCoord(
-            ghostPath,
-            runElapsedRef.current,
-          );
-          ghostMesh.visible = ghost.isVisible;
-          if (ghost.isVisible) {
-            ghostMesh.position.set(
-              ghost.coord[0],
-              BALL_RADIUS,
-              ghost.coord[1],
-            );
-          }
-        } else {
-          ghostMesh.visible = false;
-        }
-      }
+      applyGhostMeshTransform(ghostMesh, transform);
     },
     [],
   );
@@ -109,4 +96,3 @@ export function useGhostReplay({
     stepGhostReplay,
   };
 }
-

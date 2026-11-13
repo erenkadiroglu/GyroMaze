@@ -832,10 +832,15 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **useGameStore Durum Deposu Sadeleşmesi (`apps/client/src/store/useGameStore.ts`):** Inline localStorage JSON ayrıştırma, hata yakalama, eşleşme oyun durumu çözümleme, kamera döngüsü, tema/renk düzeni senkronizasyonu ve tur sıfırlama alanları `gameStoreUtils` motoruna bağlandı.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/gameStoreUtils.test.mjs` dahil edilerek istemci test sayısı 555'ten **574'e**, toplam monorepo testleri **629'a** yükseltildi.
 
-### Faz 177: Hayalet Yarışçı Yeniden Oynatma ve Örnekleme Motoru (Sıradaki)
-- [ ] **Ghost Replay Yardımcı Motoru (`ghostReplayUtils.ts`, `ghostReplayUtils.test.mjs`):** `useGhostReplay.ts` kancasındaki 10Hz örnekleme aralığı, mesafe eşiği, hayalet konumu enterpolasyonu (lerp), hayalet opaklığı ve görünürlük mantığını saf yardımcı motora ayrıştırma.
-- [ ] **useGhostReplay Kancası Sadeleşmesi:** Kancayı salt React/Three.js yaşam döngüsü ve useFrame aboneliğine indirgeme.
-- [ ] **Birim Testleri ve Doğrulama:** Yeni testlerle istemci test sayısını artırma, derleme ve git push.
+### Faz 177: Hayalet Yarışçı Yeniden Oynatma ve Örnekleme Motoru (Tamamlandı)
+- [x] **Ghost Replay Yardımcı Motoru (`ghostReplayUtils.ts`, `ghostReplayUtils.test.mjs`):** `GHOST_SAMPLE_RATE`, `GHOST_SAMPLE_INTERVAL_SECONDS`, `MAX_GHOST_RECORDING_POINTS`, `DEFAULT_GHOST_BALL_RADIUS`, `createInitialGhostPaths`, `evaluateGhostRecordingStep`, `resolveGhostMeshTransform`, `applyGhostMeshTransform` fonksiyonları saf mimariyle geliştirildi; 12 yeni birim test ile %100 doğrulandı (toplam 586 istemci testi, 49 sunucu testi, 6 shared testi, **641 monorepo testi**).
+- [x] **useGhostReplay Kancası Sadeleşmesi (`apps/client/src/hooks/useGhostReplay.ts`):** 10Hz örnekleme, 600 nokta sınırı, zaman ilerletimi, koordinat yuvarlama ve Three.js mesh transformasyonu saf yardımcı motora devredildi.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/ghostReplayUtils.test.mjs` dahil edilerek test sayısı 574'ten **586'ya**, monorepo testleri **641'e** çıkarıldı.
+
+### Faz 178: 3B Kamera Görüş ve Takip Rig Motoru (Sıradaki)
+- [ ] **Kamera Rig Yardımcı Motoru (`mazeCameraRigUtils.ts`, `mazeCameraRigUtils.test.mjs`):** `useMazeCameraRig.ts` kancasındaki kamera modları ('isometric', 'topdown', 'follow'), dinamik hedefler, mesafe/açı hesaplamaları ve yumuşak sönümlenmiş enterpolasyon (lerp) mantığını saf yardımcı motora ayrıştırma.
+- [ ] **useMazeCameraRig Kancası Sadeleşmesi:** Kancayı salt Three.js `useFrame` kamera konumu atamasına indirgeme.
+- [ ] **Birim Testleri ve Doğrulama:** Yeni testlerle monorepo kapsamını artırma, derleme ve git push.
 
 
 
