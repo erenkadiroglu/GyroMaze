@@ -591,6 +591,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Bağımsız Kamera Teçhizatı Kancası (`useMazeCameraRig.ts`):** İzometrik, takip ve kuş bakışı hedef takibi, sönümleme (lerp) ve sinematik dinamik FOV döngüsü tek kancada toplandı.
 - [x] **Yalın Kamera Rig Bileşeni (`MazeCameraRig.tsx`):** Kamera teçhizat döngüsü kancaya devredilerek `MazeCameraRig.tsx` 87 satırdan **14 satıra** indirildi.
 
+### Faz 118: 3B Sahne Tehlikeler ve Kinetik Alanlar Ayrıştırması (Tamamlandı)
+- [x] **Sahne Tehlikeleri Geometri ve Dönüşüm Motoru (`hazardUtils.ts`, `hazardUtils.test.mjs`):** Tuzak delik yarıçapları `resolveVoidHoleRadii`, kinetik rampalar `resolveBoostPadTransform`, lazer sütunları ve ışın kafesleri `resolveLaserGatePillars` ile portal koordinatları `flattenTeleporterPortals` saf yardımcıları geliştirildi; 5 yeni birim test ile doğrulandı (toplam 268 istemci testi, 296 monorepo testi).
+- [x] **Modüler Tehlike ve Dinamik Alan Bileşenleri (`HazardVoidHoles.tsx`, `HazardBoostPads.tsx`, `HazardTeleporters.tsx`, `HazardLaserGates.tsx`, `HazardMovingObstacles.tsx`):** Tuzak delikleri, hızlandırma rampaları, kuantum portalları, lazer kapıları ve kinetik devriye engelleri bağımsız alt bileşenlere ayrıştırıldı.
+- [x] **Yalın Tehlikeler Orkestratörü (`MazeStageHazards.tsx`):** Karmaşık gömülü Three.js geometrileri alt bileşenlere devredilerek `MazeStageHazards.tsx` 170 satırdan **53 satıra** indirildi.
+
+
 
 
 
