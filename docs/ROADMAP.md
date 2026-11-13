@@ -576,6 +576,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Sahne Tabanı ve Fizik Bilyeleri (`MazeStageBoardBase.tsx`, `MazeStagePhysicsBalls.tsx`):** Zemin mesh'i, aydınlık/karanlık ızgara yardımcısı ve 1P/2P sıfır zıplamalı dinamik Rapier fizik küreleri bağımsız bileşenlere ayrıştırıldı.
 - [x] **Daha Sade 3B Sahne Orkestratörü (`MazeStage.tsx`):** Zemin ve dinamik küre blokları alt bileşenlere devredilerek `MazeStage.tsx` 509 satırdan **460 satıra** indirildi.
 
+### Faz 115: 3B Sahne Kare Döngüsü Kancası ve Etkileşim Motoru Ayrıştırması (Tamamlandı)
+- [x] **3B Sahne Kare Döngüsü Yardımcı Motoru (`stageLoopUtils.ts`, `stageLoopUtils.test.mjs`):** `resolveIsInteractive`, `stepHazardElapsed` ve `resolveP2BallVisibility` saf yardımcıları geliştirildi; 4 yeni birim test ile doğrulandı (toplam 257 istemci testi, 285 monorepo testi).
+- [x] **Bağımsız Sahne Kare Döngüsü Kancası (`useMazeStageFrameLoop.ts`):** Eğim ivmesi, slerp yumuşatma, kristal/lazer/engel animasyonları, hayalet yarışçı ve 1P/2P etkileşim döngüsü tek kancada toplandı.
+- [x] **Yalın 3B Sahne Orkestratörü (`MazeStage.tsx`):** `useFrame` blokları kancaya devredilerek `MazeStage.tsx` 460 satırdan **280 satıra** indirildi.
+
+
 
 
 
