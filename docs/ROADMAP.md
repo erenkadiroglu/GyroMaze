@@ -626,10 +626,10 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Zafer Arayüz Bileşenleri (`VictoryWinnerBadge.tsx`, `VictoryStarsRow.tsx`, `VictoryTimeReadout.tsx`, `VictoryScoreSubmitForm.tsx`):** Kazanan rozeti, yıldız gösterimi, süre/PB rozeti ve liderlik tablosu formu bağımsız alt bileşenlere ayrıştırıldı.
 - [x] **Yalın Zafer Modalı (`VictoryModal.tsx`):** Alt bileşen mimarisine geçirilerek `VictoryModal.tsx` 170 satırdan **88 satıra** indirildi.
 
-### Faz 125: Bölüm Seçici Menüsü ve Liste Bileşenleri Ayrıştırması (Tamamlandı)
-- [x] **Bölüm Menüsü ve Kural Yardımcı Motoru (`levelMenuUtils.ts`, `levelMenuUtils.test.mjs`):** Standart bölüm kartı aktiflik denetimi `isStandardLevelActive`, en iyi süre metin formatı `formatLevelBestTimeText`, yıldız glifleri `formatLevelStarsText`, prosedürel mod kontrolü `isProceduralActive` ve rozet formatlayıcı `formatProceduralBadgeText` saf yardımcıları geliştirildi; 6 yeni birim test ile doğrulandı (toplam 296 istemci testi, 324 monorepo testi).
-- [x] **Modüler Bölüm Seçici Arayüz Bileşenleri (`LevelSelectCampaignSummary.tsx`, `LevelSelectStandardGrid.tsx`, `LevelSelectActionList.tsx`):** Kampanya yıldız özeti, 1..5 bölüm kartları ve prosedürel/özel harita butonları bağımsız alt bileşenlere ayrıştırıldı.
-- [x] **Yalın Bölüm Menüsü (`LevelSelectMenu.tsx`):** Açılır menü şablonu yalınlaştırılarak `LevelSelectMenu.tsx` 181 satırdan **68 satıra** indirildi.
+### Faz 126: Harita Editörü Araç Çubuğu ve Butonları Ayrıştırması (Tamamlandı)
+- [x] **Araç Çubuğu ve Palet Yardımcı Motoru (`editorToolbarUtils.ts`, `editorToolbarUtils.test.mjs`):** 10 adet editör araç tanımı (`TOOLS`, `TOOL_BY_ID`), araç arama `getToolDefinition`, aktiflik denetimi `isToolActive` ve dinamik stil hesaplayıcı `resolveToolButtonClass` saf yardımcıları geliştirildi; 5 yeni birim test ile doğrulandı (toplam 301 istemci testi, 329 monorepo testi).
+- [x] **Modüler Araç Butonu Bileşeni (`EditorToolButton.tsx`):** Tekil araç butonu, erişilebilir radyo semantiği ve ikon/etiket yerleşimi bağımsız bileşene ayrıştırıldı.
+- [x] **Yalın Araç Çubuğu Orkestratörü (`LevelEditorToolbar.tsx`):** Araç listesi ve durum eşlemesi sadeleştirilerek `LevelEditorToolbar.tsx` 159 satırdan **45 satıra** indirildi ve `TOOLS`, `TOOL_BY_ID` geriye dönük re-export uyumluluğu korundu.
 
 
 
