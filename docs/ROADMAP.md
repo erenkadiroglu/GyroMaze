@@ -566,6 +566,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Bağımsız Konfeti Canvas Kancası (`useCelebrationCanvas.ts`):** 2B Canvas yeniden boyutlandırma dinleyicisi, rAF çizim döngüsü ve temizleme mantığı tek kancada soyutlandı.
 - [x] **Yalın Zafer Konfeti Bileşeni (`CelebrationCanvas.tsx`):** Karmaşık çizim döngüsü kancaya devredilerek `CelebrationCanvas.tsx` 94 satırdan **23 satıra** indirildi.
 
+### Faz 113: Canlı 2B Mini-Harita Radarı ve Nokta İşaretçileri Ayrıştırması (Tamamlandı)
+- [x] **Radar İşaretçi ve Yüzde Yardımcı Motoru (`radarUtils.ts`, `radarUtils.test.mjs`):** `resolveGoalMarkerClasses`, `resolvePlayerMarkerClasses` ve `calculateCrystalPercentages` saf yardımcıları geliştirildi; 8 birim test ile doğrulandı (toplam 249 istemci testi, 277 monorepo testi).
+- [x] **Modüler Radar İşaretçi Bileşenleri (`RadarGoalMarker.tsx`, `RadarCrystalMarkers.tsx`, `RadarPlayerMarkers.tsx`):** Hedef portalı rengi, kalan kristallerin döngüsü ve 1P/2P bilye transform noktaları bağımsız alt bileşenlere ayrıştırıldı.
+- [x] **Yalın 2B Radar Bileşeni (`MiniMapRadar.tsx`):** DOM işaretçileri alt bileşenlere devredilerek `MiniMapRadar.tsx` 85 satırdan **56 satıra** indirildi.
+
+
 
 
 

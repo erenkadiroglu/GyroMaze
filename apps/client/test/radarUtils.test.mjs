@@ -8,6 +8,9 @@ import {
   resolveAttitudeTransformStyle,
   calculateRadarDotTransform,
   shouldThrottleTelemetryText,
+  resolveGoalMarkerClasses,
+  resolvePlayerMarkerClasses,
+  calculateCrystalPercentages,
 } from '../src/utils/radarUtils.ts';
 
 test('radarUtils — Kokpit Yapay Ufuk ve 2B Radar Motoru', async (t) => {
@@ -118,5 +121,29 @@ test('radarUtils — Kokpit Yapay Ufuk ve 2B Radar Motoru', async (t) => {
     assert.equal(shouldThrottleTelemetryText(250, 100, 100), true);
     assert.equal(shouldThrottleTelemetryText(150, 100, 100), false);
     assert.equal(shouldThrottleTelemetryText(200, 100, 100), true);
+  });
+
+  await t.test('resolveGoalMarkerClasses ve resolvePlayerMarkerClasses doğru sınıfları döner', () => {
+    assert.ok(resolveGoalMarkerClasses(true).includes('bg-ok'));
+    assert.ok(resolveGoalMarkerClasses(false).includes('bg-brass'));
+
+    assert.ok(resolvePlayerMarkerClasses(1).includes('bg-fg'));
+    assert.ok(resolvePlayerMarkerClasses(2).includes('bg-warn'));
+  });
+
+  await t.test('calculateCrystalPercentages her kristal için yüzde ve id üretir', () => {
+    const crystals = [
+      [0, 0],
+      [3, -3],
+    ];
+    const res = calculateCrystalPercentages(crystals, 12);
+    assert.equal(res.length, 2);
+    assert.equal(res[0].left, 50);
+    assert.equal(res[0].top, 50);
+    assert.equal(res[0].id, 'radar-c-0');
+
+    assert.equal(res[1].left, 75);
+    assert.equal(res[1].top, 25);
+    assert.equal(res[1].id, 'radar-c-1');
   });
 });

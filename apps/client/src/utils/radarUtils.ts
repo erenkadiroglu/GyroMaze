@@ -139,3 +139,36 @@ export function shouldThrottleTelemetryText(
   return now - lastTextTime >= intervalMs;
 }
 
+/**
+ * Hedef portalının radar göstergesindeki renk ve gölge sınıflarını döner.
+ */
+export function resolveGoalMarkerClasses(isPortalUnlocked: boolean): string {
+  return isPortalUnlocked
+    ? 'bg-ok shadow-[0_0_6px_var(--gm-ok)]'
+    : 'bg-brass';
+}
+
+/**
+ * Oyuncu slotuna göre (P1 beyaz, P2 altın sarısı) radar noktası stil sınıflarını döner.
+ */
+export function resolvePlayerMarkerClasses(playerSlot: 1 | 2): string {
+  return playerSlot === 2
+    ? 'absolute top-0 left-0 h-2 w-2 rounded-full bg-warn shadow-sm will-change-transform'
+    : 'absolute top-0 left-0 h-2 w-2 rounded-full bg-fg shadow-sm will-change-transform';
+}
+
+/**
+ * Kalan kristallerin radar yüzdelerini ve benzersiz anahtarlarını üretir.
+ */
+export function calculateCrystalPercentages(
+  remainingCrystals: Array<[number, number]>,
+  boardSize: number,
+): Array<{ left: number; top: number; id: string }> {
+  return remainingCrystals.map(([cx, cz], idx) => ({
+    left: calculateRadarPercentage(cx, boardSize),
+    top: calculateRadarPercentage(cz, boardSize),
+    id: `radar-c-${idx}`,
+  }));
+}
+
+
