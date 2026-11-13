@@ -748,6 +748,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Seviye Seçici Alt Bileşenleri (`LeaderboardAllLevelsTab.tsx`, `LeaderboardLevelTabsGrid.tsx`, `LeaderboardRefreshButton.tsx`):** "Tümü" genel sekmesi, 5'li seviye penceresi butonları gridi ve durum göstergeli yenileme butonu bağımsız modüllere ayrıştırıldı; `selector/index.ts` üzerinden re-export edildi.
 - [x] **Yalın Seviye Seçim Çubuğu Orkestratörü (`LeaderboardLevelSelector.tsx`):** Alt bileşen mimarisine devredilerek `LeaderboardLevelSelector.tsx` 101 satırdan **57 satıra** indirildi.
 
+### Faz 152: Masaüstü Skor Tablosu Liste Kayıtları Ayrıştırması (Tamamlandı)
+- [x] **Skor Listesi Yardımcı Motoru (`leaderboardListUtils.ts`, `leaderboardListUtils.test.mjs`):** Skor süresi renk sınıfı `resolveScoreTimeColorClass`, seviye rozeti görünürlük denetleyicisi `shouldShowLevelBadge`, kayıt zamanı geçerlilik doğrulaması `shouldShowRecordDate`, madalya ve derece erişilebilirlik açıklaması `resolveRankAriaDescription` ve kart erişilebilirlik etiketi `formatRowAriaLabel` saf yardımcıları geliştirildi; 6 yeni birim test ile doğrulandı (toplam 433 istemci testi, 461 monorepo testi).
+- [x] **Modüler Liste Alt Bileşenleri (`LeaderboardEmptyState.tsx`, `LeaderboardRankBadge.tsx`, `LeaderboardRowItem.tsx`):** Boş arama durumu kartı, kupa/madalya ve numara sıra rozeti ile tekil rekor satırı kartı bağımsız modüllere ayrıştırıldı; `list/index.ts` üzerinden re-export edildi.
+- [x] **Yalın ve Erişilebilir Skor Listesi Orkestratörü (`LeaderboardList.tsx`):** `role="list"` ve `role="listitem"` semantik yapıları, sanal boşluklar ve saf yardımcı mimarisi ile `LeaderboardList.tsx` 113 satırdan **44 satıra** indirildi.
+
+
 
 
 
