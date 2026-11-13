@@ -17,6 +17,13 @@ import {
   resolveSceneColors,
   calculateShadowMargin,
 } from '@/utils/sceneConfigUtils';
+import {
+  getSceneContainerClass,
+  getSceneCanvasCameraConfig,
+  getSceneGLConfig,
+  getSceneDprRange,
+  getScenePhysicsGravity,
+} from '@/utils/sceneViewportUtils';
 
 /**
  * Masaüstü ekranında tam ekran çalışan 3B WebGL sahnesi.
@@ -58,7 +65,7 @@ export function MazeScene() {
   const shadowMargin = calculateShadowMargin(activeLevel.boardSize);
 
   return (
-    <div className="fixed inset-0 z-0 h-screen w-screen bg-base transition-colors duration-300">
+    <div className={getSceneContainerClass()}>
       <SceneErrorBoundary key={canvasRevision} onRetry={handleSceneRetry}>
         {isContextLost ? (
           <ContextLostFallback onRetry={handleSceneRetry} />
@@ -66,9 +73,9 @@ export function MazeScene() {
           <Canvas
             key={canvasRevision}
             shadows
-            dpr={[1, 1.5]}
-            gl={{ powerPreference: 'high-performance', antialias: true }}
-            camera={{ position: [0, 14.5, 10.2], fov: 42, near: 0.1, far: 60 }}
+            dpr={getSceneDprRange()}
+            gl={getSceneGLConfig()}
+            camera={getSceneCanvasCameraConfig()}
             onCreated={({ gl }) => attachContextListeners(gl)}
           >
             <color attach="background" args={[sceneBgColor]} />
@@ -81,7 +88,7 @@ export function MazeScene() {
               shadowMargin={shadowMargin}
             />
 
-            <Physics gravity={[0, 0, 0]}>
+            <Physics gravity={getScenePhysicsGravity()}>
               <MazeStage
                 levelData={activeLevel}
                 isGoalUnlocked={isGoalUnlocked}
