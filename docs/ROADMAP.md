@@ -957,9 +957,14 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **DesktopSceneLoadingFallback ve DesktopSceneLoader Sadeleşmesi (`DesktopSceneLoadingFallback.tsx`, `DesktopSceneLoader.tsx`):** CSR dinamik yükleme durumunun spinner, kapsayıcı ve mesaj sunumu bağımsız `DesktopSceneLoadingFallback` bileşeniyle saf orkestrasyon motoruna bağlandı.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/desktopSceneLoaderOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 770'ten **777'ye**, monorepo testleri 825'ten **832'ye** çıkarıldı.
 
-### Faz 202: 3B Labirent Sahnesi Kamera Rig (MazeCameraRig) Orkestrasyon Motoru (Sıradaki)
-- [ ] **3B Kamera Teçhizatı Orkestrasyon Motoru (`mazeCameraRigOrchestrationUtils.ts`, `mazeCameraRigOrchestrationUtils.test.mjs`):** `MazeCameraRig.tsx` bileşeninin dinamik görüş açısı (FOV), takip hedefi, kamera modu sınırlandırmaları ve telemetri durumunu saf motora ayrıştırma.
-- [ ] **MazeCameraRig Bileşeni Sadeleşmesi:** Kamera teçhizat bileşenini saf orkestrasyon motoruna bağlayarak deklaratif sunuma dönüştürme.
+### Faz 202: 3B Labirent Sahnesi Kamera Rig (MazeCameraRig) Orkestrasyon Motoru (Tamamlandı)
+- [x] **3B Kamera Teçhizatı Orkestrasyon Motoru (`mazeCameraRigOrchestrationUtils.ts`, `mazeCameraRigOrchestrationUtils.test.mjs`):** `resolveCameraModeLabel`, `resolveCameraRigEnvironmentState`, `formatCameraRigTelemetry`, `resolveCameraRigStepSummary`, `resolveCameraRigOrchestrationBundle` fonksiyonları saf mimariyle geliştirildi; 8 yeni birim test ile %100 doğrulandı (toplam 785 istemci testi, 49 sunucu testi, 6 shared testi, **840 monorepo testi**).
+- [x] **useMazeCameraRig Kancası ve Kamera Teçhizatı Sadeleşmesi (`apps/client/src/hooks/useMazeCameraRig.ts`):** Sayfa gizliliği, modal kilitleri, kamera modu etiketleri ve interaktiflik mantığı tekil orkestrasyon motoruna devredildi.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/mazeCameraRigOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 777'den **785'e**, monorepo testleri 832'den **840'a** çıkarıldı.
+
+### Faz 203: 3B Labirent Sahne Tabanı ve Izgarası (MazeStageBoardBase) Orkestrasyon Motoru (Sıradaki)
+- [ ] **3B Sahne Tabanı Orkestrasyon Motoru (`mazeStageBoardBaseOrchestrationUtils.ts`, `mazeStageBoardBaseOrchestrationUtils.test.mjs`):** `MazeStageBoardBase.tsx` bileşeninin tahta boyutuna göre zemin kutusu boyutları, ızgara çizgi sayısı, zemin teması renkleri ve telemetri durumunu saf motora ayrıştırma.
+- [ ] **MazeStageBoardBase Bileşeni Sadeleşmesi:** Tahta tabanı bileşenini saf orkestrasyon motoruna bağlayarak deklaratif sunuma dönüştürme.
 - [ ] **Birim Testleri ve Doğrulama:** Yeni birim testleriyle monorepo test kapsamını artırma, tam derleme ve git push.
 
 

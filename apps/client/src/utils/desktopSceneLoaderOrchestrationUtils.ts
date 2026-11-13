@@ -97,3 +97,4 @@ export function resolveDesktopSceneLoaderState(
     telemetrySummary,
   };
 }
+
