@@ -693,6 +693,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Eylem Buton Bileşenleri (`HeaderPairingButton.tsx`, `HeaderSettingsButton.tsx`, `HeaderHelpButton.tsx`):** Telefon eşleştirme/gecikme rozeti butonu, ayarlar çekmecesi butonu ve klavye yardım rehberi ikon butonu bağımsız modüllere ayrıştırıldı.
 - [x] **Yalın Üst Eylem Butonları Orkestratörü (`HeaderActionButtons.tsx`):** Alt bileşen mimarisine geçirilerek `HeaderActionButtons.tsx` 74 satırdan **45 satıra** indirildi.
 
+### Faz 141: Masaüstü HUD Araç Çubuğu Görünüm ve Ses Kontrolleri Ayrıştırması (Tamamlandı)
+- [x] **Görünüm ve Ses Yardımcı Motoru (`viewportAudioUtils.ts`, `viewportAudioUtils.test.mjs`):** Sıfırlama yapılandırması `getViewportResetConfig`, kamera/tema/ses kısayol belirteçleri `getViewportCameraShortcut` / `getViewportThemeShortcut` / `getViewportSoundShortcut`, tema doğrulama/ikon çözümleme `isLightTheme` / `getViewportThemeIconName` ve ses ikonu/stil yapılandırıcısı `getViewportSoundIconConfig` saf yardımcıları geliştirildi; 5 yeni birim test ile doğrulandı (toplam 377 istemci testi, 405 monorepo testi).
+- [x] **Modüler Görünüm ve Ses Buton Bileşenleri (`ViewportResetButton.tsx`, `ViewportCameraButton.tsx`, `ViewportThemeButton.tsx`, `ViewportSoundButton.tsx`):** Topu başa alma (R), kamera modu döngüsü (C), açık/koyu tema anahtarlama (L) ve ses açma/kapatma (M) butonları bağımsız modüllere ayrıştırıldı.
+- [x] **Yalın Görünüm ve Ses Orkestratörü (`ViewportAudioControls.tsx`):** Alt bileşen ve barrel mimarisine geçirilerek `ViewportAudioControls.tsx` 82 satırdan **49 satıra** indirildi.
+
+
 
 
 

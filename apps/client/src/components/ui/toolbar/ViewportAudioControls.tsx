@@ -1,15 +1,12 @@
 'use client';
 
-import {
-  RotateCcw,
-  Camera,
-  Sun,
-  Moon,
-  Volume2,
-  VolumeX,
-} from 'lucide-react';
 import type { ColorScheme } from '@/utils/quickControlsUtils';
-import { IconButton } from '../primitives';
+import {
+  ViewportResetButton,
+  ViewportCameraButton,
+  ViewportThemeButton,
+  ViewportSoundButton,
+} from './viewport';
 
 interface ViewportAudioControlsProps {
   onResetClick: () => void;
@@ -36,47 +33,24 @@ export function ViewportAudioControls({
 }: ViewportAudioControlsProps) {
   return (
     <div role="group" aria-label="Görünüm ve ses" className="flex items-center gap-0.5">
-      <IconButton
-        label="Topu başa al"
-        shortcut="R"
-        onClick={onResetClick}
-      >
-        <RotateCcw className="h-4 w-4" aria-hidden="true" />
-      </IconButton>
+      <ViewportResetButton onResetClick={onResetClick} />
 
-      <IconButton
+      <ViewportCameraButton
         label={cameraLabel}
-        shortcut="C"
-        onClick={onCycleCamera}
-      >
-        <Camera className="h-4 w-4" aria-hidden="true" />
-      </IconButton>
+        onCycleCamera={onCycleCamera}
+      />
 
-      <IconButton
-        label={themeLabel}
-        shortcut="L"
-        pressed={colorScheme === 'light'}
-        onClick={onToggleColorScheme}
-      >
-        {colorScheme === 'light' ? (
-          <Sun className="h-4 w-4" aria-hidden="true" />
-        ) : (
-          <Moon className="h-4 w-4" aria-hidden="true" />
-        )}
-      </IconButton>
+      <ViewportThemeButton
+        colorScheme={colorScheme}
+        themeLabel={themeLabel}
+        onToggleColorScheme={onToggleColorScheme}
+      />
 
-      <IconButton
-        label={soundLabel}
-        shortcut="M"
-        pressed={isSoundMuted}
-        onClick={onToggleSound}
-      >
-        {isSoundMuted ? (
-          <VolumeX className="h-4 w-4 text-danger" aria-hidden="true" />
-        ) : (
-          <Volume2 className="h-4 w-4" aria-hidden="true" />
-        )}
-      </IconButton>
+      <ViewportSoundButton
+        isSoundMuted={isSoundMuted}
+        soundLabel={soundLabel}
+        onToggleSound={onToggleSound}
+      />
     </div>
   );
 }
