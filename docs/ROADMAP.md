@@ -698,6 +698,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Görünüm ve Ses Buton Bileşenleri (`ViewportResetButton.tsx`, `ViewportCameraButton.tsx`, `ViewportThemeButton.tsx`, `ViewportSoundButton.tsx`):** Topu başa alma (R), kamera modu döngüsü (C), açık/koyu tema anahtarlama (L) ve ses açma/kapatma (M) butonları bağımsız modüllere ayrıştırıldı.
 - [x] **Yalın Görünüm ve Ses Orkestratörü (`ViewportAudioControls.tsx`):** Alt bileşen ve barrel mimarisine geçirilerek `ViewportAudioControls.tsx` 82 satırdan **49 satıra** indirildi.
 
+### Faz 142: Masaüstü HUD Araç Çubuğu Editör ve Skor Butonları Ayrıştırması (Tamamlandı)
+- [x] **Araçlar Yardımcı Motoru (`toolsControlsUtils.ts`, `toolsControlsUtils.test.mjs`):** Editör yapılandırması `getEditorButtonConfig`, skor tablosu yapılandırması `getLeaderboardButtonConfig`, erişilebilir buton etiketi `formatToolButtonAriaLabel` ve grup rol etiketi `getToolsGroupAriaLabel` saf yardımcıları geliştirildi; 5 yeni birim test ile doğrulandı (toplam 382 istemci testi, 410 monorepo testi).
+- [x] **Modüler Araç Buton Bileşenleri (`ToolsEditorButton.tsx`, `ToolsLeaderboardButton.tsx`):** Harita editörü açma (E) ve küresel skor tablosu açma (K) butonları bağımsız modüllere ayrıştırıldı.
+- [x] **Yalın Araç Çubuğu Araçlar Orkestratörü (`ToolsControls.tsx`):** Alt bileşen mimarisine geçirilerek `ToolsControls.tsx` 32 satırdan **20 satıra** indirildi.
+
+
 
 
 
