@@ -502,6 +502,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Bağımsız Hızlı Kontroller Kancası (`useQuickControls.ts`):** Kamera modu döngüsü, ses açma/kapama, açık/koyu renk modu ve modal tetikleyicileri tek kancada toplandı.
 - [x] **Modüler Araç Çubuğu Mimarisi (`ViewportAudioControls.tsx`, `ToolsControls.tsx`, `QuickControlsToolbar.tsx`):** Görünüm/ses kontrolleri ile araç kontrolleri bağımsız bileşenlere ayrıştırılarak `QuickControlsToolbar.tsx` 106 satırdan **46 satıra** indirildi.
 
+### Faz 100: Modüler Masaüstü HUD Orkestratörü, Kanca ve Modallar Katmanı Ayrıştırması (Tamamlandı)
+- [x] **Masaüstü HUD Katmanı Yardımcı Motoru (`desktopHudUtils.ts`, `desktopHudUtils.test.mjs`):** `calculateRemainingCrystals`, `resolveIsPortalUnlocked`, `resolveAnyOverlayOpen` ve `resolveLeaderboardInitialLevel` saf yardımcıları geliştirildi; 5 yeni birim test ile doğrulandı (toplam 190 istemci testi, 218 monorepo testi).
+- [x] **Bağımsız Masaüstü HUD Kancası (`useDesktopHUD.ts`):** Bölüm bilgisi, toplanan kristal hesaplaması, overlay açık durumu, oyun saati ve global kısayol bağlamları tek kancada toplandı.
+- [x] **Modüler Modallar Katmanı ve Yalın Orkestratör (`DesktopModalsLayer.tsx`, `DesktopHUD.tsx`):** Editör, Ayarlar, Yardım, Eşleştirme, Skor Tablosu ve Sonuç pencereleri `DesktopModalsLayer` bileşenine taşınarak `DesktopHUD.tsx` 97 satırdan **54 satıra** indirildi.
+
 
 
 
