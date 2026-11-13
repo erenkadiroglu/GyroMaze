@@ -887,9 +887,14 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **useDesktopHeader ve useLevelSelect Kancaları Sadeleşmesi (`apps/client/src/hooks/useDesktopHeader.ts`, `apps/client/src/hooks/useLevelSelect.ts`):** Üst çubuk telemetrisi, portal/süre formatlaması, bağlantı ve eşleşme rozeti, bölüm seçici açılır menü kontrolü ve prosedürel seviye bildirimleri saf orkestrasyon motoruna devredildi.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/desktopHeaderOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 673'ten **680'e**, monorepo testleri 728'den **735'e** çıkarıldı.
 
-### Faz 188: Alt Telemetri ve Radar Görünürlük Orkestrasyon Motoru (Sıradaki)
-- [ ] **Alt Telemetri Orkestrasyon Motoru (`desktopFooterOrchestrationUtils.ts`, `desktopFooterOrchestrationUtils.test.mjs`):** `useDesktopFooter.ts` kancasındaki hız göstergesi (attitude gauge), 2B mini-harita radarı, görünürlük tercihleri, kamera ve aydınlık/karanlık mod geçiş tetikleyicilerini saf motora ayrıştırma.
-- [ ] **useDesktopFooter Kancası Sadeleşmesi:** Kancayı salt durum seçicilerine indirgeme.
+### Faz 188: Alt Telemetri ve Radar Görünürlük Orkestrasyon Motoru (Tamamlandı)
+- [x] **Alt Telemetri Orkestrasyon Motoru (`desktopFooterOrchestrationUtils.ts`, `desktopFooterOrchestrationUtils.test.mjs`):** `resolveDesktopFooterState`, `formatRadarSummary`, `resolveFooterLayoutConfig` fonksiyonları saf mimariyle geliştirildi; 4 yeni birim test ile %100 doğrulandı (toplam 684 istemci testi, 49 sunucu testi, 6 shared testi, **739 monorepo testi**).
+- [x] **useDesktopFooter Kancası ve Alt Panel Sadeleşmesi (`apps/client/src/hooks/useDesktopFooter.ts`, `apps/client/src/components/ui/footer/DesktopFooterControls.tsx`):** Kokpit göstergesi, mini-harita radarı, çok oyunculu/tekil klavye ipucu belirleme ve erişilebilirlik rolleri saf orkestrasyon motoruna bağlandı.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/desktopFooterOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 680'den **684'e**, monorepo testleri 735'ten **739'a** çıkarıldı.
+
+### Faz 189: Hızlı Sahne Kontrolleri (Quick Controls Toolbar) Orkestrasyon Motoru (Sıradaki)
+- [ ] **Hızlı Sahne Kontrolleri Orkestrasyon Motoru (`quickControlsOrchestrationUtils.ts`, `quickControlsOrchestrationUtils.test.mjs`):** `useQuickControls.ts` kancasındaki kamera modu etiketi, aydınlık/karanlık tema durumu, ses kısma/açma etiketi, araç çubuğu ayırıcı ve modal açıcılarını saf motora ayrıştırma.
+- [ ] **useQuickControls Kancası Sadeleşmesi:** Kancayı salt durum seçicilerine indirgeme.
 - [ ] **Birim Testleri ve Doğrulama:** Yeni testlerle kapsamı artırma, derleme ve git push.
 
 

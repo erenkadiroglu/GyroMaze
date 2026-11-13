@@ -1,13 +1,9 @@
 'use client';
 
-import { useGameStore } from '@/store/useGameStore';
+import { useDesktopFooter } from '@/hooks/useDesktopFooter';
 import { AttitudeGauge } from '@/components/ui/AttitudeGauge';
 import { QuickControlsToolbar } from '@/components/ui/toolbar';
 import { FooterKeyboardHints } from './FooterKeyboardHints';
-import {
-  getFooterAriaLabel,
-  getFooterContainerClass,
-} from '@/utils/desktopFooterUtils';
 
 export interface DesktopFooterControlsProps {
   boardSize: number;
@@ -30,18 +26,20 @@ export function DesktopFooterControls({
   isPortalUnlocked,
   onResetClick,
 }: DesktopFooterControlsProps) {
-  const isControllerPaired = useGameStore((s) => s.isControllerPaired);
-  const isSecondControllerPaired = useGameStore(
-    (s) => s.isSecondControllerPaired,
-  );
-  const isMultiplayer = useGameStore((s) => s.isMultiplayer);
-  const showMiniMap = useGameStore((s) => s.showMiniMap);
+  const {
+    isControllerPaired,
+    isSecondControllerPaired,
+    isMultiplayer,
+    showMiniMap,
+    footerContainerClass,
+    footerAriaLabel,
+  } = useDesktopFooter();
 
   return (
     <footer
       role="contentinfo"
-      aria-label={getFooterAriaLabel()}
-      className={getFooterContainerClass()}
+      aria-label={footerAriaLabel}
+      className={footerContainerClass}
     >
       <AttitudeGauge
         boardSize={boardSize}
