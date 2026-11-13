@@ -6,8 +6,7 @@ import {
   BallCollider,
   type RapierRigidBody,
 } from '@react-three/rapier';
-import { BALL_RADIUS } from '../sceneMaterials';
-import { resolveBallSpawnPosition } from '@/utils/stageUtils';
+import { useMazeStagePhysicsBalls } from '@/hooks/useMazeStagePhysicsBalls';
 
 interface MazeStagePhysicsBallsProps {
   ballBodyRef: RefObject<RapierRigidBody | null>;
@@ -31,50 +30,56 @@ export function MazeStagePhysicsBalls({
   isMultiplayer,
   onBallCollision,
 }: MazeStagePhysicsBallsProps) {
-  const p1Spawn = resolveBallSpawnPosition(startPosition);
-  const p2Spawn = resolveBallSpawnPosition(startPosition, [
+  const {
+    p1BallConfig,
+    p2BallConfig,
+    handleP1Collision,
+    handleP2Collision,
+  } = useMazeStagePhysicsBalls({
+    startPosition,
     p2SpawnOffsetX,
     p2SpawnOffsetZ,
-  ]);
+    isMultiplayer,
+    onBallCollision,
+  });
 
   return (
     <>
       {/* 1. Oyuncu Dinamik Fizik Küresi (Y ekseni kilitli -> Sıfır Zıplama!) */}
       <RigidBody
         ref={ballBodyRef}
-        name="ball-p1"
-        type="dynamic"
-        colliders={false}
-        position={p1Spawn.position}
-        enabledTranslations={[true, false, true]}
-        enabledRotations={[false, false, false]}
-        restitution={0.22}
-        friction={0.08}
-        ccd={true}
-        onCollisionEnter={() => onBallCollision(1)}
+        name={p1BallConfig.name}
+        type={p1BallConfig.type}
+        colliders={p1BallConfig.colliders}
+        position={p1BallConfig.position}
+        enabledTranslations={p1BallConfig.enabledTranslations}
+        enabledRotations={p1BallConfig.enabledRotations}
+        restitution={p1BallConfig.restitution}
+        friction={p1BallConfig.friction}
+        ccd={p1BallConfig.ccd}
+        onCollisionEnter={handleP1Collision}
       >
-        <BallCollider args={[BALL_RADIUS]} />
+        <BallCollider args={[p1BallConfig.colliderRadius]} />
       </RigidBody>
 
       {/* Çok Oyunculu Modda 2. Oyuncu Dinamik Fizik Küresi */}
       {isMultiplayer && (
         <RigidBody
           ref={ball2BodyRef}
-          name="ball-p2"
-          type="dynamic"
-          colliders={false}
-          position={p2Spawn.position}
-          enabledTranslations={[true, false, true]}
-          enabledRotations={[false, false, false]}
-          restitution={0.22}
-          friction={0.08}
-          ccd={true}
-          onCollisionEnter={() => onBallCollision(2)}
+          name={p2BallConfig.name}
+          type={p2BallConfig.type}
+          colliders={p2BallConfig.colliders}
+          position={p2BallConfig.position}
+          enabledTranslations={p2BallConfig.enabledTranslations}
+          enabledRotations={p2BallConfig.enabledRotations}
+          restitution={p2BallConfig.restitution}
+          friction={p2BallConfig.friction}
+          ccd={p2BallConfig.ccd}
+          onCollisionEnter={handleP2Collision}
         >
-          <BallCollider args={[BALL_RADIUS]} />
+          <BallCollider args={[p2BallConfig.colliderRadius]} />
         </RigidBody>
       )}
     </>
   );
 }
-

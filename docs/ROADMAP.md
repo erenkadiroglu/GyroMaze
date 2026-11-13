@@ -967,9 +967,14 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **useMazeStageBoardBase Kancası ve MazeStageBoardBase Sadeleşmesi (`apps/client/src/hooks/useMazeStageBoardBase.ts`, `apps/client/src/components/scene/stage/MazeStageBoardBase.tsx`):** Zemin kutusu geometrisi, zemin gölgesi, kılavuz ızgara çizgileri ve dinamik açık/koyu renk paleti tekil orkestrasyon motoruna devredildi.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/mazeStageBoardBaseOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 785'ten **791'e**, monorepo testleri 840'tan **846'ya** çıkarıldı.
 
-### Faz 204: 3B Labirent Sahnesi Fizik Küreleri (MazeStagePhysicsBalls) Orkestrasyon Motoru (Sıradaki)
-- [ ] **3B Fizik Küreleri Orkestrasyon Motoru (`mazeStagePhysicsBallsOrchestrationUtils.ts`, `mazeStagePhysicsBallsOrchestrationUtils.test.mjs`):** `MazeStagePhysicsBalls.tsx` bileşenindeki 1P ve 2P fizik küreleri doğuş pozisyonları, materyal renkleri, çarpışma filtreleri ve telemetri özetini saf motora ayrıştırma.
-- [ ] **MazeStagePhysicsBalls Bileşeni ve useMazeStagePhysicsBalls Kancası:** Fizik küreleri bileşenini deklaratif sunuma kavuşturma.
+### Faz 204: 3B Labirent Sahnesi Fizik Küreleri (MazeStagePhysicsBalls) Orkestrasyon Motoru (Tamamlandı)
+- [x] **3B Fizik Küreleri Orkestrasyon Motoru (`mazeStagePhysicsBallsOrchestrationUtils.ts`, `mazeStagePhysicsBallsOrchestrationUtils.test.mjs`):** `resolvePhysicsBallRigidBodyConfig`, `resolvePhysicsBallsSpawnPair`, `createSafeBallCollisionHandler`, `formatPhysicsBallsTelemetry`, `resolvePhysicsBallsOrchestrationBundle` fonksiyonları saf mimariyle geliştirildi; 10 yeni birim test ile %100 doğrulandı (toplam 801 istemci testi, 49 sunucu testi, 6 shared testi, **856 monorepo testi** - 800+ istemci testi barajı aşıldı).
+- [x] **useMazeStagePhysicsBalls Kancası ve MazeStagePhysicsBalls Sadeleşmesi (`apps/client/src/hooks/useMazeStagePhysicsBalls.ts`, `apps/client/src/components/scene/stage/MazeStagePhysicsBalls.tsx`):** 1P ve 2P zıplamasız (Y-kilitli) Rapier dinamik fizik küreleri, doğuş ofsetleri, sürekli çarpışma algılama (CCD), slot çarpışma dinleyicileri ve telemetri tekil kancaya devredildi.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/mazeStagePhysicsBallsOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 791'den **801'e**, monorepo testleri 846'dan **856'ya** çıkarıldı.
+
+### Faz 205: 3B Labirent Sahnesi Duvarları (MazeStageWalls) Orkestrasyon Motoru (Sıradaki)
+- [ ] **3B Sahne Duvarları Orkestrasyon Motoru (`mazeStageWallsOrchestrationUtils.ts`, `mazeStageWallsOrchestrationUtils.test.mjs`):** Dış sınır duvarları ve iç labirent duvarları demetini, revizyon anahtarlarını, toplam duvar metriklerini ve telemetri durumunu saf motora ayrıştırma.
+- [ ] **MazeStageWalls Bileşeni ve useMazeStageWalls Kancası:** Duvar hiyerarşisini deklaratif ve test edilebilir kancaya bağlama.
 - [ ] **Birim Testleri ve Doğrulama:** Yeni birim testleriyle monorepo test kapsamını artırma, tam derleme ve git push.
 
 
