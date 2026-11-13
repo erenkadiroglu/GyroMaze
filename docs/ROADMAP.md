@@ -837,10 +837,15 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **useGhostReplay Kancası Sadeleşmesi (`apps/client/src/hooks/useGhostReplay.ts`):** 10Hz örnekleme, 600 nokta sınırı, zaman ilerletimi, koordinat yuvarlama ve Three.js mesh transformasyonu saf yardımcı motora devredildi.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/ghostReplayUtils.test.mjs` dahil edilerek test sayısı 574'ten **586'ya**, monorepo testleri **641'e** çıkarıldı.
 
-### Faz 178: 3B Kamera Görüş ve Takip Rig Motoru (Sıradaki)
-- [ ] **Kamera Rig Yardımcı Motoru (`mazeCameraRigUtils.ts`, `mazeCameraRigUtils.test.mjs`):** `useMazeCameraRig.ts` kancasındaki kamera modları ('isometric', 'topdown', 'follow'), dinamik hedefler, mesafe/açı hesaplamaları ve yumuşak sönümlenmiş enterpolasyon (lerp) mantığını saf yardımcı motora ayrıştırma.
-- [ ] **useMazeCameraRig Kancası Sadeleşmesi:** Kancayı salt Three.js `useFrame` kamera konumu atamasına indirgeme.
-- [ ] **Birim Testleri ve Doğrulama:** Yeni testlerle monorepo kapsamını artırma, derleme ve git push.
+### Faz 178: 3B Kamera Görüş ve Takip Rig Motoru (Tamamlandı)
+- [x] **Kamera Rig Yardımcı Motoru (`mazeCameraRigUtils.ts`, `mazeCameraRigUtils.test.mjs`):** `CAMERA_MAX_SAFE_DELTA`, `CAMERA_LERP_SPEED`, `DEFAULT_MAX_TILT_RADIANS`, `isAnyCameraRigModalOpen`, `clampCameraFrameDelta`, `evaluateCameraRigStep`, `applyCameraRigTransform` fonksiyonları saf mimariyle geliştirildi; 12 yeni birim test ile %100 doğrulandı (toplam 598 istemci testi, 49 sunucu testi, 6 shared testi, **653 monorepo testi**).
+- [x] **useMazeCameraRig Kancası Sadeleşmesi (`apps/client/src/hooks/useMazeCameraRig.ts`):** Modal açık olma kontrolleri, güvenli delta kenetleme, eğim kenetleme, kamera modları (isometric, topdown, follow), hedef/bakış hesaplaması, lerp sönümlemesi ve dinamik FOV güncellemesi saf yardımcı motora devredildi.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/mazeCameraRigUtils.test.mjs` dahil edilerek test sayısı 586'dan **598'e**, monorepo testleri **653'e** yükseltildi.
+
+### Faz 179: Bilye Neon Hareket İzi ve Kuyruk Simülasyon Motoru (Sıradaki)
+- [ ] **Hareket İzi Yardımcı Motoru (`motionTrailUtils.ts`, `motionTrailUtils.test.mjs`):** `useMotionTrail.ts` kancasındaki iz noktaları ekleme/temizleme, mesafe eşiği, solma (decay/fade) ömrü, Catmull-Rom eğri enterpolasyonu ve opaklık tampon hesaplamalarını saf motora ayrıştırma.
+- [ ] **useMotionTrail Kancası Sadeleşmesi:** Kancayı salt React/Three.js yaşam döngüsüne indirgeme.
+- [ ] **Birim Testleri ve Doğrulama:** Yeni testlerle kapsamı artırma, derleme ve git push.
 
 
 
