@@ -497,6 +497,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Bağımsız Telemetri RAF Döngüsü Kancası (`useAttitudeTelemetryLoop.ts`):** 60 FPS yapay ufuk disk açısı, 2B mini-harita bilye koordinatları ve 10 Hz metin güncelleme döngüsü `useAttitudeTelemetryLoop` kancasına devredildi.
 - [x] **Modüler Kokpit Telemetri Arayüz Mimarisi (`AttitudeTelemetryColumn.tsx`, `AttitudeGauge.tsx`):** Sayısal eğim, yatış ve hız göstergesi bağımsız `AttitudeTelemetryColumn` bileşeni olarak ayrılarak `AttitudeGauge.tsx` 160 satırdan **74 satıra** indirildi.
 
+### Faz 99: Hızlı Kontroller Araç Çubuğu Ayrıştırması, Toolbar Kancası ve Alt Gruplar (Tamamlandı)
+- [x] **Hızlı Sahne Kontrolleri Yardımcı Motoru (`quickControlsUtils.ts`, `quickControlsUtils.test.mjs`):** `resolveThemeToggleLabel`, `resolveSoundToggleLabel`, `formatCameraControlAriaLabel` ve `resolveNextCameraMode` saf yardımcıları geliştirildi; 5 yeni birim test ile doğrulandı (toplam 185 istemci testi, 213 monorepo testi).
+- [x] **Bağımsız Hızlı Kontroller Kancası (`useQuickControls.ts`):** Kamera modu döngüsü, ses açma/kapama, açık/koyu renk modu ve modal tetikleyicileri tek kancada toplandı.
+- [x] **Modüler Araç Çubuğu Mimarisi (`ViewportAudioControls.tsx`, `ToolsControls.tsx`, `QuickControlsToolbar.tsx`):** Görünüm/ses kontrolleri ile araç kontrolleri bağımsız bileşenlere ayrıştırılarak `QuickControlsToolbar.tsx` 106 satırdan **46 satıra** indirildi.
+
 
 
 
