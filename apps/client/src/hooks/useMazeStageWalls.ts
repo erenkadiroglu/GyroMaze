@@ -33,3 +33,4 @@ export function useMazeStageWalls({
     });
   }, [levelRevisionKey, outerWalls, innerWalls]);
 }
+

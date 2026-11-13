@@ -977,9 +977,14 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **useMazeStageWalls Kancası ve MazeStageWalls Sadeleşmesi (`apps/client/src/hooks/useMazeStageWalls.ts`, `apps/client/src/components/scene/MazeStageWalls.tsx`):** Dış sınır duvarları (`StageOuterWalls`) ve iç labirent duvarları (`StageInnerWalls`) demeti, revizyon anahtarı doğrulaması, toplam duvar adetleri, hacim hesapları ve telemetri tekil kancaya devredildi.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/mazeStageWallsOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 801'den **810'a**, monorepo testleri 856'dan **865'e** çıkarıldı.
 
-### Faz 206: 3B Labirent Toplanabilirleri ve Geçitleri (MazeStageCollectibles) Orkestrasyon Motoru (Sıradaki)
-- [ ] **3B Toplanabilirler ve Geçitler Orkestrasyon Motoru (`mazeStageCollectiblesOrchestrationUtils.ts`, `mazeStageCollectiblesOrchestrationUtils.test.mjs`):** Başlangıç halkası, toplanabilir kristaller listesi (kristal indeksleri, toplanma durumu/oranı, kalan kristal sayısı) ve kilitli/açık hedef portalı durumunu saf motora ayrıştırma.
-- [ ] **MazeStageCollectibles Bileşeni ve useMazeStageCollectibles Kancası:** Toplanabilirler ve portal hiyerarşisini deklaratif ve test edilebilir kancaya bağlama.
+### Faz 206: 3B Labirent Toplanabilirleri ve Geçitleri (MazeStageCollectibles) Orkestrasyon Motoru (Tamamlandı)
+- [x] **3B Toplanabilirler ve Geçitler Orkestrasyon Motoru (`mazeStageCollectiblesOrchestrationUtils.ts`, `mazeStageCollectiblesOrchestrationUtils.test.mjs`):** `normalizeStageVector3`, `resolveCrystalsMetrics`, `resolveGoalPortalDescriptor`, `resolveCrystalRenderItems`, `formatStageCollectiblesTelemetry`, `resolveStageCollectiblesOrchestrationBundle` fonksiyonları saf mimariyle geliştirildi; 10 yeni birim test ile %100 doğrulandı (toplam 820 istemci testi, 49 sunucu testi, 6 shared testi, **875 monorepo testi**).
+- [x] **useMazeStageCollectibles Kancası ve MazeStageCollectibles Sadeleşmesi (`apps/client/src/hooks/useMazeStageCollectibles.ts`, `apps/client/src/components/scene/MazeStageCollectibles.tsx`):** Başlangıç halkası pozisyonu, toplanabilir kristallerin ilerleme metrikleri ve görünürlük durumları, kilitli/açık hedef portalı tanımlayıcısı ve telemetri tekil kancaya devredildi.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/mazeStageCollectiblesOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 810'dan **820'ye**, monorepo testleri 865'ten **875'e** çıkarıldı.
+
+### Faz 207: 3B Labirent Sahnesi Tehlikeleri ve Dinamik Alanları (MazeStageHazards) Orkestrasyon Motoru (Sıradaki)
+- [ ] **3B Sahne Tehlikeleri Orkestrasyon Motoru (`mazeStageHazardsOrchestrationUtils.ts`, `mazeStageHazardsOrchestrationUtils.test.mjs`):** Tuzak delikleri, hızlandırma rampaları, kuantum portalları, lazer kapıları ve kinetik engellerin liste doğrulaması, revizyon anahtarları, toplam tehlike metrikleri ve telemetri özetini saf motora ayrıştırma.
+- [ ] **MazeStageHazards Bileşeni ve useMazeStageHazards Kancası:** Tehlike hiyerarşisini deklaratif ve test edilebilir kancaya bağlama.
 - [ ] **Birim Testleri ve Doğrulama:** Yeni birim testleriyle monorepo test kapsamını artırma, tam derleme ve git push.
 
 

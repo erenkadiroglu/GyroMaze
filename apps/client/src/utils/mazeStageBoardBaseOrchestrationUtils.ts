@@ -74,3 +74,4 @@ export function resolveMazeStageBoardBaseState({
     telemetrySummary,
   };
 }
+

@@ -20,3 +20,4 @@ export function useMazeStageBoardBase({
     return resolveMazeStageBoardBaseState({ boardSize, isLightBoard });
   }, [boardSize, isLightBoard]);
 }
+

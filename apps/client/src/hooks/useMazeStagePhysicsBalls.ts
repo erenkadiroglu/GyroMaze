@@ -56,3 +56,4 @@ export function useMazeStagePhysicsBalls({
     handleP2Collision,
   };
 }
+

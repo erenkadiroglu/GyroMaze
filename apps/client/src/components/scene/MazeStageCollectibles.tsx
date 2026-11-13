@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { CollectibleStartRing } from './collectibles/CollectibleStartRing';
 import { CollectibleCrystals } from './collectibles/CollectibleCrystals';
 import { CollectibleGoalPortal } from './collectibles/CollectibleGoalPortal';
+import { useMazeStageCollectibles } from '@/hooks/useMazeStageCollectibles';
 
 interface MazeStageCollectiblesProps {
   levelRevisionKey: string;
@@ -31,17 +32,32 @@ export function MazeStageCollectibles({
   crystalMeshesRef,
   goalRingRef,
 }: MazeStageCollectiblesProps) {
+  const {
+    safeRevisionKey,
+    startPosition: safeStartPosition,
+    goalPosition: safeGoalPosition,
+    crystals: safeCrystals,
+    collectedCrystals: safeCollectedCrystals,
+  } = useMazeStageCollectibles({
+    levelRevisionKey,
+    startPosition,
+    goalPosition,
+    crystals,
+    collectedCrystals,
+    isGoalUnlocked,
+  });
+
   return (
     <>
-      <CollectibleStartRing startPosition={startPosition} />
+      <CollectibleStartRing startPosition={safeStartPosition} />
       <CollectibleCrystals
-        levelRevisionKey={levelRevisionKey}
-        crystals={crystals}
-        collectedCrystals={collectedCrystals}
+        levelRevisionKey={safeRevisionKey}
+        crystals={safeCrystals}
+        collectedCrystals={safeCollectedCrystals}
         crystalMeshesRef={crystalMeshesRef}
       />
       <CollectibleGoalPortal
-        goalPosition={goalPosition}
+        goalPosition={safeGoalPosition}
         isGoalUnlocked={isGoalUnlocked}
         goalRingRef={goalRingRef}
       />
