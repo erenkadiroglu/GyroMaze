@@ -937,10 +937,15 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **useMobileControllerView Kancası ve MobileControllerView Sadeleşmesi (`apps/client/src/hooks/useMobileControllerView.ts`, `apps/client/src/app/controller/MobileControllerView.tsx`):** Başlık, durum şeritleri, merkez sahne ve alt araçlar olmak üzere 4 ana bölge orkestrasyon kancasına devredilerek bileşen 154 satırdan **39 satıra** indirgendi.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/mobileControllerViewOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 740'tan **747'ye**, monorepo testleri 795'ten **802'ye** çıkarıldı.
 
-### Faz 198: 3B Labirent Sahnesi Görünümü (Scene Viewport & Canvas) Orkestrasyon Motoru (Sıradaki)
-- [ ] **3B Sahne Görünümü Orkestrasyon Motoru (`sceneViewportOrchestrationUtils.ts`, `sceneViewportOrchestrationUtils.test.mjs`):** `SceneViewport.tsx` ve sahne tuvalinin (Canvas) WebGL kurtarma, yeniden boyutlandırma, erişilebilirlik ve sahne konteyneri özelliklerini saf motora ayrıştırma.
-- [ ] **SceneViewport ve Sahne Sarmalayıcılarının Sadeleşmesi:** 3B sahne görünümünü tekil orkestrasyon kancasına bağlayarak sorumluluk ayrımını tamamlama.
-- [ ] **Birim Testleri ve Doğrulama:** Yeni birim testleriyle monorepo test kapsamını daha da ileri taşıma, tam derleme ve git push.
+### Faz 198: 3B Labirent Sahnesi Görünümü (Scene Viewport & Canvas) Orkestrasyon Motoru (Tamamlandı)
+- [x] **3B Sahne Görünümü Orkestrasyon Motoru (`sceneViewportOrchestrationUtils.ts`, `sceneViewportOrchestrationUtils.test.mjs`):** `formatSceneViewportAriaLabel`, `formatSceneViewportTelemetry`, `resolveSceneViewportContainerProps`, `resolveSceneLightingConfig`, `resolveSceneCanvasConfig`, `resolveSceneViewportState`, `resolveSceneStageProps` fonksiyonları saf mimariyle geliştirildi; 8 yeni birim test ile %100 doğrulandı (toplam 755 istemci testi, 49 sunucu testi, 6 shared testi, **810 monorepo testi**).
+- [x] **useSceneViewport Kancası ve MazeScene Sadeleşmesi (`apps/client/src/hooks/useSceneViewport.ts`, `apps/client/src/components/scene/MazeScene.tsx`):** WebGL bağlam kurtarma, sahne olayları, aydınlatma, tuval ve Rapier fizik yapılandırması tekil orkestrasyon kancasına devredilerek bileşen 111 satırdan **55 satıra** indirgendi.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/sceneViewportOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 747'den **755'e**, monorepo testleri 802'den **810'a** çıkarıldı.
+
+### Faz 199: 3B Labirent Sahnesi Işık ve Gölgeleri (SceneLights) Orkestrasyon Motoru (Sıradaki)
+- [ ] **3B Sahne Işıkları Orkestrasyon Motoru (`sceneLightsOrchestrationUtils.ts`, `sceneLightsOrchestrationUtils.test.mjs`):** `SceneLights.tsx` bileşenindeki ortam ışığı şiddeti, yönlü güneş pozisyonu, gölge kamera sınırları, gölge haritası çözünürlüğü ve dolgu ışığı yapılandırmasını saf motora ayrıştırma.
+- [ ] **SceneLights Bileşeni Sadeleşmesi:** Görsel ışık bileşenini saf orkestrasyon motoruna bağlayarak deklaratif sunuma dönüştürme.
+- [ ] **Birim Testleri ve Doğrulama:** Yeni birim testleriyle monorepo test kapsamını artırma, tam derleme ve git push.
 
 
 
