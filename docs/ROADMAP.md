@@ -788,6 +788,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **WebSocket Ağ Geçidi Sadeleşmesi (`gyro.gateway.ts`, `gateway/index.ts`):** `GyroGateway` içindeki ham veri doğrulama mantığı saf motor fonksiyonlarına devredildi; `gateway/index.ts` üzerinden `gatewayValidationUtils` dışa aktarıldı.
 - [x] **Sunucu Test Otomasyonu (`apps/server/package.json`):** Sunucu test script'ine `test/gatewayValidationUtils.test.mjs` dahil edilerek sunucu test sayısı 34'ten 41'e yükseltildi.
 
+### Faz 167: Sunucu HTTP Kontrolcüleri (Health & Leaderboard) ve Modül Konsolidasyonu (Tamamlandı)
+- [x] **HTTP Kontrolcü Yardımcı Motoru (`httpControllerUtils.ts`, `httpControllerUtils.test.mjs`):** Standart sağlık yanıtı üretici `buildHealthResponse`, güvenli sorgu seviye ayrıştırıcı `parseLevelQuery` ve seviye filtreli/filtresiz liderlik tablosu formatlayıcı `formatLeaderboardResponse` saf yardımcıları geliştirildi; 7 yeni birim test ile %100 doğrulandı (toplam 48/49 sunucu testi, 498 istemci testi, 6 shared testi, **552 monorepo testi**).
+- [x] **Modüler Kontrolcü ve Barrel Mimarisi (`controllers/index.ts`, `controllers/health.controller.ts`, `controllers/leaderboard.controller.ts`):** HTTP denetleyicileri bağımsız `controllers/` modülü altına taşındı; `controllers/index.ts` ve kök `src/index.ts` üzerinden merkezi re-export mimarisi kuruldu.
+- [x] **Sunucu Test Kapsamı Artışı (`apps/server/package.json`):** Sunucu testlerine `test/httpControllerUtils.test.mjs` dahil edildi.
+
 
 
 
