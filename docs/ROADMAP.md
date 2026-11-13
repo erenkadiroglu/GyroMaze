@@ -666,15 +666,7 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Eğim Seçici Bileşenleri (`GimbalModeSelector.tsx`, `GimbalSensitivitySelector.tsx`, `GimbalSlotSelector.tsx`):** Jiroskop/Dokunmatik modu seçici, 0.75x..1.35x hassasiyet seçici ve çok oyunculu oyuncu yuvası seçici radyo grupları bağımsız modüllere ayrıştırıldı.
 - [x] **Yalın Eğim Kontrolleri Orkestratörü (`GimbalControlSelectors.tsx`):** Seçici bileşen mimarisine geçirilerek `GimbalControlSelectors.tsx` 144 satırdan **38 satıra** indirildi.
 
-### Faz 134: Mobil Kontrolcü Başlık Eylemleri ve Ağ Rozeti Ayrıştırması (Tamamlandı)
-- [x] **Başlık Eylemleri ve Tema Yardımcı Motoru (`controllerHeaderUtils.ts`, `controllerHeaderUtils.test.mjs`):** Titreşim butonu stil sınıfı `resolveHapticButtonClass` ve tema değiştirme butonu erişilebilir etiketi `resolveThemeButtonLabel` saf yardımcıları geliştirildi; test kapsamı 6 birim teste çıkarıldı (toplam 338 istemci testi, 366 monorepo testi).
-- [x] **Modüler Başlık Eylem Bileşenleri (`ControllerHapticButton.tsx`, `ControllerThemeButton.tsx`, `ControllerRoomButton.tsx`, `ControllerConnectionBadge.tsx`):** Titreşim açma/kapatma butonu, aydınlık/karanlık tema geçiş butonu, oda kodu düzenleme butonu ve canlı RTT gecikme süreli ağ bağlantı rozeti bağımsız modüllere ayrıştırıldı.
-- [x] **Yalın Başlık Eylemleri Orkestratörü (`ControllerHeaderActions.tsx`):** Alt bileşen mimarisine geçirilerek `ControllerHeaderActions.tsx` 133 satırdan **56 satıra** indirildi.
 
-### Faz 135: Ayarlar Modalı Görünüm ve Sahne Atmosferi Ayrıştırması (Tamamlandı)
-- [x] **Görünüm Seçenekleri ve Bilye Kaplama Yardımcı Motoru (`appearanceUtils.ts`, `appearanceUtils.test.mjs`):** Renk şeması seçenekleri `COLOR_SCHEME_OPTIONS`, 3B atmosfer seçenekleri `BOARD_THEME_OPTIONS`, kamera modları `CAMERA_MODE_OPTIONS`, bilye kaplama buton stili `resolveBallSkinButtonClass`, renk önizleme `resolveBallSkinSwatchClass` ve erişilebilir etiket `formatBallSkinAriaLabel` saf yardımcıları geliştirildi; 5 yeni birim test ile doğrulandı (toplam 344 istemci testi, 372 monorepo testi).
-- [x] **Modüler Görünüm ve Sahne Seçici Bileşenleri (`AppearanceColorSchemeSelector.tsx`, `AppearanceBoardThemeSelector.tsx`, `AppearanceCameraModeSelector.tsx`, `AppearanceBallSkinSelector.tsx`):** Gece/Gündüz renk şeması, Zümrüt/Siberpunk/Kızıl Kor/Gün Işığı atmosferi, İzometrik/Üstten/Takip kamera açısı ve Krom/Zümrüt/Plazma/Kızıl bilye kaplama paleti bağımsız alt bileşenlere ayrıştırıldı.
-- [x] **Yalın Görünüm Bölümü Orkestratörü (`SettingsAppearanceSection.tsx`):** Alt bileşen mimarisine geçirilerek `SettingsAppearanceSection.tsx` 126 satırdan **56 satıra** indirildi.
 
 ### Faz 136: Ayarlar Modalı Ses ve Ekran Katmanları Ayrıştırması (Tamamlandı)
 - [x] **Ses ve Katman Yardımcı Motoru (`audioOverlaysUtils.ts`, `audioOverlaysUtils.test.mjs`):** Katman konfigürasyonları `OVERLAY_SWITCH_CONFIGS`, erişilebilir anahtar etiketi `formatOverlayToggleAriaLabel`, katman arama `getOverlaySwitchConfig` ve ses düzeyi metin formatlayıcı `formatVolumeAriaLabel` saf yardımcıları geliştirildi; 5 yeni birim test ile doğrulandı (toplam 350 istemci testi, 378 monorepo testi).
@@ -691,8 +683,10 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Fizik Seçici Bileşenleri (`GravityScaleSelector.tsx`, `TiltResponsivenessSelector.tsx`):** Bilye ivmesi ve eğim tepki hızı Segmented buton grupları bağımsız bileşenlere ayrıştırıldı.
 - [x] **Yalın Fizik Bölümü Orkestratörü (`SettingsPhysicsSection.tsx`):** Alt bileşen mimarisine geçirilerek `SettingsPhysicsSection.tsx` 46 satırdan **28 satıra** indirildi.
 
-
-
+### Faz 139: Masaüstü HUD Üst Durum Göstergeleri Ayrıştırması (Tamamlandı)
+- [x] **HUD Gösterge Yardımcı Motoru (`headerReadoutUtils.ts`, `headerReadoutUtils.test.mjs`):** Portal kilit erişilebilir etiketi `resolvePortalLockAriaLabel`, rekor metni formatlayıcı `formatRecordBadgeText`, çok oyunculu mod bildirim etiketi `resolveMultiplayerBadgeAriaLabel` ve süre konteyneri başlık metni `resolveTimerStatusTitle` saf yardımcıları geliştirildi; 5 yeni birim test ile doğrulandı (toplam 367 istemci testi, 395 monorepo testi).
+- [x] **Modüler Gösterge Bileşenleri (`HeaderCrystalStatus.tsx`, `HeaderTimerStatus.tsx`, `HeaderMultiplayerBadge.tsx`):** Kristal oranı ve portal kilidi, oyun süresi ve bölüm rekoru ile çok oyunculu aktiflik rozeti bağımsız modüllere ayrıştırıldı.
+- [x] **Yalın Üst Durum Orkestratörü (`HeaderStatusReadouts.tsx`):** Alt bileşen mimarisine geçirilerek `HeaderStatusReadouts.tsx` 91 satırdan **56 satıra** indirildi.
 
 
 

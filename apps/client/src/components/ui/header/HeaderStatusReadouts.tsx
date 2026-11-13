@@ -1,7 +1,8 @@
 'use client';
 
-import { Gem, Lock, Unlock, Timer, Trophy, Users } from 'lucide-react';
-import { cx } from '@/components/ui/primitives';
+import { HeaderCrystalStatus } from './readouts/HeaderCrystalStatus';
+import { HeaderTimerStatus } from './readouts/HeaderTimerStatus';
+import { HeaderMultiplayerBadge } from './readouts/HeaderMultiplayerBadge';
 
 export interface HeaderStatusReadoutsProps {
   portalTooltip: string;
@@ -34,58 +35,25 @@ export function HeaderStatusReadouts({
 }: HeaderStatusReadoutsProps) {
   return (
     <>
-      {/* Kristal ve Portal Durumu */}
-      <div
-        className="flex items-center gap-1.5 px-1 text-sm"
-        title={portalTooltip}
-      >
-        <Gem className="h-3.5 w-3.5 text-signal" aria-hidden="true" />
-        <span className="gm-num font-semibold text-fg">{ratioText}</span>
-        {isPortalUnlocked ? (
-          <Unlock className="h-3.5 w-3.5 text-ok" aria-label="Portal açık" />
-        ) : (
-          <Lock className="h-3.5 w-3.5 text-muted" aria-label="Portal kilitli" />
-        )}
-      </div>
+      <HeaderCrystalStatus
+        portalTooltip={portalTooltip}
+        ratioText={ratioText}
+        isPortalUnlocked={isPortalUnlocked}
+      />
 
       <span className="h-4 w-px bg-line" aria-hidden="true" />
 
-      {/* Süre (veya Süreye Karşı geri sayım) */}
-      <div className="flex items-center gap-1.5 px-1 text-sm">
-        {isTimeAttack && (
-          <Timer
-            className={cx('h-3.5 w-3.5', timerColorClass)}
-            aria-label="Geri sayım"
-          />
-        )}
-        <span className={cx('gm-num font-semibold', timerColorClass)}>
-          {visibleTimerText}
-        </span>
-        {currentBestTime !== undefined && !isTimeAttack && (
-          <span
-            className="gm-num hidden items-center gap-1 text-xs text-brass sm:inline-flex"
-            title="Bölüm rekorun"
-          >
-            <Trophy className="h-3 w-3" aria-hidden="true" />
-            {currentBestTime.toFixed(1)}
-          </span>
-        )}
-      </div>
+      <HeaderTimerStatus
+        isTimeAttack={isTimeAttack}
+        timerColorClass={timerColorClass}
+        visibleTimerText={visibleTimerText}
+        currentBestTime={currentBestTime}
+      />
 
-      {/* Çok Oyunculu Rozeti */}
-      {isMultiplayer && (
-        <>
-          <span className="h-4 w-px bg-line" aria-hidden="true" />
-          <span
-            className="inline-flex items-center gap-1 rounded-lg bg-brass/15 px-2 py-0.5 text-xs font-medium text-brass"
-            title={multiplayerTooltip}
-          >
-            <Users className="h-3 w-3" aria-hidden="true" />
-            2 Oyuncu
-          </span>
-        </>
-      )}
+      <HeaderMultiplayerBadge
+        isMultiplayer={isMultiplayer}
+        multiplayerTooltip={multiplayerTooltip}
+      />
     </>
   );
 }
-
