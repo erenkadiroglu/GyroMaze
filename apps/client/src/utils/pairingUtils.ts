@@ -84,3 +84,53 @@ export function buildControllerUrl(
   return `${base}?${params.toString()}`;
 }
 
+/**
+ * Belirtilen kontrolcü yuvasının (1P veya 2P) bağlantı durum metnini döner.
+ */
+export function resolvePairingSlotStatus(
+  slot: 1 | 2,
+  isControllerPaired: boolean,
+  isSecondControllerPaired: boolean,
+): string {
+  const isPaired = slot === 1 ? isControllerPaired : isSecondControllerPaired;
+  return isPaired ? 'Bağlı' : 'Bekliyor';
+}
+
+/**
+ * Eşleştirme penceresindeki oyuncu radyo düğmesinin tam metin etiketini formatlar.
+ */
+export function formatPairingSlotLabel(
+  slot: 1 | 2,
+  isControllerPaired: boolean,
+  isSecondControllerPaired: boolean,
+): string {
+  const status = resolvePairingSlotStatus(
+    slot,
+    isControllerPaired,
+    isSecondControllerPaired,
+  );
+  return `${slot}. Oyuncu QR (${status})`;
+}
+
+/**
+ * Pano kopyalama butonlarının durumuna göre metin etiketini belirler.
+ */
+export function resolveCopyButtonLabel(
+  copied: boolean,
+  defaultLabel: string,
+  copiedLabel: string,
+): string {
+  return copied ? copiedLabel : defaultLabel;
+}
+
+/**
+ * 6 haneli oda kodunu görsel olarak biçimlendirir (yoksa yer tutucu döner).
+ */
+export function formatRoomCodeDisplay(roomId?: string | null): string {
+  if (!roomId || !roomId.trim()) {
+    return '......';
+  }
+  return roomId.trim().toUpperCase();
+}
+
+

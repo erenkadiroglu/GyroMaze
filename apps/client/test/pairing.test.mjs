@@ -3,6 +3,10 @@ import assert from 'node:assert/strict';
 import {
   resolveControllerBaseUrl,
   buildControllerUrl,
+  resolvePairingSlotStatus,
+  formatPairingSlotLabel,
+  resolveCopyButtonLabel,
+  formatRoomCodeDisplay,
 } from '../src/utils/pairingUtils.ts';
 
 describe('pairingUtils — Kontrolcü URL ve Eşleşme Yönlendirme Motoru', () => {
@@ -69,6 +73,39 @@ describe('pairingUtils — Kontrolcü URL ve Eşleşme Yönlendirme Motoru', () 
       buildControllerUrl('http://192.168.1.50:3000', '84k9x2', 2),
       'http://192.168.1.50:3000/controller?room=84K9X2&slot=2',
     );
+  });
+
+  it('yuva bağlantı durumu, etiket formatı, pano kopyalama ve oda kodu görünümünü doğrular', () => {
+    // resolvePairingSlotStatus
+    assert.equal(resolvePairingSlotStatus(1, true, false), 'Bağlı');
+    assert.equal(resolvePairingSlotStatus(1, false, false), 'Bekliyor');
+    assert.equal(resolvePairingSlotStatus(2, false, true), 'Bağlı');
+    assert.equal(resolvePairingSlotStatus(2, true, false), 'Bekliyor');
+
+    // formatPairingSlotLabel
+    assert.equal(
+      formatPairingSlotLabel(1, true, false),
+      '1. Oyuncu QR (Bağlı)',
+    );
+    assert.equal(
+      formatPairingSlotLabel(2, false, false),
+      '2. Oyuncu QR (Bekliyor)',
+    );
+
+    // resolveCopyButtonLabel
+    assert.equal(
+      resolveCopyButtonLabel(true, 'Kopyala', 'Kopyalandı'),
+      'Kopyalandı',
+    );
+    assert.equal(
+      resolveCopyButtonLabel(false, 'Kopyala', 'Kopyalandı'),
+      'Kopyala',
+    );
+
+    // formatRoomCodeDisplay
+    assert.equal(formatRoomCodeDisplay('7k9xj2'), '7K9XJ2');
+    assert.equal(formatRoomCodeDisplay(''), '......');
+    assert.equal(formatRoomCodeDisplay(null), '......');
   });
 });
 

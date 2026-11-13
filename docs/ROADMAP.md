@@ -473,6 +473,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Bağımsız Oyun Sonucu Kancası (`useGameOutcome.ts`):** Zafer konfeti eşiği, kişisel rekor (PB), yıldız hesabı, oyuncu adı yerel saklama ve liderlik tablosu puan gönderim yaşam döngüsü bağımsız `useGameOutcome` kancasına devredildi.
 - [x] **Modüler Sonuç Modalları Mimarisi (`VictoryModal.tsx`, `DefeatModal.tsx`, `GameOutcomeModals.tsx`):** Zafer ve süre doldu modalları bağımsız alt bileşenlere ayrılarak `GameOutcomeModals.tsx` 271 satırdan **63 satıra** indirildi.
 
+### Faz 94: Mobil Eşleştirme Modali, Pano Kancası ve Yuva Durum Motoru (Tamamlandı)
+- [x] **Eşleşme Yuvası ve Pano Yardımcı Motoru (`pairingUtils.ts`, `pairing.test.mjs`):** `resolvePairingSlotStatus`, `formatPairingSlotLabel`, `resolveCopyButtonLabel` ve `formatRoomCodeDisplay` saf yardımcıları geliştirildi; 1 yeni birim test ile doğrulandı (toplam 176 istemci testi, 204 monorepo testi).
+- [x] **Bağımsız Eşleştirme Modali Kancası (`usePairingModal.ts`):** Pano kopyalama zamanlayıcıları, tarayıcı adresi algılama, QR kod URL çözümü ve klavye moduna geçiş kancaya taşındı.
+- [x] **Modüler Eşleştirme Arayüz Mimarisi (`PairingSlotSelector.tsx`, `PairingQRCodeCard.tsx`, `PairingModal.tsx`):** 1P/2P radyo grubu yuva seçici ve QR kod / oda kodu kartı bağımsız alt bileşenlere ayrılarak `PairingModal.tsx` 242 satırdan **88 satıra** indirildi.
+
+
 
 
 
