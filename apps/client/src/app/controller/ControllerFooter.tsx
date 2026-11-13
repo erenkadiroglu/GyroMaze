@@ -1,9 +1,10 @@
 'use client';
 
+import { useControllerFooter } from '@/hooks/useControllerFooter';
 import { RecalibrateButton } from './footer/RecalibrateButton';
 import { ResetBallButton } from './footer/ResetBallButton';
 
-interface ControllerFooterProps {
+export interface ControllerFooterProps {
   showGimbalSurface: boolean;
   isControllerPaired: boolean;
   isSocketConnected: boolean;
@@ -15,19 +16,22 @@ interface ControllerFooterProps {
  * Mobil kontrolcü alt araç çubuğu: sol tarafta merkez kalibrasyon butonu,
  * sağ tarafta bilye sıfırlama butonu.
  */
-export function ControllerFooter({
-  showGimbalSurface,
-  isControllerPaired,
-  isSocketConnected,
-  onRecalibrate,
-  onResetBall,
-}: ControllerFooterProps) {
-  if (!showGimbalSurface) {
-    return <div className="h-2" aria-hidden="true" />;
+export function ControllerFooter(props: ControllerFooterProps) {
+  const {
+    containerProps,
+    isVisible,
+    isControllerPaired,
+    isSocketConnected,
+    onRecalibrate,
+    onResetBall,
+  } = useControllerFooter(props);
+
+  if (!isVisible) {
+    return <div {...containerProps} />;
   }
 
   return (
-    <footer className="grid grid-cols-2 gap-2.5">
+    <footer {...containerProps}>
       <RecalibrateButton onRecalibrate={onRecalibrate} />
 
       <ResetBallButton

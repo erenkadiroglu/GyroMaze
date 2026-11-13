@@ -927,10 +927,15 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **useControllerCenterStage Kancası ve ControllerCenterStage Sadeleşmesi (`apps/client/src/hooks/useControllerCenterStage.ts`, `apps/client/src/app/controller/ControllerCenterStage.tsx`):** 3 aşama modunun (`room`, `sensor`, `gimbal`) alt kart prop gruplamaları (Oda kartı, Sensör izin kartı, Gimbal pad) kancaya taşınarak bileşen 128 satırdan 57 satıra indirgendi.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/controllerCenterStageOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 728'den **735'e**, monorepo testleri 783'ten **790'a** çıkarıldı.
 
-### Faz 196: Mobil Kontrolcü Alt Eylemler (ControllerFooter) Orkestrasyon Motoru (Sıradaki)
-- [ ] **Mobil Kontrolcü Alt Eylemler Orkestrasyon Motoru (`controllerFooterOrchestrationUtils.ts`, `controllerFooterOrchestrationUtils.test.mjs`):** `ControllerFooter.tsx` bileşenindeki gimbal yüzeyi görünürlük kontrolü, merkez kalibrasyon butonu eylemi, bilye sıfırlama (ResetBall) butonu durum/erişilebilirlik kuralları ve semantik footer landmark özniteliklerini saf motora ayrıştırma.
-- [ ] **useControllerFooter Kancası ve ControllerFooter Sadeleşmesi:** Alt araç çubuğu durumunu tekil kancaya bağlayarak sunum katmanına indirgeme.
-- [ ] **Birim Testleri ve Doğrulama:** Yeni birim testleriyle monorepo test barajını artırma, tam derleme ve git push.
+### Faz 196: Mobil Kontrolcü Alt Eylemler (ControllerFooter) Orkestrasyon Motoru (Tamamlandı)
+- [x] **Mobil Kontrolcü Alt Eylemler Orkestrasyon Motoru (`controllerFooterOrchestrationUtils.ts`, `controllerFooterOrchestrationUtils.test.mjs`):** `getControllerFooterClassName`, `getControllerFooterSpacerClassName`, `formatControllerFooterTelemetry`, `resolveControllerFooterContainerProps`, `resolveControllerFooterState` fonksiyonları saf mimariyle geliştirildi; 5 yeni birim test ile %100 doğrulandı (toplam 740 istemci testi, 49 sunucu testi, 6 shared testi, **795 monorepo testi**).
+- [x] **useControllerFooter Kancası ve ControllerFooter Sadeleşmesi (`apps/client/src/hooks/useControllerFooter.ts`, `apps/client/src/app/controller/ControllerFooter.tsx`):** Gimbal yüzeyi görünürlük denetimi, kalibrasyon butonu ve bilye sıfırlama (topu başa al) butonunun eşleşme kilit kuralları saf orkestrasyon motoruna devredildi.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/controllerFooterOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 735'ten **740'a**, monorepo testleri 790'dan **795'e** çıkarıldı.
+
+### Faz 197: Mobil Kontrolcü Ana Görünüm (MobileControllerView) Orkestrasyon Motoru (Sıradaki)
+- [ ] **Mobil Kontrolcü Ana Görünüm Orkestrasyon Motoru (`mobileControllerViewOrchestrationUtils.ts`, `mobileControllerViewOrchestrationUtils.test.mjs`):** `MobileControllerView.tsx` bileşenindeki 4 ana bölgenin (Başlık, Durum Şeritleri, Merkez Sahne, Alt Araçlar) prop paketleme kurallarını, semantik main kapsayıcı özniteliklerini ve tam ekran düzenini saf motora ayrıştırma.
+- [ ] **MobileControllerView Bileşeni Sadeleşmesi:** Görünüm bileşenini tekil orkestrasyon kancasına bağlayarak 154 satırdan ~50 satıra indirgeme.
+- [ ] **Birim Testleri ve Doğrulama:** Yeni birim testleriyle monorepo genelinde **800+ test barajını aşma**, tam derleme ve git push.
 
 
 
