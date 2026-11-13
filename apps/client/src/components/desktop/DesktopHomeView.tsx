@@ -1,37 +1,19 @@
 'use client';
 
-import { useAppPreferences } from '@/hooks/useAppPreferences';
-import { useSocket } from '@/hooks/useSocket';
-import { useKeyboardFallback } from '@/hooks/useKeyboardFallback';
-import { useGameStore } from '@/store/useGameStore';
+import { useDesktopHomeView } from '@/hooks/useDesktopHomeView';
 import { DesktopHUD } from '@/components/ui';
-import {
-  getDesktopHomeMainClassName,
-  getDesktopSocketRoleConfig,
-  formatDesktopStageAriaLabel,
-} from '@/utils/desktopHomeViewUtils';
 import { DesktopSceneLoader } from './DesktopSceneLoader';
 
 /**
  * GyroMaze Masaüstü Ana Ekran Görünüm Bileşeni.
- * Kalıcı tercihleri yükler, ev sahibi (host) Socket.io odasını başlatır,
- * klavye yedek kontrollerini dinler ve 3B sahne ile HUD katmanını semantik olarak sunar.
+ * Yaşam döngüsü tercihlerini, Socket.io ev sahibi odasını ve klavye kontrollerini
+ * useDesktopHomeView kancası üzerinden koordine ederek 3B sahne ile HUD katmanını sunar.
  */
 export function DesktopHomeView() {
-  useAppPreferences();
-  useSocket(getDesktopSocketRoleConfig());
-  useKeyboardFallback();
-
-  const level = useGameStore((s) => s.level);
-  const mainClass = getDesktopHomeMainClassName();
-  const ariaLabel = formatDesktopStageAriaLabel(level);
+  const { containerProps } = useDesktopHomeView();
 
   return (
-    <main
-      className={mainClass}
-      role="main"
-      aria-label={ariaLabel}
-    >
+    <main {...containerProps}>
       <DesktopSceneLoader />
       <DesktopHUD />
     </main>

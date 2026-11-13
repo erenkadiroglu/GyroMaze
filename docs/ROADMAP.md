@@ -902,9 +902,14 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **useDesktopModals Kancası ve DesktopModalsLayer Sadeleşmesi (`apps/client/src/hooks/useDesktopModals.ts`, `apps/client/src/components/ui/hud/DesktopModalsLayer.tsx`):** Masaüstü sahnesi üzerindeki 6 modal (eşleşme, skor tablosu, harita editörü, ayarlar, yardım/kısayollar, oyun sonu) öncelik sırası, backdrop kilit kuralları, grup bayrakları ve semantik container öznitelikleri saf motora devredildi.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/desktopModalsOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 689'dan **699'a**, monorepo testleri 744'ten **754'e** çıkarıldı.
 
-### Faz 191: Masaüstü Ana Sayfa Görünümü (DesktopHomeView) Orkestrasyon Motoru (Sıradaki)
-- [ ] **Masaüstü Ana Sayfa Orkestrasyon Motoru (`desktopHomeOrchestrationUtils.ts`, `desktopHomeOrchestrationUtils.test.mjs`):** `DesktopHomeView.tsx` bileşenindeki yaşam döngüsü tercihleri, soket ev sahibi yapılandırması, klavye yedek kontrol bağlamı ve semantik sahne kapsayıcı rollerini saf motora ayrıştırma.
-- [ ] **useDesktopHomeView Kancası ve DesktopHomeView Bileşeni Sadeleşmesi:** Görünüm bileşenini tekil orkestrasyon kancasına bağlayarak saf bir sunum katmanına indirgeme.
+### Faz 191: Masaüstü Ana Sayfa Görünümü (DesktopHomeView) Orkestrasyon Motoru (Tamamlandı)
+- [x] **Masaüstü Ana Sayfa Orkestrasyon Motoru (`desktopHomeOrchestrationUtils.ts`, `desktopHomeOrchestrationUtils.test.mjs`):** `resolveActiveLevelDescriptor`, `formatDesktopStageAriaLabel`, `formatHomeTelemetrySummary`, `resolveDesktopHomeContainerProps`, `resolveDesktopHomeViewState` fonksiyonları saf mimariyle geliştirildi; 9 yeni birim test ile %100 doğrulandı (toplam 708 istemci testi, 49 sunucu testi, 6 shared testi, **763 monorepo testi**).
+- [x] **useDesktopHomeView Kancası ve DesktopHomeView Bileşeni Sadeleşmesi (`apps/client/src/hooks/useDesktopHomeView.ts`, `apps/client/src/components/desktop/DesktopHomeView.tsx`):** Yaşam döngüsü tercihleri, ev sahibi soket konfigürasyonu, klavye yönlendirme desteği ve semantik kapsayıcı öznitelikleri saf orkestrasyon motoruna devredildi.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/desktopHomeOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 699'dan **708'e**, monorepo testleri 754'ten **763'e** çıkarıldı.
+
+### Faz 192: Masaüstü Sahne Üstü Bildirim ve Duraklatma Katmanı (DesktopHUDOverlays) Orkestrasyon Motoru (Sıradaki)
+- [ ] **Sahne Üstü Bildirim ve Duraklatma Orkestrasyon Motoru (`desktopOverlaysOrchestrationUtils.ts`, `desktopOverlaysOrchestrationUtils.test.mjs`):** `DesktopHUDOverlays.tsx`, `PauseRecoveryBar.tsx` ve `HudNotificationToast.tsx` bileşenlerindeki duraklatma çubuğu görünürlüğü, eşleştirme açma eylemi, oyuna devam etme işleyicisi ve bildirim kartı görünürlük/otomatik sönme mantıklarını saf motora ayrıştırma.
+- [ ] **useDesktopHUDOverlays Kancası ve DesktopHUDOverlays Sadeleşmesi:** Bildirim ve kurtarma çubuğu durumunu tekil kancaya bağlayarak sunum katmanına indirgeme.
 - [ ] **Birim Testleri ve Doğrulama:** Yeni birim testleriyle monorepo test barajını artırma, tam derleme ve git push.
 
 
