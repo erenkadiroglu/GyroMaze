@@ -827,6 +827,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **useBallInteractions Kancası Sadeleşmesi (`apps/client/src/hooks/useBallInteractions.ts`):** Inline etkileşim, süre kontrolü ve çarpışma dallanmaları saf yardımcı motor fonksiyonlarına devredildi.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/ballInteractionUtils.test.mjs` dahil edilerek test sayısı 543'ten **549'a** çıkarıldı.
 
+### Faz 175: Masaüstü Klavye Sanal Eğim ve Çok Oyunculu Yönlendirme Motoru (Tamamlandı)
+- [x] **Klavye Sanal Eğim Motoru (`keyboardFallbackUtils.ts`, `keyboardFallbackUtils.test.mjs`):** `DEFAULT_KEYBOARD_TILT_DEGREES`, `MOVEMENT_KEY_CODES`, `isKeyboardFallbackBlocked`, `shouldIgnoreKeyboardEvent`, `isMovementKey`, `shouldPreventDefaultMovementKey`, `calculateSinglePlayerKeyboardTilt`, `calculateMultiplayerKeyboardTilt` saf yardımcı fonksiyonları geliştirildi; 6 yeni birim test ile %100 doğrulandı (toplam 555 istemci testi, 49 sunucu testi, 6 shared testi, **610 monorepo testi**).
+- [x] **useKeyboardFallback Kancası Sadeleşmesi (`apps/client/src/hooks/useKeyboardFallback.ts`):** Inline engelleme koşulları, girdi alanı filtrelemesi ve çok oyunculu tuş dağılımı saf yardımcı motora devredildi.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/keyboardFallbackUtils.test.mjs` dahil edilerek test sayısı 549'dan **555'e** çıkarıldı.
+
 
 
 

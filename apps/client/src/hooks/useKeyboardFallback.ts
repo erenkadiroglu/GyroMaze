@@ -6,6 +6,14 @@ import {
   transientGyro,
   transientGyroP2,
 } from '@/store/useGameStore';
+import {
+  isKeyboardFallbackBlocked,
+  shouldIgnoreKeyboardEvent,
+  isMovementKey,
+  shouldPreventDefaultMovementKey,
+  calculateSinglePlayerKeyboardTilt,
+  calculateMultiplayerKeyboardTilt,
+} from '@/utils/keyboardFallbackUtils';
 
 /**
  * Mobil cihaz bağlı olmadığında masaüstünde WASD veya Yön Tuşları ile
@@ -24,27 +32,28 @@ export function useKeyboardFallback(): void {
   const isEditorOpen = useGameStore((s) => s.isEditorOpen);
   const isLeaderboardOpen = useGameStore((s) => s.isLeaderboardOpen);
 
-  const isBlocked =
-    isPairingModalOpen ||
-    isSettingsOpen ||
-    isEditorOpen ||
-    isLeaderboardOpen ||
-    gameStatus !== 'playing';
+  const isBlocked = isKeyboardFallbackBlocked(
+    isPairingModalOpen,
+    isSettingsOpen,
+    isEditorOpen,
+    isLeaderboardOpen,
+    gameStatus,
+  );
 
   useEffect(() => {
     const pressedKeys = new Set<string>();
-    const TILT_DEGREES = 20;
 
     const resetKeyboardAxes = () => {
+      const now = Date.now();
       if (!isControllerPaired) {
         transientGyro.beta = 0;
         transientGyro.gamma = 0;
-        transientGyro.timestamp = Date.now();
+        transientGyro.timestamp = now;
       }
       if (!isSecondControllerPaired) {
         transientGyroP2.beta = 0;
         transientGyroP2.gamma = 0;
-        transientGyroP2.timestamp = Date.now();
+        transientGyroP2.timestamp = now;
       }
     };
 
@@ -54,83 +63,49 @@ export function useKeyboardFallback(): void {
     }
 
     const updateFromKeys = () => {
+      const now = Date.now();
       if (!isMultiplayer) {
         if (isControllerPaired) return;
-        let beta = 0;
-        let gamma = 0;
-
-        if (pressedKeys.has('KeyW') || pressedKeys.has('ArrowUp')) {
-          beta -= TILT_DEGREES;
-        }
-        if (pressedKeys.has('KeyS') || pressedKeys.has('ArrowDown')) {
-          beta += TILT_DEGREES;
-        }
-        if (pressedKeys.has('KeyA') || pressedKeys.has('ArrowLeft')) {
-          gamma -= TILT_DEGREES;
-        }
-        if (pressedKeys.has('KeyD') || pressedKeys.has('ArrowRight')) {
-          gamma += TILT_DEGREES;
-        }
-
+        const { beta, gamma } = calculateSinglePlayerKeyboardTilt(pressedKeys);
         transientGyro.beta = beta;
         transientGyro.gamma = gamma;
-        transientGyro.timestamp = Date.now();
+        transientGyro.timestamp = now;
         return;
       }
 
-      // Çok Oyunculu Mod: 1. Telefon bağlı değilse WASD -> Oyuncu 1
+      const { p1, p2 } = calculateMultiplayerKeyboardTilt(
+        pressedKeys,
+        isControllerPaired,
+        isSecondControllerPaired,
+      );
+
       if (!isControllerPaired) {
-        let b1 = 0;
-        let g1 = 0;
-        if (pressedKeys.has('KeyW')) b1 -= TILT_DEGREES;
-        if (pressedKeys.has('KeyS')) b1 += TILT_DEGREES;
-        if (pressedKeys.has('KeyA')) g1 -= TILT_DEGREES;
-        if (pressedKeys.has('KeyD')) g1 += TILT_DEGREES;
-        transientGyro.beta = b1;
-        transientGyro.gamma = g1;
-        transientGyro.timestamp = Date.now();
+        transientGyro.beta = p1.beta;
+        transientGyro.gamma = p1.gamma;
+        transientGyro.timestamp = now;
       }
 
-      // Çok Oyunculu Mod: 2. Telefon bağlı değilse Yön Tuşları -> Oyuncu 2
       if (!isSecondControllerPaired) {
-        let b2 = 0;
-        let g2 = 0;
-        if (pressedKeys.has('ArrowUp')) b2 -= TILT_DEGREES;
-        if (pressedKeys.has('ArrowDown')) b2 += TILT_DEGREES;
-        if (pressedKeys.has('ArrowLeft')) g2 -= TILT_DEGREES;
-        if (pressedKeys.has('ArrowRight')) g2 += TILT_DEGREES;
-        transientGyroP2.beta = b2;
-        transientGyroP2.gamma = g2;
-        transientGyroP2.timestamp = Date.now();
+        transientGyroP2.beta = p2.beta;
+        transientGyroP2.gamma = p2.gamma;
+        transientGyroP2.timestamp = now;
       }
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
-      const target = e.target as HTMLElement | null;
-      const tag = target?.tagName;
       if (
-        tag === 'INPUT' ||
-        tag === 'TEXTAREA' ||
-        tag === 'SELECT' ||
-        target?.isContentEditable
+        shouldIgnoreKeyboardEvent({
+          ctrlKey: e.ctrlKey,
+          metaKey: e.metaKey,
+          altKey: e.altKey,
+          target: e.target as HTMLElement | null,
+        })
       ) {
         return;
       }
 
-      if (
-        [
-          'KeyW',
-          'KeyA',
-          'KeyS',
-          'KeyD',
-          'ArrowUp',
-          'ArrowDown',
-          'ArrowLeft',
-          'ArrowRight',
-        ].includes(e.code)
-      ) {
-        if (e.code.startsWith('Arrow')) {
+      if (isMovementKey(e.code)) {
+        if (shouldPreventDefaultMovementKey(e.code)) {
           e.preventDefault();
         }
         if (pressedKeys.has(e.code)) return;
