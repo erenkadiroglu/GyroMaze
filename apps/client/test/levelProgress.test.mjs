@@ -5,6 +5,10 @@ import {
   calculateCampaignProgress,
   formatLevelStarBadges,
   STANDARD_LEVEL_THRESHOLDS,
+  formatShortLevelTag,
+  cleanLevelTitle,
+  calculateNextProceduralLevel,
+  resolveLevelItemAriaLabel,
 } from '../src/utils/levelProgressUtils.ts';
 
 describe('levelProgressUtils — Bölüm İlerleme, Yıldız ve Seviye Başarı Motoru', () => {
@@ -75,5 +79,40 @@ describe('levelProgressUtils — Bölüm İlerleme, Yıldız ve Seviye Başarı 
     assert.equal(formatLevelStarBadges(-1), '☆☆☆');
     assert.equal(formatLevelStarBadges(5), '★★★');
   });
+
+  it('formatShortLevelTag, cleanLevelTitle, calculateNextProceduralLevel ve resolveLevelItemAriaLabel kurallarını uygular', () => {
+    // 1. formatShortLevelTag
+    assert.equal(formatShortLevelTag(99, 99), 'Özel');
+    assert.equal(formatShortLevelTag(1, 1), 'Bölüm 01');
+    assert.equal(formatShortLevelTag(5, 5), 'Bölüm 05');
+    assert.equal(formatShortLevelTag(12, 12), 'Bölüm 12');
+
+    // 2. cleanLevelTitle
+    assert.equal(cleanLevelTitle('Bölüm 01 — Başlangıç Koridoru'), 'Başlangıç Koridoru');
+    assert.equal(cleanLevelTitle('Bölüm 2 - Lazer Labirenti'), 'Lazer Labirenti');
+    assert.equal(cleanLevelTitle('Özel Labirent'), 'Özel Labirent');
+    assert.equal(cleanLevelTitle(undefined), '');
+
+    // 3. calculateNextProceduralLevel
+    assert.equal(calculateNextProceduralLevel(1), 6);
+    assert.equal(calculateNextProceduralLevel(5), 6);
+    assert.equal(calculateNextProceduralLevel(6), 7);
+    assert.equal(calculateNextProceduralLevel(10), 11);
+    assert.equal(calculateNextProceduralLevel(99), 6);
+
+    // 4. resolveLevelItemAriaLabel
+    const completedItem = { levelId: 2, completed: true, stars: 3, bestTime: 14.2 };
+    assert.equal(
+      resolveLevelItemAriaLabel(2, completedItem),
+      'Bölüm 02: 3 yıldız, en iyi 14.2 saniye',
+    );
+
+    const unplayedItem = { levelId: 3, completed: false, stars: 0 };
+    assert.equal(
+      resolveLevelItemAriaLabel(3, unplayedItem),
+      'Bölüm 03: oynanmadı',
+    );
+  });
 });
+
 

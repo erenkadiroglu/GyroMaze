@@ -463,6 +463,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Bağımsız Liderlik Tablosu Senkronizasyon Kancası (`useLeaderboardSync.ts`):** REST API veri çekme, bölüm sekmesi değiştirme, oyuncu arama filtresi ve yenileme durumu `useLeaderboardSync` kancasına ayrıştırıldı.
 - [x] **Modüler Liderlik Bileşen Mimarisi (`LeaderboardLevelSelector.tsx`, `LeaderboardSearchInput.tsx`, `LeaderboardList.tsx`, `LeaderboardModal.tsx`):** Bölüm seçici sekmeleri, arama kutusu ve podyum madalyalı skor listesi bağımsız alt bileşenlere ayrılarak `LeaderboardModal.tsx` 310 satırdan **75 satıra** indirildi.
 
+### Faz 92: Modüler Bölüm Seçici, Popover Kancası ve İlerleme Görsel Motoru (Tamamlandı)
+- [x] **Liderlik/Bölüm İlerleme ve Etiket Motoru (`levelProgressUtils.ts`, `levelProgress.test.mjs`):** `formatShortLevelTag`, `cleanLevelTitle`, `calculateNextProceduralLevel` ve `resolveLevelItemAriaLabel` saf yardımcıları geliştirildi; 1 yeni birim test ile doğrulandı (toplam 174 istemci testi, 202 monorepo testi).
+- [x] **Bağımsız Bölüm Seçici Kancası (`useLevelSelect.ts`):** Açılır menü yaşam döngüsü, dışarı tıklama/Esc denetleyicisi, kampanya yıldız/rekor ilerlemesi ve prosedürel bölüm sıçrama eylemleri bağımsız `useLevelSelect` kancasına taşındı.
+- [x] **Modüler Bölüm Seçici Arayüz Mimarisi (`LevelSelectTrigger.tsx`, `LevelSelectMenu.tsx`, `LevelSelectPopover.tsx`):** Üst çubuk tetikleyicisi/okları ve 1..5 standart bölüm kartları ile özel/prosedürel butonlar bağımsız bileşenlere ayrılarak `LevelSelectPopover.tsx` 300 satırdan **65 satıra** indirildi.
+
+
 
 
 

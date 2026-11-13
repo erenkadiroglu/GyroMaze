@@ -112,3 +112,45 @@ export function formatLevelStarBadges(stars: number): string {
   const safeStars = Math.max(0, Math.min(3, Math.round(stars || 0)));
   return '★'.repeat(safeStars) + '☆'.repeat(3 - safeStars);
 }
+
+/**
+ * Bölüm kimliği ve numarasına göre üst çubuk için kısa etiket döner (Özel veya Bölüm 01).
+ */
+export function formatShortLevelTag(level: number, id: number): string {
+  if (level === 99) return 'Özel';
+  const safeId = Number.isFinite(id) && id > 0 ? id : 1;
+  return `Bölüm ${safeId < 10 ? `0${safeId}` : String(safeId)}`;
+}
+
+/**
+ * Bölüm başlığındaki "Bölüm X — " önekini temizleyerek yalnız bölümün adını döner.
+ */
+export function cleanLevelTitle(title: string): string {
+  if (typeof title !== 'string') return '';
+  return title.replace(/^Bölüm \d+\s*[—-]\s*/, '').trim();
+}
+
+/**
+ * Mevcut bölüm numarasına göre bir sonraki prosedürel bölüm numarasını belirler.
+ */
+export function calculateNextProceduralLevel(currentLevel: number): number {
+  if (!Number.isFinite(currentLevel) || currentLevel < 6 || currentLevel === 99) {
+    return 6;
+  }
+  return currentLevel + 1;
+}
+
+/**
+ * Bölüm kartı için ekran okuyucu (aria-label) erişilebilirlik metnini oluşturur.
+ */
+export function resolveLevelItemAriaLabel(
+  levelId: number,
+  progress: LevelProgressItem,
+): string {
+  const padId = levelId < 10 ? `0${levelId}` : String(levelId);
+  if (progress.completed && progress.bestTime !== undefined) {
+    return `Bölüm ${padId}: ${progress.stars} yıldız, en iyi ${progress.bestTime.toFixed(1)} saniye`;
+  }
+  return `Bölüm ${padId}: oynanmadı`;
+}
+
