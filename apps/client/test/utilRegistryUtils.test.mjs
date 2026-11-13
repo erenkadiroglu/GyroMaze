@@ -74,3 +74,4 @@ test('utilRegistryUtils — İstemci Yardımcı Motorları Katalog ve Kategori Y
     assert.deepEqual(controllerOnly, ['controllerUtils.ts', 'gimbalPadUtils.ts']);
   });
 });
+

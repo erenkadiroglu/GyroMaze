@@ -95,3 +95,4 @@ export interface MazeLevelDefinition {
   /** [3 Yıldız Süre Sınırı (sn), 2 Yıldız Süre Sınırı (sn)] */
   starThresholds?: [number, number];
 }
+

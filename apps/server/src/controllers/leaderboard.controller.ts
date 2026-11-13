@@ -25,3 +25,4 @@ export class LeaderboardController {
     return formatLeaderboardResponse(all, parsedLevel);
   }
 }
+

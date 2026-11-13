@@ -802,6 +802,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Prosedürel Labirent Motoru ve Seviye Yardımcıları (`levels/proceduralGenerator.ts`, `levels/levelUtils.ts`, `levels/index.ts`):** Mulberry32 tohumlu sözde-rastgele sayı üreteci, DFS spanning tree ve braiding mimarisine sahip `generateProceduralLevel` ile `getMazeLevel`, `findSafeP2SpawnOffset`, `getLevelRevisionKey` yardımcıları `levels/` modülü altında toplandı; `mazeLevels.ts` 815 satırdan **28 satıra** indirildi.
 - [x] **Seviye Motoru Birim Testleri (`apps/client/test/levelUtils.test.mjs`):** 8 yeni birim test ile istemci test sayısı 506'dan **514'e**, toplam monorepo test sayısı **569'a** yükseltildi.
 
+### Faz 170: Kök Yerleşim ve Üstveri (Metadata/Viewport) Yardımcı Motoru ve UTF-8 Doğruluğu (Tamamlandı)
+- [x] **Kök Yerleşim Yardımcı Motoru (`layoutMetadataUtils.ts`, `layoutMetadataUtils.test.mjs`):** `getAppMetadataTitle`, `getAppMetadataDescription`, `getViewportThemeColors`, `resolveHtmlAttributes` ve `resolveRootBodyClasses` saf yardımcıları geliştirildi; 6 yeni birim test ile %100 doğrulandı (toplam 520 istemci testi, 49 sunucu testi, 6 shared testi, **575 monorepo testi**).
+- [x] **Kök Yerleşim Temizliği (`apps/client/src/app/layout.tsx`):** Bozuk Türkçe karakter kodlamaları (mojibake) düzeltildi; metadata ve viewport tanımları `layoutMetadataUtils` motoruna bağlanarak `layout.tsx` deklaratif ve SRP uyumlu hale getirildi.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/layoutMetadataUtils.test.mjs` dahil edilerek istemci test sayısı 514'ten 520'ye yükseltildi.
+
 
 
 

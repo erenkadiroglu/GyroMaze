@@ -85,3 +85,4 @@ export function formatLeaderboardResponse(
     entries: safeEntries,
   };
 }
+

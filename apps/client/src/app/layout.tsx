@@ -1,6 +1,13 @@
 import type { Metadata, Viewport } from 'next';
 import { Barlow, Barlow_Condensed } from 'next/font/google';
 import './globals.css';
+import {
+  getAppMetadataTitle,
+  getAppMetadataDescription,
+  getViewportThemeColors,
+  resolveHtmlAttributes,
+  resolveRootBodyClasses,
+} from '@/utils/layoutMetadataUtils';
 
 const barlow = Barlow({
   subsets: ['latin', 'latin-ext'],
@@ -17,9 +24,8 @@ const barlowCondensed = Barlow_Condensed({
 });
 
 export const metadata: Metadata = {
-  title: 'GyroMaze | Telefonunla Yönettiğin 3B Labirent',
-  description:
-    'Telefonunu eğerek masaüstü ekranındaki 3B labirent tablasını yönettiğin, gecikmesiz çok oyunculu beceri oyunu.',
+  title: getAppMetadataTitle(),
+  description: getAppMetadataDescription(),
   icons: {
     icon: '/icon.svg',
     apple: '/icon.svg',
@@ -35,10 +41,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: [
-    { media: '(prefers-color-scheme: dark)', color: '#0f1a2b' },
-    { media: '(prefers-color-scheme: light)', color: '#e9eef5' },
-  ],
+  themeColor: getViewportThemeColors(),
 };
 
 /**
@@ -50,16 +53,16 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const htmlAttrs = resolveHtmlAttributes('dark');
+
   return (
     <html
-      lang="tr"
-      data-scheme="dark"
+      lang={htmlAttrs.lang}
+      data-scheme={htmlAttrs['data-scheme']}
       className={`${barlow.variable} ${barlowCondensed.variable}`}
-      suppressHydrationWarning
+      suppressHydrationWarning={htmlAttrs.suppressHydrationWarning}
     >
-      <body className="min-h-screen bg-base font-sans text-fg antialiased selection:bg-brass/30">
-        {children}
-      </body>
+      <body className={resolveRootBodyClasses()}>{children}</body>
     </html>
   );
 }
