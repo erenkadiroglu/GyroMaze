@@ -1,10 +1,11 @@
 'use client';
 
-import { Kbd } from '../primitives';
 import {
   shouldShowKeyboardHints,
   resolveMultiplayerSlotHints,
 } from '@/utils/footerControlsUtils';
+import { formatKeyboardHintAriaLabel } from '@/utils/footerKeyboardHintUtils';
+import { MultiplayerKeyboardHints, SoloKeyboardHints } from './hints';
 
 interface FooterKeyboardHintsProps {
   isControllerPaired: boolean;
@@ -35,40 +36,28 @@ export function FooterKeyboardHints({
     isSecondControllerPaired,
   );
 
+  const ariaLabel = formatKeyboardHintAriaLabel(
+    isMultiplayer,
+    showP1,
+    showP2,
+  );
+
   return (
     <div
       role="note"
-      aria-label="Klavye kontrol ipuçları"
+      aria-label={ariaLabel}
       className="gm-panel hidden items-center gap-2 rounded-xl px-3 py-1.5 text-xs text-muted lg:flex"
     >
       {isMultiplayer ? (
-        <>
-          {showP1 && (
-            <>
-              <Kbd>WASD</Kbd>
-              <span>1. Bilye</span>
-            </>
-          )}
-          {showSeparator && <span className="text-line" aria-hidden="true">·</span>}
-          {showP2 && (
-            <>
-              <Kbd>Oklar</Kbd>
-              <span>2. Bilye</span>
-            </>
-          )}
-        </>
+        <MultiplayerKeyboardHints
+          showP1={showP1}
+          showP2={showP2}
+          showSeparator={showSeparator}
+        />
       ) : (
-        <>
-          <Kbd>WASD</Kbd>
-          <span>Eğim</span>
-          <span className="text-line" aria-hidden="true">·</span>
-          <Kbd>R</Kbd>
-          <span>Sıfırla</span>
-          <span className="text-line" aria-hidden="true">·</span>
-          <Kbd>L</Kbd>
-          <span>Gece/Gündüz</span>
-        </>
+        <SoloKeyboardHints />
       )}
     </div>
   );
 }
+

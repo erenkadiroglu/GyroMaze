@@ -703,6 +703,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Araç Buton Bileşenleri (`ToolsEditorButton.tsx`, `ToolsLeaderboardButton.tsx`):** Harita editörü açma (E) ve küresel skor tablosu açma (K) butonları bağımsız modüllere ayrıştırıldı.
 - [x] **Yalın Araç Çubuğu Araçlar Orkestratörü (`ToolsControls.tsx`):** Alt bileşen mimarisine geçirilerek `ToolsControls.tsx` 32 satırdan **20 satıra** indirildi.
 
+### Faz 143: Masaüstü HUD Alt Klavye İpuçları Ayrıştırması (Tamamlandı)
+- [x] **Klavye İpuçları Yardımcı Motoru (`footerKeyboardHintUtils.ts`, `footerKeyboardHintUtils.test.mjs`):** Solo tuş listesi `getSoloKeyboardHintItems`, çok oyunculu yuva yapılandırmaları `getMultiplayerP1Hint` / `getMultiplayerP2Hint` ve dinamik ekran okuyucu etiket formatlayıcı `formatKeyboardHintAriaLabel` saf yardımcıları geliştirildi; 6 yeni birim test ile doğrulandı (toplam 388 istemci testi, 416 monorepo testi).
+- [x] **Modüler Klavye İpucu Bileşenleri (`KeyboardHintItem.tsx`, `MultiplayerKeyboardHints.tsx`, `SoloKeyboardHints.tsx`):** Kbd/span çifti, 1P/2P çok oyunculu yuva gösterimi ve solo eğim/sıfırlama/tema gösterimi bağımsız modüllere ayrıştırıldı.
+- [x] **Yalın Alt Klavye İpuçları Orkestratörü (`FooterKeyboardHints.tsx`):** Alt bileşen ve dinamik ARIA etiket mimarisine geçirilerek `FooterKeyboardHints.tsx` 74 satırdan **57 satıra** indirildi.
+
+
 
 
 
