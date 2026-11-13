@@ -512,6 +512,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Klavye İpuçları Bileşeni (`FooterKeyboardHints.tsx`):** Tek ve çok oyunculu modlar için dinamik tuş eşleşmesi ve yuva ayrımı bağımsız `FooterKeyboardHints` bileşeni olarak ayrıştırıldı.
 - [x] **Yalın Masaüstü Alt Paneli (`DesktopFooterControls.tsx`):** Gösterge, ipucu ve araç çubuğu yapısı modüler alt bileşenlerle bağlanarak `DesktopFooterControls.tsx` 88 satırdan **49 satıra** indirildi.
 
+### Faz 102: Sahne Üstü Bildirim ve Kurtarma Çubuğu Ayrıştırması (Tamamlandı)
+- [x] **Sahne Üstü Bildirim ve Çubuk Yardımcı Motoru (`overlayBarUtils.ts`, `overlayBarUtils.test.mjs`):** `shouldShowPauseRecoveryBar` ve `getToastMotionVariants` saf yardımcıları geliştirildi; 3 yeni birim test ile doğrulandı (toplam 197 istemci testi, 225 monorepo testi).
+- [x] **Modüler Kurtarma Çubuğu ve Bildirim Kartı (`PauseRecoveryBar.tsx`, `HudNotificationToast.tsx`):** Bağlantı kopmasında duraklatma/devam barı ile framer-motion tabanlı toast kartı bağımsız bileşenlere ayrıştırıldı.
+- [x] **Yalın Sahne Üstü Orkestratörü (`DesktopHUDOverlays.tsx`):** Bildirim ve kurtarma mantığı modüler alt bileşenlerle birleştirilerek `DesktopHUDOverlays.tsx` 87 satırdan **38 satıra** indirildi.
+
 
 
 
