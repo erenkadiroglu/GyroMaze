@@ -14,6 +14,7 @@ import { HazardBoostPads } from './hazards/HazardBoostPads';
 import { HazardTeleporters } from './hazards/HazardTeleporters';
 import { HazardLaserGates } from './hazards/HazardLaserGates';
 import { HazardMovingObstacles } from './hazards/HazardMovingObstacles';
+import { useMazeStageHazards } from '@/hooks/useMazeStageHazards';
 
 interface MazeStageHazardsProps {
   levelRevisionKey: string;
@@ -40,19 +41,35 @@ export function MazeStageHazards({
   laserBeamMeshesRef,
   movingObstacleMeshesRef,
 }: MazeStageHazardsProps) {
+  const {
+    safeRevisionKey,
+    voidHoles: safeVoidHoles,
+    boostPads: safeBoostPads,
+    teleporters: safeTeleporters,
+    laserGates: safeLaserGates,
+    movingObstacles: safeMovingObstacles,
+  } = useMazeStageHazards({
+    levelRevisionKey,
+    voidHoles,
+    boostPads,
+    teleporters,
+    laserGates,
+    movingObstacles,
+  });
+
   return (
     <>
-      <HazardVoidHoles voidHoles={voidHoles} levelRevisionKey={levelRevisionKey} />
-      <HazardBoostPads boostPads={boostPads} levelRevisionKey={levelRevisionKey} />
-      <HazardTeleporters teleporters={teleporters} levelRevisionKey={levelRevisionKey} />
+      <HazardVoidHoles voidHoles={safeVoidHoles} levelRevisionKey={safeRevisionKey} />
+      <HazardBoostPads boostPads={safeBoostPads} levelRevisionKey={safeRevisionKey} />
+      <HazardTeleporters teleporters={safeTeleporters} levelRevisionKey={safeRevisionKey} />
       <HazardLaserGates
-        laserGates={laserGates}
-        levelRevisionKey={levelRevisionKey}
+        laserGates={safeLaserGates}
+        levelRevisionKey={safeRevisionKey}
         laserBeamMeshesRef={laserBeamMeshesRef}
       />
       <HazardMovingObstacles
-        movingObstacles={movingObstacles}
-        levelRevisionKey={levelRevisionKey}
+        movingObstacles={safeMovingObstacles}
+        levelRevisionKey={safeRevisionKey}
         movingObstacleMeshesRef={movingObstacleMeshesRef}
       />
     </>
