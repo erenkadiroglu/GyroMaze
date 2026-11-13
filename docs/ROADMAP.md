@@ -917,9 +917,14 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **useControllerStatusBanners Kancası ve ControllerStatusBanners Sadeleşmesi (`apps/client/src/hooks/useControllerStatusBanners.ts`, `apps/client/src/app/controller/ControllerStatusBanners.tsx`):** Hata bildirimi, seviye gezinme butonları, zafer ve süre dolumu şeritlerinin görünürlük kuralları, eylemleri ve semantik bölge öznitelikleri saf motora devredildi.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/controllerBannersOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 713'ten **721'e**, monorepo testleri 768'den **776'ya** çıkarıldı.
 
-### Faz 194: Mobil Kontrolcü Başlık ve Hızlı Eylemler (ControllerHeader) Orkestrasyon Motoru (Sıradaki)
-- [ ] **Mobil Kontrolcü Başlık Orkestrasyon Motoru (`controllerHeaderOrchestrationUtils.ts`, `controllerHeaderOrchestrationUtils.test.mjs`):** `ControllerHeader.tsx` bileşenindeki marka kapsülü, 6 haneli oda kodu, oyuncu yuvası (1P/2P) rozeti, haptik titreşim eylemi, renk teması geçişi, oda düzenleyici tetikleyicisi ve gecikme telemetrisini saf motora ayrıştırma.
-- [ ] **useControllerHeader Kancası ve ControllerHeader Sadeleşmesi:** Başlık durumunu tekil kancaya bağlayarak sunum katmanına indirgeme.
+### Faz 194: Mobil Kontrolcü Başlık ve Hızlı Eylemler (ControllerHeader) Orkestrasyon Motoru (Tamamlandı)
+- [x] **Mobil Kontrolcü Başlık Orkestrasyon Motoru (`controllerHeaderOrchestrationUtils.ts`, `controllerHeaderOrchestrationUtils.test.mjs`):** `getControllerHeaderClassName`, `formatControllerHeaderTelemetry`, `resolveHeaderContainerProps`, `resolveControllerHeaderState` fonksiyonları saf mimariyle geliştirildi; 7 yeni birim test ile %100 doğrulandı (toplam 728 istemci testi, 49 sunucu testi, 6 shared testi, **783 monorepo testi**).
+- [x] **useControllerHeader Kancası ve ControllerHeader Sadeleşmesi (`apps/client/src/hooks/useControllerHeader.ts`, `apps/client/src/app/controller/ControllerHeader.tsx`):** Başlık marka kapsülü, oda kodu, P1/P2 oyuncu yuvası rozeti, haptik titreşim, renk şeması, oda düzenleyici ve ağ gecikme telemetrisi saf motora devredildi.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/controllerHeaderOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 721'den **728'e**, monorepo testleri 776'dan **783'e** çıkarıldı.
+
+### Faz 195: Mobil Kontrolcü Merkez Sahne (ControllerCenterStage) Orkestrasyon Motoru (Sıradaki)
+- [ ] **Mobil Kontrolcü Merkez Sahne Orkestrasyon Motoru (`controllerCenterStageOrchestrationUtils.ts`, `controllerCenterStageOrchestrationUtils.test.mjs`):** `ControllerCenterStage.tsx` bileşenindeki 3 farklı aşama modunun (`room`, `sensor`, `gimbal`), dokunmatik yönlendirme/hassasiyet geçişlerinin ve semantik landmark özniteliklerinin saf motora ayrıştırılması.
+- [ ] **useControllerCenterStage Kancası ve ControllerCenterStage Sadeleşmesi:** Merkez sahne aşama durumunu tekil kancaya bağlayarak sunum katmanına indirgeme.
 - [ ] **Birim Testleri ve Doğrulama:** Yeni birim testleriyle monorepo test barajını artırma, tam derleme ve git push.
 
 

@@ -1,9 +1,10 @@
 'use client';
 
+import { useControllerHeader } from '@/hooks/useControllerHeader';
 import { ControllerBrandCapsule } from './header/ControllerBrandCapsule';
 import { ControllerHeaderActions } from './header/ControllerHeaderActions';
 
-interface ControllerHeaderProps {
+export interface ControllerHeaderProps {
   activeRoomCode: string;
   playerSlot: 1 | 2;
   isHapticEnabled: boolean;
@@ -22,22 +23,25 @@ interface ControllerHeaderProps {
  * Mobil kontrolcü üst başlık çubuğu: sol tarafta marka ve oda kodu,
  * sağ tarafta hızlı eylemler ve bağlantı durumu.
  */
-export function ControllerHeader({
-  activeRoomCode,
-  playerSlot,
-  isHapticEnabled,
-  onToggleHaptic,
-  colorScheme,
-  onToggleColorScheme,
-  isRoomEditorOpen,
-  onOpenRoomEditor,
-  onCloseRoomEditor,
-  isControllerPaired,
-  isSocketConnected,
-  latencyMs,
-}: ControllerHeaderProps) {
+export function ControllerHeader(props: ControllerHeaderProps) {
+  const {
+    containerProps,
+    activeRoomCode,
+    playerSlot,
+    isHapticEnabled,
+    onToggleHaptic,
+    colorScheme,
+    onToggleColorScheme,
+    isRoomEditorOpen,
+    onOpenRoomEditor,
+    onCloseRoomEditor,
+    isControllerPaired,
+    isSocketConnected,
+    latencyMs,
+  } = useControllerHeader(props);
+
   return (
-    <header className="flex items-center justify-between gap-2 rounded-2xl border border-line bg-surface px-3.5 py-2.5">
+    <header {...containerProps}>
       <ControllerBrandCapsule
         activeRoomCode={activeRoomCode}
         playerSlot={playerSlot}
