@@ -5,6 +5,10 @@ import {
   resolveIsPortalUnlocked,
   resolveAnyOverlayOpen,
   resolveLeaderboardInitialLevel,
+  getDesktopHudContainerClass,
+  getDesktopHudAriaProps,
+  isCustomLevel,
+  formatHudLevelBadge,
 } from '../src/utils/desktopHudUtils.ts';
 
 test('desktopHudUtils — Masaüstü HUD Katmanı ve Overlay Kuralları', async (t) => {
@@ -55,5 +59,27 @@ test('desktopHudUtils — Masaüstü HUD Katmanı ve Overlay Kuralları', async 
     assert.equal(resolveLeaderboardInitialLevel(5), 5);
     assert.equal(resolveLeaderboardInitialLevel(1), 1);
     assert.equal(resolveLeaderboardInitialLevel(0), 1);
+  });
+
+  await t.test('getDesktopHudContainerClass ve getDesktopHudAriaProps geçerli erişilebilirlik değerleri döner', () => {
+    const containerClass = getDesktopHudContainerClass();
+    assert.match(containerClass, /pointer-events-none/);
+    assert.match(containerClass, /fixed inset-0/);
+
+    const ariaProps = getDesktopHudAriaProps();
+    assert.equal(ariaProps.role, 'region');
+    assert.equal(ariaProps['aria-label'], 'Oyun arayüzü ve kontrolleri');
+  });
+
+  await t.test('isCustomLevel 99 numaralı seviyeyi doğru doğrular', () => {
+    assert.equal(isCustomLevel(99), true);
+    assert.equal(isCustomLevel(1), false);
+    assert.equal(isCustomLevel(2), false);
+  });
+
+  await t.test('formatHudLevelBadge standart ve özel bölümleri doğru etiketler', () => {
+    assert.equal(formatHudLevelBadge(1, 'Başlangıç'), '1. Bölüm — Başlangıç');
+    assert.equal(formatHudLevelBadge(2, ''), '2. Bölüm');
+    assert.equal(formatHudLevelBadge(99, 'Özel Harita'), 'Özel Harita');
   });
 });

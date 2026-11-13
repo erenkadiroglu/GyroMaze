@@ -45,3 +45,38 @@ export function resolveAnyOverlayOpen(flags: OverlayFlags): boolean {
 export function resolveLeaderboardInitialLevel(levelId: number): number {
   return levelId === 99 ? 1 : Math.max(1, Math.floor(levelId));
 }
+
+/**
+ * Masaüstü HUD kapsayıcısı için temel Tailwind stil sınıflarını döner.
+ */
+export function getDesktopHudContainerClass(): string {
+  return 'pointer-events-none fixed inset-0 z-10 flex flex-col justify-between p-4 sm:p-5';
+}
+
+/**
+ * Masaüstü HUD arayüzü için erişilebilir semantik bölge niteliklerini döner.
+ */
+export function getDesktopHudAriaProps(): { role: 'region'; 'aria-label': string } {
+  return {
+    role: 'region',
+    'aria-label': 'Oyun arayüzü ve kontrolleri',
+  };
+}
+
+/**
+ * Bölüm kimliğinin özel editör haritası (99) olup olmadığını belirler.
+ */
+export function isCustomLevel(levelId: number): boolean {
+  return levelId === 99;
+}
+
+/**
+ * Bölüm numarası ve başlığına göre ekran etiketini formatlar.
+ */
+export function formatHudLevelBadge(levelId: number, levelName: string): string {
+  if (isCustomLevel(levelId)) {
+    return 'Özel Harita';
+  }
+  const safeName = levelName ? ` — ${levelName}` : '';
+  return `${levelId}. Bölüm${safeName}`;
+}

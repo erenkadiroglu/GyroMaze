@@ -1,10 +1,14 @@
 'use client';
 
 import { useDesktopHUD } from '@/hooks/useDesktopHUD';
+import {
+  getDesktopHudContainerClass,
+  getDesktopHudAriaProps,
+} from '@/utils/desktopHudUtils';
 import { DesktopHeader } from './DesktopHeader';
 import { DesktopHUDOverlays } from './DesktopHUDOverlays';
 import { DesktopFooterControls } from './DesktopFooterControls';
-import { DesktopModalsLayer } from './hud/DesktopModalsLayer';
+import { DesktopModalsLayer } from './hud';
 
 /**
  * Masaüstü 3B sahne üzerindeki düzenli, tek odaklı HUD orkestratörü:
@@ -25,8 +29,14 @@ export function DesktopHUD() {
     leaderboardInitialLevel,
   } = useDesktopHUD();
 
+  const containerClass = getDesktopHudContainerClass();
+  const ariaProps = getDesktopHudAriaProps();
+
   return (
-    <div className="pointer-events-none fixed inset-0 z-10 flex flex-col justify-between p-4 sm:p-5">
+    <div
+      {...ariaProps}
+      className={containerClass}
+    >
       {/* ÜST ÇUBUK (MARKA, SEVİYE SEÇİCİ, DURUM OKUMALARI VE ANA EYLEMLER) */}
       <DesktopHeader />
 
