@@ -778,10 +778,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Kontrolcü Görünüm Orkestratörü (`MobileControllerView.tsx`, `controller/index.ts`):** `page.tsx` içindeki monolitik kontrolcü JSX yapısı bağımsız `MobileControllerView` bileşenine taşındı; `controller/index.ts` üzerinden merkezi re-export mimarisi tamamlandı.
 - [x] **Yalın Next.js 15 App Router Sayfası (`controller/page.tsx`):** `page.tsx` bileşeni 163 satırdan **30 satıra** indirilerek saf ve standart bir Next.js 15 Suspense sayfa sarmalayıcısı haline getirildi.
 
-### Faz 158: 3B Sahne Viewport Ayarları ve Modül Barrel Konsolidasyonu (Tamamlandı)
-- [x] **3B Viewport ve Kamera Yardımcı Motoru (`sceneViewportUtils.ts`, `sceneViewportUtils.test.mjs`):** Sahne kapsayıcı stil sınıfları `getSceneContainerClass`, standart perspektif kamera yapılandırması `getSceneCanvasCameraConfig`, WebGL yüksek performans/antialias ayarı `getSceneGLConfig`, retina DPR aralığı `getSceneDprRange`, yerçekimi vektörü `getScenePhysicsGravity` ve bölüm canlı özet formatlayıcı `formatSceneSummary` saf yardımcıları geliştirildi; 6 yeni birim test ile doğrulandı (toplam 465 istemci testi, 493 monorepo testi).
-- [x] **3B Sahne Hiyerarşik Barrel Mimarisi (`actors/index.ts`, `collectibles/index.ts`, `colliders/index.ts`, `hazards/index.ts`, `stage/index.ts`, `walls/index.ts`, `scene/index.ts`):** 3B labirent sahnesinin tüm alt aktör, toplanabilir kristal/hedef, çarpışma sensörü, tehlike kapısı, zemin ve duvar katmanları modüler barrel hiyerarşisine bağlandı.
-- [x] **Yalın ve Deklaratif 3B Sahne Orkestratörü (`MazeScene.tsx`):** Canvas, kamera ve WebGL parametreleri saf yardımcı motoru üzerinden deklaratif olarak beslenip temiz barrel importları ile konsolide edildi.
+### Faz 159: Harita Editörü Modalı ve Hiyerarşik Barrel Konsolidasyonu (Tamamlandı)
+- [x] **Harita Editörü Görünüm ve Araç Motoru (`editorModalViewUtils.ts`, `editorModalViewUtils.test.mjs`):** Modal başlığı `getEditorModalTitle`, açıklama `getEditorModalDescription`, modal boyutu `getEditorModalSize`, ilk başlık çözümü `resolveEditorModalInitialTitle`, aria etiketi `formatEditorModalAriaLabel`, boş ızgara denetimi `isEditorGridEmpty` ve araç açıklamaları `formatEditorToolDescription` saf yardımcıları geliştirildi; 8 yeni birim test ile doğrulandı (toplam 473 istemci testi, 501 monorepo testi).
+- [x] **Harita Editörü Hiyerarşik Barrel Mimarisi (`footer/index.ts`, `grid/index.ts`, `meta/index.ts`, `templates/index.ts`, `toolbar/index.ts`, `editor/index.ts`):** Editörün tüm alt bileşenleri (araç çubuğu, ızgara, meta kontrolleri, şablon listesi, alt eylem çubuğu) temiz hiyerarşik re-export düzenine kavuşturuldu.
+- [x] **Yalın ve Semantik Harita Editörü Modalı (`LevelEditorModal.tsx`):** Saf yardımcı motorundan beslenen modal yapılandırması ve `role="region"` çalışma alanı semantiğiyle konsolide edildi.
+
 
 
 

@@ -2,12 +2,19 @@
 
 import { Wrench } from 'lucide-react';
 import { useLevelEditor } from '@/hooks/useLevelEditor';
+import {
+  getEditorModalTitle,
+  getEditorModalDescription,
+  getEditorModalSize,
+} from '@/utils/editorModalViewUtils';
 import { Modal } from './primitives';
-import { LevelEditorToolbar } from './editor/LevelEditorToolbar';
-import { LevelEditorGrid } from './editor/LevelEditorGrid';
-import { LevelEditorTemplatesList } from './editor/LevelEditorTemplatesList';
-import { LevelEditorMetaControls } from './editor/LevelEditorMetaControls';
-import { LevelEditorFooter } from './editor/LevelEditorFooter';
+import {
+  LevelEditorToolbar,
+  LevelEditorGrid,
+  LevelEditorTemplatesList,
+  LevelEditorMetaControls,
+  LevelEditorFooter,
+} from './editor';
 
 /**
  * 8×8 görsel ızgara üzerinden kendi 3B labirent haritasını
@@ -41,9 +48,9 @@ export function LevelEditorModal() {
     <Modal
       open={isEditorOpen}
       onClose={closeEditor}
-      size="xl"
-      title="3B Harita Editörü"
-      description="8×8 ızgara üzerinde duvar, engel ve hedef noktalarını yerleştirin"
+      size={getEditorModalSize()}
+      title={getEditorModalTitle()}
+      description={getEditorModalDescription()}
       icon={<Wrench className="h-4 w-4" aria-hidden="true" />}
       footer={
         <LevelEditorFooter
@@ -57,7 +64,7 @@ export function LevelEditorModal() {
         />
       }
     >
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2" role="region" aria-label="Harita Editörü Çalışma Alanı">
         <div className="space-y-4">
           <LevelEditorTemplatesList onApplyTemplate={handleApplyTemplate} />
           <LevelEditorToolbar
