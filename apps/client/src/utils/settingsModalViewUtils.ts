@@ -64,3 +64,4 @@ export function formatActivePreferencesSummary(
 
   return `${playerMode} | ${mode} | ${scheme} | Ses: ${volumeText}`;
 }
+

@@ -82,3 +82,4 @@ export function formatEditorToolDescription(tool: string): string {
       return 'Bilinmeyen Araç';
   }
 }
+

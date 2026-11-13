@@ -63,3 +63,4 @@ test('settingsModalViewUtils — Ayarlar Çekmecesi Görünüm ve Özet Yardımc
     assert.equal(summary, '1P Solo | Klasik | Cyberpunk | Ses: Sessiz');
   });
 });
+

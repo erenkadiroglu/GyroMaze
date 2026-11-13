@@ -46,3 +46,4 @@ export function formatDesktopStageAriaLabel(level?: number | string | null): str
   }
   return 'GyroMaze Masaüstü 3B Labirent Sahnesi';
 }
+

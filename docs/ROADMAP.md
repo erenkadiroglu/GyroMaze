@@ -778,10 +778,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Kontrolcü Görünüm Orkestratörü (`MobileControllerView.tsx`, `controller/index.ts`):** `page.tsx` içindeki monolitik kontrolcü JSX yapısı bağımsız `MobileControllerView` bileşenine taşındı; `controller/index.ts` üzerinden merkezi re-export mimarisi tamamlandı.
 - [x] **Yalın Next.js 15 App Router Sayfası (`controller/page.tsx`):** `page.tsx` bileşeni 163 satırdan **30 satıra** indirilerek saf ve standart bir Next.js 15 Suspense sayfa sarmalayıcısı haline getirildi.
 
-### Faz 162: Masaüstü Ana Ekran Orkestratörü ve Sahne Yükleyici Ayrışımı (Tamamlandı)
-- [x] **Masaüstü Ana Ekran Görünüm ve Yükleme Motoru (`desktopHomeViewUtils.ts`, `desktopHomeViewUtils.test.mjs`):** Standart layout sınıfı `getDesktopHomeMainClassName`, yükleme kapsayıcısı `getDesktopLoadingContainerClassName`, döner çember animasyonu `getDesktopLoadingSpinnerClassName`, Türkçe yükleme metni `getDesktopLoadingMessage`, ev sahibi soket yapılandırması `getDesktopSocketRoleConfig` ve erişilebilir sahne etiketi `formatDesktopStageAriaLabel` saf yardımcıları geliştirildi; 5 yeni birim test ile doğrulandı (toplam 491 istemci testi, 519 monorepo testi).
-- [x] **Masaüstü Bileşen ve Modül Barrel Mimarisi (`desktop/DesktopSceneLoader.tsx`, `desktop/DesktopHomeView.tsx`, `desktop/index.ts`):** R3F ve Rapier WASM istemci yükleyicisi ile kalıcı tercihler, ev sahibi soket ve klavye dinleyicisi bağımsız `DesktopHomeView` bileşenine taşındı.
-- [x] **Saf ve Deklaratif App Router Sayfası (`apps/client/src/app/page.tsx`):** Masaüstü ana sayfası 42 satırdan 8 satıra indirilerek tıpkı mobil kontrolcü sayfası gibi yalın bir sayfa sarmalayıcısına dönüştürüldü.
+### Faz 163: Kanca, Store ve Bileşen Kök Barrel Konsolidasyonu (Tamamlandı)
+- [x] **Kanca Sınıflandırma ve Telemetri Motoru (`hookCategoryUtils.ts`, `hookCategoryUtils.test.mjs`):** Sabit kanca kategori listesi `HOOK_CATEGORIES`, kanca adı etki alanı çözümleyici `resolveHookCategory`, sahne kancası denetleyici `isSceneHook`, kontrolcü kancası denetleyici `isControllerHook` ve hata ayıklama etiketi `formatHookDebugLabel` saf yardımcıları geliştirildi; 7 yeni birim test ile doğrulandı (toplam 498 istemci testi, 526 monorepo testi).
+- [x] **Merkezi İstemci Kanca Barrel Mimarisi (`hooks/index.ts`):** 31 adet bağımsız kanca (tercihler, masaüstü HUD, mobil kontrolcü, 3B sahne/fizik, WebSocket ve donanım) tekil temiz giriş noktasında kategorize edilerek re-export edildi.
+- [x] **Kök Bileşen ve Store Barrel Düzeni (`store/index.ts`, `components/index.ts`):** Durum yönetimi ve üst seviye bileşen klasörleri (`desktop`, `scene`, `ui`) hiyerarşik modül sistemine entegre edildi.
+
 
 
 

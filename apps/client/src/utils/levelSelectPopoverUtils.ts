@@ -45,3 +45,4 @@ export function formatLevelSelectTriggerTooltip(
 export function resolveLevelPopoverAriaExpanded(isOpen: boolean): boolean {
   return Boolean(isOpen);
 }
+
