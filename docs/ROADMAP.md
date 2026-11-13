@@ -581,6 +581,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Bağımsız Sahne Kare Döngüsü Kancası (`useMazeStageFrameLoop.ts`):** Eğim ivmesi, slerp yumuşatma, kristal/lazer/engel animasyonları, hayalet yarışçı ve 1P/2P etkileşim döngüsü tek kancada toplandı.
 - [x] **Yalın 3B Sahne Orkestratörü (`MazeStage.tsx`):** `useFrame` blokları kancaya devredilerek `MazeStage.tsx` 460 satırdan **280 satıra** indirildi.
 
+### Faz 116: WebGL Bağlam Kurtarma Kancası, Sahne Konfigürasyonu ve Yalın 3B Tuval Ayrıştırması (Tamamlandı)
+- [x] **3B Sahne Konfigürasyon Yardımcı Motoru (`sceneConfigUtils.ts`, `sceneConfigUtils.test.mjs`):** `isLightSceneActive`, `resolveSceneColors` ve `calculateShadowMargin` saf yardımcıları geliştirildi; 4 yeni birim test ile doğrulandı (toplam 261 istemci testi, 289 monorepo testi).
+- [x] **Bağımsız WebGL Bağlam Kurtarma Kancası (`useWebGLContextRecovery.ts`):** WebGL bağlam kesilmesi (`webglcontextlost`) ve geri yüklenmesi (`webglcontextrestored`) dinleyicileri, revizyon sayacı ve temizleme mantığı tek kancada toplandı.
+- [x] **Modüler Kurtarma Kartı ve Yalın 3B Sahne (`ContextLostFallback.tsx`, `MazeScene.tsx`):** Bağlam kesintisi arayüzü alt bileşene devredilip `MazeScene.tsx` 149 satırdan **88 satıra** indirildi.
+
+
 
 
 
