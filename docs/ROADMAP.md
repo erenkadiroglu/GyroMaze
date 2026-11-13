@@ -552,6 +552,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Oda Kartı Bileşenleri (`RoomCardHeader.tsx`, `RoomCodeInput.tsx`, `RecentRoomsList.tsx`, `RoomConnectButton.tsx`):** Başlık ve kapatma düğmesi, 6 haneli kod girişi, son kullanılan odalar listesi ve bağlan butonu bağımsız alt bileşenlere ayrıştırıldı.
 - [x] **Yalın Mobil Oda Kartı Orkestratörü (`ControllerRoomCard.tsx`):** Form yapısı alt bileşenlerle birleştirilerek `ControllerRoomCard.tsx` 110 satırdan **54 satıra** indirildi.
 
+### Faz 110: Mobil Sensör Kartı ve Güvensiz Bağlam Uyarısı Ayrıştırması (Tamamlandı)
+- [x] **Mobil Sensör Kartı Yardımcı Motoru (`sensorCardUtils.ts`, `sensorCardUtils.test.mjs`):** `shouldShowInsecureWarning`, `resolveInsecureContextNotice` ve `resolveSensorActionAriaLabels` saf yardımcıları geliştirildi; 4 yeni birim test ile doğrulandı (toplam 237 istemci testi, 265 monorepo testi).
+- [x] **Modüler Sensör Kartı Bileşenleri (`SensorCardHeader.tsx`, `InsecureContextWarning.tsx`, `SensorActionButtons.tsx`):** Kalkan ikonu ve başlık alanı, HTTP güvensiz bağlam uyarı notu ve sensör/dokunmatik eylem butonları bağımsız alt bileşenlere ayrıştırıldı.
+- [x] **Yalın Mobil Sensör Kartı Orkestratörü (`ControllerSensorCard.tsx`):** Düzen alt bileşenlerle bağlanarak `ControllerSensorCard.tsx` 58 satırdan **28 satıra** indirildi.
+
+
 
 
 
