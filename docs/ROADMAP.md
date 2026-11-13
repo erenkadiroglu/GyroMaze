@@ -586,6 +586,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Bağımsız WebGL Bağlam Kurtarma Kancası (`useWebGLContextRecovery.ts`):** WebGL bağlam kesilmesi (`webglcontextlost`) ve geri yüklenmesi (`webglcontextrestored`) dinleyicileri, revizyon sayacı ve temizleme mantığı tek kancada toplandı.
 - [x] **Modüler Kurtarma Kartı ve Yalın 3B Sahne (`ContextLostFallback.tsx`, `MazeScene.tsx`):** Bağlam kesintisi arayüzü alt bileşene devredilip `MazeScene.tsx` 149 satırdan **88 satıra** indirildi.
 
+### Faz 117: Bağımsız 3B Kamera Teçhizatı Kancası ve Yalın Rig Ayrıştırması (Tamamlandı)
+- [x] **Kamera Eğim ve FOV Yardımcı Motoru (`sceneCameraUtils.ts`, `sceneCameraUtils.test.mjs`):** `calculateCameraClampedTilt` ve `calculateNextCameraFov` saf yardımcıları geliştirildi; test kapsamı 9 birim teste genişletildi (toplam 263 istemci testi, 291 monorepo testi).
+- [x] **Bağımsız Kamera Teçhizatı Kancası (`useMazeCameraRig.ts`):** İzometrik, takip ve kuş bakışı hedef takibi, sönümleme (lerp) ve sinematik dinamik FOV döngüsü tek kancada toplandı.
+- [x] **Yalın Kamera Rig Bileşeni (`MazeCameraRig.tsx`):** Kamera teçhizat döngüsü kancaya devredilerek `MazeCameraRig.tsx` 87 satırdan **14 satıra** indirildi.
+
+
 
 
 

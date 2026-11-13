@@ -7,6 +7,8 @@ import {
   calculateBallRollingRotation,
   stepTrailHistory,
   shouldUpdateGhostSample,
+  calculateCameraClampedTilt,
+  calculateNextCameraFov,
 } from '../src/utils/sceneCameraUtils.ts';
 
 test('sceneCameraUtils — 3B Dinamik Kamera ve Hareket Takip Motoru', async (t) => {
@@ -127,6 +129,41 @@ test('sceneCameraUtils — 3B Dinamik Kamera ve Hareket Takip Motoru', async (t)
       const catchup = shouldUpdateGhostSample(1.5, 0, 0.1);
       assert.equal(catchup.shouldSample, true);
       assert.equal(catchup.nextSampleTime, 1.5);
+    },
+  );
+
+  await t.test(
+    'calculateCameraClampedTilt jiroskop açılarını radyana çevirir ve sınırlandırır',
+    () => {
+      // Etkileşim kapalıyken 0 döner
+      const nonInteractive = calculateCameraClampedTilt(20, -15, false);
+      assert.equal(nonInteractive.clampedPitch, 0);
+      assert.equal(nonInteractive.clampedRoll, 0);
+
+      // Normal açılar
+      const normal = calculateCameraClampedTilt(10, 10, true, 0.42);
+      assert.ok(normal.clampedPitch > 0);
+      assert.ok(normal.clampedRoll < 0); // gamma ters işaretli
+
+      // Sınırı aşan açılar (örn 45 derece -> 0.78 radyan, 0.42'ye kırpılır)
+      const clamped = calculateCameraClampedTilt(45, -45, true, 0.42);
+      assert.equal(clamped.clampedPitch, 0.42);
+      assert.equal(clamped.clampedRoll, 0.42);
+    },
+  );
+
+  await t.test(
+    'calculateNextCameraFov eşik kontrolüne göre yeni sönümlenmiş FOV döner',
+    () => {
+      // Fark eşikten büyükse günceller
+      const update = calculateNextCameraFov(42, 48, 0.2, 0.04);
+      assert.equal(update.shouldUpdate, true);
+      assert.equal(update.nextFov, 42 + 6 * 0.2); // 43.2
+
+      // Fark eşikten küçükse güncellemez
+      const noUpdate = calculateNextCameraFov(42, 42.02, 0.2, 0.04);
+      assert.equal(noUpdate.shouldUpdate, false);
+      assert.equal(noUpdate.nextFov, 42);
     },
   );
 });

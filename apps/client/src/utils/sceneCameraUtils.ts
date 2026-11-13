@@ -122,3 +122,48 @@ export function shouldUpdateGhostSample(
   return { shouldSample: false, nextSampleTime: lastSampleTime };
 }
 
+/**
+ * Jiroskop açılarını derece cinsinden radyana çevirip kamera eğim sınırlarına kenetler.
+ */
+export function calculateCameraClampedTilt(
+  beta: number,
+  gamma: number,
+  isInteractive: boolean,
+  maxTiltRadians: number = 0.418879,
+): { clampedPitch: number; clampedRoll: number } {
+  if (!isInteractive) {
+    return { clampedPitch: 0, clampedRoll: 0 };
+  }
+  const degToRad = Math.PI / 180;
+  const rawPitchRad = (Number.isFinite(beta) ? beta : 0) * degToRad;
+  const rawRollRad = -(Number.isFinite(gamma) ? gamma : 0) * degToRad;
+
+  const clampedPitch = Math.max(-maxTiltRadians, Math.min(maxTiltRadians, rawPitchRad));
+  const clampedRoll = Math.max(-maxTiltRadians, Math.min(maxTiltRadians, rawRollRad));
+
+  return { clampedPitch, clampedRoll };
+}
+
+/**
+ * Mevcut FOV ile hedef FOV arasındaki fark eşikten büyükse yeni sönümlenmiş FOV değerini döner.
+ */
+export function calculateNextCameraFov(
+  currentFov: number,
+  targetFov: number,
+  lerpAlpha: number,
+  threshold: number = 0.04,
+): { shouldUpdate: boolean; nextFov: number } {
+  const diff = Math.abs(currentFov - targetFov);
+  if (diff > threshold) {
+    return {
+      shouldUpdate: true,
+      nextFov: currentFov + (targetFov - currentFov) * lerpAlpha,
+    };
+  }
+  return {
+    shouldUpdate: false,
+    nextFov: currentFov,
+  };
+}
+
+
