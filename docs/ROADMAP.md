@@ -537,10 +537,21 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Durum ve Gezinme Şeritleri (`ControllerErrorBanner.tsx`, `ControllerLevelNavBanner.tsx`, `ControllerVictoryBanner.tsx`, `ControllerDefeatBanner.tsx`):** Hata bildirimi, bölüm/kristal navigasyonu, zafer kutlaması ve süre doldu uyarı kartları bağımsız alt bileşenlere ayrıştırıldı.
 - [x] **Yalın Mobil Durum Şeritleri Orkestratörü (`ControllerStatusBanners.tsx`):** Tüm bildirim ve oyun sonu kartları modüler yapıyla bağlanarak `ControllerStatusBanners.tsx` 155 satırdan **55 satıra** indirildi.
 
+### Faz 107: Mobil Kontrolcü Alt Araç Çubuğu Ayrıştırması (Tamamlandı)
+- [x] **Mobil Alt Çubuk Yardımcı Motoru (`controllerFooterUtils.ts`, `controllerFooterUtils.test.mjs`):** `isResetBallDisabled`, `resolveRecalibrateAriaLabel` ve `resolveResetBallAriaLabel` saf yardımcıları geliştirildi; 4 yeni birim test ile doğrulandı (toplam 220 istemci testi, 248 monorepo testi).
+- [x] **Modüler Alt Eylem Butonları (`RecalibrateButton.tsx`, `ResetBallButton.tsx`):** Kalibrasyon ve topu sıfırlama butonları bağımsız, erişilebilir alt bileşenlere ayrıştırıldı.
+- [x] **Yalın Mobil Kontrolcü Alt Çubuğu (`ControllerFooter.tsx`):** Buton yerleşimi modüler alt bileşenlerle bağlanarak `ControllerFooter.tsx` 46 satırdan **32 satıra** indirildi.
+
 ### Faz 108: Mobil Gimbal Pad Arayüzü ve Radyo Kontrolcüleri Ayrıştırması (Tamamlandı)
 - [x] **Mobil Gimbal Pad Yardımcı Motoru (`gimbalPadUtils.ts`, `gimbalPadUtils.test.mjs`):** `resolveGimbalInstructionText`, `shouldShowPairingStatus`, `shouldShowSensorTimeoutStatus` ve `resolveGimbalDotClasses` saf yardımcıları geliştirildi; 6 yeni birim test ile doğrulandı (toplam 226 istemci testi, 254 monorepo testi).
 - [x] **Modüler Gimbal Bileşenleri (`GimbalTouchSurface.tsx`, `GimbalInstructionStatus.tsx`, `GimbalPitchRollReadout.tsx`, `GimbalControlSelectors.tsx`):** Dokunmatik gimbal yüzeyi, kılavuz/uyarı durumu, eğim/dönüş telemetri okuması ve hassasiyet/yuva radyo grupları bağımsız alt bileşenlere ayrıştırıldı.
 - [x] **Yalın Mobil Gimbal Pad Orkestratörü (`ControllerGimbalPad.tsx`):** Dokunmatik etkileşim ve radyo kontrolleri modüler alt bileşenlerle birleştirilerek `ControllerGimbalPad.tsx` 263 satırdan **70 satıra** indirildi.
+
+### Faz 109: Mobil Oda Kartı ve Son Odalar Listesi Ayrıştırması (Tamamlandı)
+- [x] **Mobil Oda Kartı Yardımcı Motoru (`roomCardUtils.ts`, `roomCardUtils.test.mjs`):** `validateRoomCodeInput`, `shouldShowCloseButton`, `formatRecentRoomAriaLabel` ve `isSubmitDisabled` saf yardımcıları geliştirildi; 7 yeni birim test ile doğrulandı (toplam 233 istemci testi, 261 monorepo testi).
+- [x] **Modüler Oda Kartı Bileşenleri (`RoomCardHeader.tsx`, `RoomCodeInput.tsx`, `RecentRoomsList.tsx`, `RoomConnectButton.tsx`):** Başlık ve kapatma düğmesi, 6 haneli kod girişi, son kullanılan odalar listesi ve bağlan butonu bağımsız alt bileşenlere ayrıştırıldı.
+- [x] **Yalın Mobil Oda Kartı Orkestratörü (`ControllerRoomCard.tsx`):** Form yapısı alt bileşenlerle birleştirilerek `ControllerRoomCard.tsx` 110 satırdan **54 satıra** indirildi.
+
 
 
 
