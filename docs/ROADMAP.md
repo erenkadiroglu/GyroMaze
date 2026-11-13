@@ -728,6 +728,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Eşleştirme Alt Bileşenleri (`PairingModalFooter.tsx`, `pairing/index.ts`):** "Bağlantıyı kopyala" ve "Sahneye geç" aksiyonları bağımsız footer bileşenine ayrıştırıldı; `pairing/index.ts` üzerinden merkezi modül yapısı tamamlandı.
 - [x] **Yalın Eşleştirme Orkestratörü (`PairingModal.tsx`):** Alt bileşen ve saf yardımcı mimarisine devredilerek `PairingModal.tsx` 91 satırdan **75 satıra** indirildi.
 
+### Faz 148: Masaüstü Klavye Kısayolları ve Yardım Modalı Ayrıştırması (Tamamlandı)
+- [x] **Klavye ve Yardım Modalı Yardımcı Motoru (`helpModalUtils.ts`, `helpModalUtils.test.mjs`):** Başlık metni `getHelpModalTitle`, açıklama metni `getHelpModalDescription`, kapatma butonu metni `getHelpModalDismissLabel`, alt bilgi ipucu metni `getHelpModalFooterTip` ve ekran okuyucu kısayol etiketleyici `formatShortcutBadgeAria` saf yardımcıları geliştirildi; 5 yeni birim test ile doğrulandı (toplam 412 istemci testi, 440 monorepo testi).
+- [x] **Modüler Yardım Alt Bileşenleri (`HelpModalFooter.tsx`, `help/index.ts`):** Klavye ipucu metni (`H` / `?`) ve "Anladım" butonunu içeren alt eylem bileşeni ayrıştırıldı; `help/index.ts` üzerinden merkezi modül yapısı tamamlandı.
+- [x] **Yalın Yardım Modalı Orkestratörü (`HelpShortcutsModal.tsx`):** Alt bileşen ve saf yardımcı mimarisine devredilerek `HelpShortcutsModal.tsx` 50 satırdan **44 satıra** indirildi.
+
+
 
 
 
