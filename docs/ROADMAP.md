@@ -972,9 +972,14 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **useMazeStagePhysicsBalls Kancası ve MazeStagePhysicsBalls Sadeleşmesi (`apps/client/src/hooks/useMazeStagePhysicsBalls.ts`, `apps/client/src/components/scene/stage/MazeStagePhysicsBalls.tsx`):** 1P ve 2P zıplamasız (Y-kilitli) Rapier dinamik fizik küreleri, doğuş ofsetleri, sürekli çarpışma algılama (CCD), slot çarpışma dinleyicileri ve telemetri tekil kancaya devredildi.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/mazeStagePhysicsBallsOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 791'den **801'e**, monorepo testleri 846'dan **856'ya** çıkarıldı.
 
-### Faz 205: 3B Labirent Sahnesi Duvarları (MazeStageWalls) Orkestrasyon Motoru (Sıradaki)
-- [ ] **3B Sahne Duvarları Orkestrasyon Motoru (`mazeStageWallsOrchestrationUtils.ts`, `mazeStageWallsOrchestrationUtils.test.mjs`):** Dış sınır duvarları ve iç labirent duvarları demetini, revizyon anahtarlarını, toplam duvar metriklerini ve telemetri durumunu saf motora ayrıştırma.
-- [ ] **MazeStageWalls Bileşeni ve useMazeStageWalls Kancası:** Duvar hiyerarşisini deklaratif ve test edilebilir kancaya bağlama.
+### Faz 205: 3B Labirent Sahnesi Duvarları (MazeStageWalls) Orkestrasyon Motoru (Tamamlandı)
+- [x] **3B Sahne Duvarları Orkestrasyon Motoru (`mazeStageWallsOrchestrationUtils.ts`, `mazeStageWallsOrchestrationUtils.test.mjs`):** `normalizeWallItems`, `resolveStageWallsRevisionKey`, `resolveWallRenderDescriptors`, `resolveStageWallsMetrics`, `formatStageWallsTelemetry`, `resolveStageWallsOrchestrationBundle` fonksiyonları saf mimariyle geliştirildi; 9 yeni birim test ile %100 doğrulandı (toplam 810 istemci testi, 49 sunucu testi, 6 shared testi, **865 monorepo testi**).
+- [x] **useMazeStageWalls Kancası ve MazeStageWalls Sadeleşmesi (`apps/client/src/hooks/useMazeStageWalls.ts`, `apps/client/src/components/scene/MazeStageWalls.tsx`):** Dış sınır duvarları (`StageOuterWalls`) ve iç labirent duvarları (`StageInnerWalls`) demeti, revizyon anahtarı doğrulaması, toplam duvar adetleri, hacim hesapları ve telemetri tekil kancaya devredildi.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/mazeStageWallsOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 801'den **810'a**, monorepo testleri 856'dan **865'e** çıkarıldı.
+
+### Faz 206: 3B Labirent Toplanabilirleri ve Geçitleri (MazeStageCollectibles) Orkestrasyon Motoru (Sıradaki)
+- [ ] **3B Toplanabilirler ve Geçitler Orkestrasyon Motoru (`mazeStageCollectiblesOrchestrationUtils.ts`, `mazeStageCollectiblesOrchestrationUtils.test.mjs`):** Başlangıç halkası, toplanabilir kristaller listesi (kristal indeksleri, toplanma durumu/oranı, kalan kristal sayısı) ve kilitli/açık hedef portalı durumunu saf motora ayrıştırma.
+- [ ] **MazeStageCollectibles Bileşeni ve useMazeStageCollectibles Kancası:** Toplanabilirler ve portal hiyerarşisini deklaratif ve test edilebilir kancaya bağlama.
 - [ ] **Birim Testleri ve Doğrulama:** Yeni birim testleriyle monorepo test kapsamını artırma, tam derleme ve git push.
 
 

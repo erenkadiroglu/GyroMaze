@@ -3,6 +3,7 @@
 import type { WallDefinition } from './mazeLevels';
 import { StageOuterWalls } from './walls/StageOuterWalls';
 import { StageInnerWalls } from './walls/StageInnerWalls';
+import { useMazeStageWalls } from '@/hooks/useMazeStageWalls';
 
 interface MazeStageWallsProps {
   levelRevisionKey: string;
@@ -21,15 +22,25 @@ export function MazeStageWalls({
   outerWalls,
   innerWalls,
 }: MazeStageWallsProps) {
+  const {
+    safeRevisionKey,
+    outerWalls: safeOuterWalls,
+    innerWalls: safeInnerWalls,
+  } = useMazeStageWalls({
+    levelRevisionKey,
+    outerWalls,
+    innerWalls,
+  });
+
   return (
     <>
       <StageOuterWalls
-        levelRevisionKey={levelRevisionKey}
-        outerWalls={outerWalls}
+        levelRevisionKey={safeRevisionKey}
+        outerWalls={safeOuterWalls}
       />
       <StageInnerWalls
-        levelRevisionKey={levelRevisionKey}
-        innerWalls={innerWalls}
+        levelRevisionKey={safeRevisionKey}
+        innerWalls={safeInnerWalls}
       />
     </>
   );
