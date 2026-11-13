@@ -537,6 +537,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Durum ve Gezinme Şeritleri (`ControllerErrorBanner.tsx`, `ControllerLevelNavBanner.tsx`, `ControllerVictoryBanner.tsx`, `ControllerDefeatBanner.tsx`):** Hata bildirimi, bölüm/kristal navigasyonu, zafer kutlaması ve süre doldu uyarı kartları bağımsız alt bileşenlere ayrıştırıldı.
 - [x] **Yalın Mobil Durum Şeritleri Orkestratörü (`ControllerStatusBanners.tsx`):** Tüm bildirim ve oyun sonu kartları modüler yapıyla bağlanarak `ControllerStatusBanners.tsx` 155 satırdan **55 satıra** indirildi.
 
+### Faz 107: Mobil Kontrolcü Alt Araç Çubuğu Ayrıştırması (Tamamlandı)
+- [x] **Mobil Alt Çubuk Yardımcı Motoru (`controllerFooterUtils.ts`, `controllerFooterUtils.test.mjs`):** `isResetBallDisabled`, `resolveRecalibrateAriaLabel` ve `resolveResetBallAriaLabel` saf yardımcıları geliştirildi; 4 yeni birim test ile doğrulandı (toplam 220 istemci testi, 248 monorepo testi).
+- [x] **Modüler Alt Eylem Butonları (`RecalibrateButton.tsx`, `ResetBallButton.tsx`):** Kalibrasyon ve topu sıfırlama butonları bağımsız, erişilebilir alt bileşenlere ayrıştırıldı.
+- [x] **Yalın Mobil Kontrolcü Alt Çubuğu (`ControllerFooter.tsx`):** Buton yerleşimi modüler alt bileşenlerle bağlanarak `ControllerFooter.tsx` 46 satırdan **32 satıra** indirildi.
+
 
 
 
