@@ -121,3 +121,4 @@ export function shouldUpdateGhostSample(
   }
   return { shouldSample: false, nextSampleTime: lastSampleTime };
 }
+

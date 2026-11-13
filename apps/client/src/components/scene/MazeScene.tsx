@@ -28,10 +28,7 @@ import {
 } from './mazeLevels';
 import { soundEngine } from '@/utils/soundEngine';
 import { calculateEarnedStars } from '@/utils/gameOutcomeUtils';
-import {
-  isLaserGateActive,
-  calculateTrailScale,
-} from '@/utils/sceneUtils';
+import { isLaserGateActive } from '@/utils/sceneUtils';
 import { calculateOuterWallConfigs } from '@/utils/sceneGeometry';
 import { isBallInsideGoal } from '@/utils/sceneCollisions';
 import {
@@ -39,6 +36,8 @@ import {
   calculateCrystalFloatTransform,
   calculateObstacleMeshPosition,
   calculateObstacleRotationY,
+  updateTransientTelemetry,
+  updateBallActorTransform,
 } from '@/utils/sceneActorUtils';
 import {
   _targetEuler,
@@ -47,7 +46,6 @@ import {
   _currentEuler,
   _boardMaterial,
   BALL_RADIUS,
-  TRAIL_COUNT,
   applySceneThemeMaterials,
 } from './sceneMaterials';
 import { SceneErrorBoundary } from './SceneErrorBoundary';
@@ -60,15 +58,12 @@ import { MazeStageActors } from './MazeStageActors';
 import { MazeStageColliders } from './MazeStageColliders';
 import { calculateSlerpAlpha } from '@/utils/sceneColliderUtils';
 import {
-  calculateBallRollingRotation,
-  stepTrailHistory,
-} from '@/utils/sceneCameraUtils';
-import {
   calculateClampedTiltAngles,
   calculateBallLinvelStep,
 } from '@/utils/sceneTiltUtils';
 import { useBallInteractions } from '@/hooks/useBallInteractions';
 import { useGhostReplay } from '@/hooks/useGhostReplay';
+import { useMotionTrail } from '@/hooks/useMotionTrail';
 
 interface MazeStageProps {
   levelData: MazeLevelDefinition;
@@ -110,13 +105,6 @@ function MazeStage({
   const crystalMeshesRef = useRef<Array<THREE.Mesh | null>>([]);
   const laserBeamMeshesRef = useRef<Array<THREE.Mesh | null>>([]);
   const movingObstacleMeshesRef = useRef<Array<THREE.Mesh | null>>([]);
-  const trailMeshesRef = useRef<Array<THREE.Mesh | null>>([]);
-  const trailHistoryRef = useRef<Array<{ x: number; z: number }>>(
-    Array.from({ length: TRAIL_COUNT }, () => ({
-      x: levelData.startPosition[0],
-      z: levelData.startPosition[2],
-    })),
-  );
   const hazardElapsedRef = useRef<number>(0);
   const lastWallSoundTimeRef = useRef<{ 1: number; 2: number }>({ 1: 0, 2: 0 });
   const lastHoleHitMsRef = useRef<{ 1: number; 2: number }>({ 1: 0, 2: 0 });
@@ -155,6 +143,15 @@ function MazeStage({
     () => findSafeP2SpawnOffset(levelData, BALL_RADIUS),
     [levelData],
   );
+
+  const {
+    trailMeshesRef,
+    trailHistoryRef,
+    stepMotionTrail,
+    resetMotionTrail,
+  } = useMotionTrail({
+    startPosition: levelData.startPosition,
+  });
 
   const {
     runPathRef,
@@ -209,10 +206,7 @@ function MazeStage({
       body.setLinvel({ x: 0, y: 0, z: 0 }, true);
       body.setAngvel({ x: 0, y: 0, z: 0 }, true);
       if (slot === 1) {
-        for (let i = 0; i < TRAIL_COUNT; i++) {
-          trailHistoryRef.current[i].x = sx;
-          trailHistoryRef.current[i].z = sz;
-        }
+        resetMotionTrail([sx, 0, sz]);
       }
     },
     [
@@ -220,6 +214,7 @@ function MazeStage({
       p2SpawnOffsetX,
       p2SpawnOffsetZ,
       resetInteractionCooldowns,
+      resetMotionTrail,
     ],
   );
   resetSingleBallRef.current = resetSingleBall;
@@ -360,21 +355,14 @@ function MazeStage({
 
       const pos = ballBodyRef.current.translation();
       const vel = ballBodyRef.current.linvel();
-      transientGyro.ballX = pos.x;
-      transientGyro.ballZ = pos.z;
-      transientGyro.ballSpeed = Math.hypot(vel.x, vel.z);
-
-      if (visualBallMeshRef.current) {
-        visualBallMeshRef.current.position.set(pos.x, BALL_RADIUS, pos.z);
-        const rot = calculateBallRollingRotation(
-          visualBallMeshRef.current.rotation,
-          vel,
-          BALL_RADIUS,
-          safeDelta,
-        );
-        visualBallMeshRef.current.rotation.x = rot.x;
-        visualBallMeshRef.current.rotation.z = rot.z;
-      }
+      updateTransientTelemetry(transientGyro, pos, vel);
+      updateBallActorTransform(
+        visualBallMeshRef.current,
+        pos,
+        vel,
+        BALL_RADIUS,
+        safeDelta,
+      );
 
       // 10Hz Hayalet Yarışçı (Ghost Replay) Canlı Oynatımı ve Yol Kaydı
       const pos2 =
@@ -393,21 +381,7 @@ function MazeStage({
       );
 
       // Neon Hareket İzi (Motion Trail) halkalarını güncelle (Sıfır GC)
-      stepTrailHistory(trailHistoryRef.current, pos);
-
-      for (let i = 0; i < TRAIL_COUNT; i++) {
-        const trailMesh = trailMeshesRef.current[i];
-        if (trailMesh) {
-          trailMesh.visible = showTrail;
-          trailMesh.position.set(
-            trailHistoryRef.current[i].x,
-            0.025,
-            trailHistoryRef.current[i].z,
-          );
-          const scale = calculateTrailScale(i, TRAIL_COUNT);
-          trailMesh.scale.set(scale, scale, 1);
-        }
-      }
+      stepMotionTrail(pos, showTrail);
 
       // 1. Oyuncu kristal, rampa, portal, lazer ve hareketli engel etkileşimleri
       processBallInteractions(
@@ -443,26 +417,15 @@ function MazeStage({
 
         const pos2Val = ball2BodyRef.current.translation();
         const vel2 = ball2BodyRef.current.linvel();
-        transientGyroP2.ballX = pos2Val.x;
-        transientGyroP2.ballZ = pos2Val.z;
-        transientGyroP2.ballSpeed = Math.hypot(vel2.x, vel2.z);
-
-        if (visualBall2MeshRef.current) {
-          visualBall2MeshRef.current.visible = true;
-          visualBall2MeshRef.current.position.set(
-            pos2Val.x,
-            BALL_RADIUS,
-            pos2Val.z,
-          );
-          const rot2 = calculateBallRollingRotation(
-            visualBall2MeshRef.current.rotation,
-            vel2,
-            BALL_RADIUS,
-            safeDelta,
-          );
-          visualBall2MeshRef.current.rotation.x = rot2.x;
-          visualBall2MeshRef.current.rotation.z = rot2.z;
-        }
+        updateTransientTelemetry(transientGyroP2, pos2Val, vel2);
+        updateBallActorTransform(
+          visualBall2MeshRef.current,
+          pos2Val,
+          vel2,
+          BALL_RADIUS,
+          safeDelta,
+          true,
+        );
 
         // 2. Oyuncu için tüm kristal, rampa, portal, lazer ve hareketli engel kontrolleri
         processBallInteractions(

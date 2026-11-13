@@ -1,4 +1,5 @@
 import { calculateMovingObstacleOffset } from './sceneUtils.ts';
+import { calculateBallRollingRotation } from './sceneCameraUtils.ts';
 
 export interface MovingObstacleSpec {
   center: [number, number];
@@ -77,3 +78,46 @@ export function isWithinInteractionCooldown(
   if (lastHitTime < 0) return false;
   return elapsed - lastHitTime <= cooldownThreshold;
 }
+
+/**
+ * Transient jiroskop telemetri nesnesini bellek ayırmadan anında günceller.
+ */
+export function updateTransientTelemetry(
+  target: { ballX: number; ballZ: number; ballSpeed: number },
+  pos: { x: number; z: number },
+  vel: { x: number; z: number },
+): void {
+  target.ballX = pos.x;
+  target.ballZ = pos.z;
+  target.ballSpeed = Math.hypot(vel.x, vel.z);
+}
+
+/**
+ * Görsel bilye mesh'inin 3B konumunu, görünürlüğünü ve yuvarlanma dönüşünü günceller.
+ */
+export function updateBallActorTransform(
+  mesh: {
+    position: { set: (x: number, y: number, z: number) => void };
+    rotation: { x: number; z: number };
+    visible?: boolean;
+  } | null,
+  pos: { x: number; z: number },
+  vel: { x: number; z: number },
+  radius: number,
+  delta: number,
+  isVisible: boolean = true,
+): void {
+  if (!mesh) return;
+  mesh.visible = isVisible;
+  mesh.position.set(pos.x, radius, pos.z);
+  const nextRot = calculateBallRollingRotation(
+    mesh.rotation,
+    vel,
+    radius,
+    delta,
+  );
+  mesh.rotation.x = nextRot.x;
+  mesh.rotation.z = nextRot.z;
+}
+
+

@@ -425,9 +425,14 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **3B Aktör Animasyon ve Etkileşim Yardımcı Motoru (`sceneActorUtils.ts`, `sceneActorUtils.test.mjs`):** Hedef portal halkası açı hesabı `calculateGoalRingRotation`, kristal havada süzülme ve dönme dönüşümü `calculateCrystalFloatTransform`, hareketli kinetik engelin 3B sinüzoidal konumu `calculateObstacleMeshPosition`, engelin kendi ekseni etrafında dönüşü `calculateObstacleRotationY` ve bekleme süresi denetleyicisi `isWithinInteractionCooldown` geliştirildi; 6 yeni birim test ile doğrulandı (toplam 147 istemci testi, 175 monorepo testi).
 - [x] **Bağımsız Bilye Etkileşim Kancası (`useBallInteractions.ts`, `MazeScene.tsx`):** Rampa (boost), portal (teleport), lazer kapısı ve kinetik engel bekleme süreleri (cooldowns) ile bilye etkileşim döngüsü `useBallInteractions` özel kancasına taşındı; `MazeScene.tsx` dosyasından 110+ satırlık gömülü etkileşim ve animasyon kodu temizlenerek bileşen 940 satıra indirildi.
 
-### Faz 83: 3B Tabla Eğim ve Bilye Hız Motoru, Hayalet Yarışçı Kancası Ayrıştırması (Tamamlandı)
-- [x] **3B Tabla Eğim ve Bilye Hız Motoru (`sceneTiltUtils.ts`, `sceneTiltUtils.test.mjs`):** Jiroskop beta ve gamma açılarından radyan ve sınırlandırma hesabı `calculateClampedTiltAngles`, yol noktası koordinat sıkıştırma formatı `formatPathPoint`, yol tamponu kapasite denetimi `canRecordPathPoint` ve yerçekimi/eğim ivmeli bilye hız adımı `calculateBallLinvelStep` geliştirildi; 7 yeni birim test ile doğrulandı (toplam 154 istemci testi, 182 monorepo testi).
-- [x] **Bağımsız Hayalet Yarışçı ve Canlı Yol Kayıt Kancası (`useGhostReplay.ts`, `MazeScene.tsx`):** 10Hz hayalet yarışçı kayıt ve oynatım döngüsü, 1. ve 2. oyuncu yol dizileri (`runPathRef`/`runPathP2Ref`) ve zamanlayıcı yönetimi `useGhostReplay` kancasına taşındı; `MazeScene.tsx` içindeki gömülü eğim ve hayalet blokları temizlenerek bileşen 870 satıra indirildi.
+### Faz 84: 3B Neon Hareket İzi Kancası, Telemetri ve Bilye Aktör Dönüşüm Motoru (Tamamlandı)
+- [x] **3B Bilye Aktör Dönüşümü ve Hızlı Telemetri Motoru (`sceneActorUtils.ts`, `sceneActorUtils.test.mjs`):** Geçici telemetri durumunu (hız, açısal hız ve konum) React render döngüsünü tetiklemeden güncelleyen `updateTransientTelemetry` ve bilye mesh'inin konum ve dönüş açılarını tek hamlede güncelleyen `updateBallActorTransform` saf yardımcıları geliştirildi; 2 yeni birim test ile doğrulandı (toplam 156 istemci testi, 184 monorepo testi).
+- [x] **Bağımsız Neon Hareket İzi Kancası ve Sahne Sadeleştirmesi (`useMotionTrail.ts`, `MazeScene.tsx`):** 12 segmentlik neon hareket izi halkaları dizisi, mesh referansları yönetimi, hareket hızına göre dinamik alfa/ölçekleme ve sıfır GC izleme yaşam döngüsü `useMotionTrail` özel kancasına taşındı; `MazeScene.tsx` içindeki gömülü iz ve aktör dönüştürme blokları temizlenerek bileşen 770 satıra indirildi.
+
+
+
+
+
 
 
 

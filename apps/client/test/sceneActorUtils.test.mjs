@@ -6,6 +6,8 @@ import {
   calculateObstacleMeshPosition,
   calculateObstacleRotationY,
   isWithinInteractionCooldown,
+  updateTransientTelemetry,
+  updateBallActorTransform,
 } from '../src/utils/sceneActorUtils.ts';
 
 test('sceneActorUtils — 3B Aktör Animasyonları ve Etkileşim Zamanlayıcı Motoru', async (t) => {
@@ -80,4 +82,45 @@ test('sceneActorUtils — 3B Aktör Animasyonları ve Etkileşim Zamanlayıcı M
       assert.equal(isWithinInteractionCooldown(10.6, 10.0, 0.5), false);
     },
   );
+
+  await t.test(
+    'updateTransientTelemetry telemetri nesnesini bellek ayırmadan günceller',
+    () => {
+      const target = { ballX: 0, ballZ: 0, ballSpeed: 0 };
+      updateTransientTelemetry(target, { x: 3, z: 4 }, { x: 6, z: 8 });
+      assert.equal(target.ballX, 3);
+      assert.equal(target.ballZ, 4);
+      assert.equal(target.ballSpeed, 10); // Math.hypot(6, 8) = 10
+    },
+  );
+
+  await t.test(
+    'updateBallActorTransform bilye görsel konumunu, görünürlüğünü ve yuvarlanma açısını uygular',
+    () => {
+      let setPos = [0, 0, 0];
+      const mockMesh = {
+        position: {
+          set: (x, y, z) => {
+            setPos = [x, y, z];
+          },
+        },
+        rotation: { x: 0, z: 0 },
+        visible: false,
+      };
+
+      updateBallActorTransform(
+        mockMesh,
+        { x: 5, z: -2 },
+        { x: 3.5, z: 0 },
+        0.35,
+        0.016,
+        true,
+      );
+
+      assert.equal(mockMesh.visible, true);
+      assert.deepEqual(setPos, [5, 0.35, -2]);
+      assert.ok(mockMesh.rotation.z < 0); // +X hızı -> negatif Z rotasyonu
+    },
+  );
 });
+
