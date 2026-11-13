@@ -651,6 +651,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Izgara Hücre Bileşeni (`EditorGridCell.tsx`):** 8x8 ızgaradaki tekil hücre butonu, erişilebilir gridcell rolü ve tık/tuş olayları bağımsız bileşene ayrıştırıldı.
 - [x] **Yalın Editör Çizim Izgarası (`LevelEditorGrid.tsx`):** Grid JSX haritalaması ve hücre durumları sadeleştirilerek `LevelEditorGrid.tsx` 79 satırdan **45 satıra** indirildi.
 
+### Faz 131: Harita Editörü Orkestrasyonu ve Pano Ayrıştırması (Tamamlandı)
+- [x] **Orkestrasyon ve Pano Yardımcı Motoru (`editorOrchestrationUtils.ts`, `editorOrchestrationUtils.test.mjs`):** Dışa aktarma denetimi `canExportGrid`, JSON/link yük çözümleyici `resolveExportPayload`, panodan harita yükleme `parseClipboardMapData` ve başlangıç değer yardımcıları (`getEditorInitialTitle`, `getEditorInitialBoardSize`) saf yardımcıları geliştirildi; 5 yeni birim test ile doğrulandı (toplam 325 istemci testi, 353 monorepo testi).
+- [x] **Yalın Editör Kancası (`useLevelEditor.ts`):** Pano/şema mantığı motor fonksiyonlarına devredilerek `useLevelEditor.ts` 204 satırdan **139 satıra** indirildi.
+- [x] **Kapsamlı Editör Modalı Mimarisi (`LevelEditorModal.tsx`):** Araç paleti, şablon listesi, meta kontrolleri, çizim ızgarası ve alt çubuk alt bileşenleri tam uyum içinde konsolide edildi.
+
 
 
 

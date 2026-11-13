@@ -4,14 +4,10 @@ import { useEffect, useRef, useState } from 'react';
 import { useGameStore } from '@/store/useGameStore';
 import {
   type MazeLevelDefinition,
-  parseCustomMazeLevel,
-  encodeCustomMazeLevelForUrl,
-  decodeCustomMazeLevelFromUrl,
   EDITOR_GRID_SIZE,
   validateEditorGrid,
   levelDefinitionToEditorGrid,
   buildLevelFromEditorGrid,
-  CUSTOM_MAP_URL_PARAM,
 } from '@/components/scene/mazeLevels';
 import {
   type EditorTemplate,
@@ -21,13 +17,15 @@ import {
   type CellTool,
   applyToolToCell,
   generateRandomEditorGrid,
-  isPortalCountBalanced,
 } from '@/utils/editorUtils';
+import { buildInitialEditorGrid } from '@/utils/editorActionUtils';
 import {
-  buildInitialEditorGrid,
-  createShareUrl,
-  detectClipboardMapType,
-} from '@/utils/editorActionUtils';
+  canExportGrid,
+  resolveExportPayload,
+  parseClipboardMapData,
+  getEditorInitialTitle,
+  getEditorInitialBoardSize,
+} from '@/utils/editorOrchestrationUtils';
 import { soundEngine } from '@/utils/soundEngine';
 
 const GRID_SIZE = EDITOR_GRID_SIZE;
@@ -41,8 +39,12 @@ export function useLevelEditor() {
 
   const copyTimerRef = useRef<number | null>(null);
   const [activeTool, setActiveTool] = useState<CellTool>('wall');
-  const [customTitle, setCustomTitle] = useState('Özel Labirent — Tasarım 1');
-  const [boardSize, setBoardSize] = useState<number>(12);
+  const [customTitle, setCustomTitle] = useState(() =>
+    getEditorInitialTitle(customLevel?.title),
+  );
+  const [boardSize, setBoardSize] = useState<number>(() =>
+    getEditorInitialBoardSize(customLevel?.boardSize),
+  );
   const [copiedKind, setCopiedKind] = useState<'json' | 'link' | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
 
@@ -110,21 +112,15 @@ export function useLevelEditor() {
   };
 
   const handleCopyExport = async (kind: 'json' | 'link') => {
-    if (!isPortalCountBalanced(grid)) {
-      setImportError(
-        'Dışa aktarmadan önce açıkta kalan kuantum portal için bir eş daha yerleştirin.',
-      );
+    const exportCheck = canExportGrid(grid);
+    if (!exportCheck.canExport) {
+      setImportError(exportCheck.reason ?? 'Harita dışa aktarılamadı.');
       return;
     }
+
     try {
       const levelDef = buildLevelDefinition();
-      let payload: string;
-      if (kind === 'link') {
-        const encoded = encodeCustomMazeLevelForUrl(levelDef);
-        payload = createShareUrl(window.location.href, encoded);
-      } else {
-        payload = JSON.stringify(levelDef, null, 2);
-      }
+      const payload = resolveExportPayload(levelDef, kind, window.location.href);
 
       await navigator.clipboard.writeText(payload);
       setCopiedKind(kind);
@@ -143,24 +139,9 @@ export function useLevelEditor() {
 
   const handleImportFromClipboard = async () => {
     try {
-      const raw = (await navigator.clipboard.readText()).trim();
-      let validated: MazeLevelDefinition | null = null;
-      const type = detectClipboardMapType(raw);
-      if (type === 'json') {
-        const parsed: unknown = JSON.parse(raw);
-        validated = parseCustomMazeLevel(parsed);
-      } else {
-        let encodedParam: string | null = null;
-        try {
-          const parsedUrl = new URL(raw);
-          encodedParam = parsedUrl.searchParams.get(CUSTOM_MAP_URL_PARAM);
-        } catch {
-          encodedParam = raw;
-        }
-        if (encodedParam) {
-          validated = decodeCustomMazeLevelFromUrl(encodedParam);
-        }
-      }
+      const raw = await navigator.clipboard.readText();
+      const validated = parseClipboardMapData(raw);
+
       if (!validated) {
         setImportError(
           'Panodaki metin geçerli bir GyroMaze JSON haritası veya paylaşım bağlantısı değil.',
