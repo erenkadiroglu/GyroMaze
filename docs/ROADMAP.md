@@ -897,10 +897,15 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **useQuickControls Kancası ve Araç Çubuğu Sadeleşmesi (`apps/client/src/hooks/useQuickControls.ts`, `apps/client/src/components/ui/toolbar/QuickControlsToolbar.tsx`):** Kamera etiketi, gündüz/gece modu geçişi, ses durumu ve semantik araç çubuğu ayırıcı nitelikleri saf motora aktarıldı.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/quickControlsOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 684'ten **689'a**, monorepo testleri 739'dan **744'e** çıkarıldı.
 
-### Faz 190: Masaüstü Modallar ve Çekmeceler Orkestrasyon Motoru (Sıradaki)
-- [ ] **Masaüstü Modallar Orkestrasyon Motoru (`desktopModalsOrchestrationUtils.ts`, `desktopModalsOrchestrationUtils.test.mjs`):** `DesktopModals.tsx` bileşenindeki 6 farklı modalın (Eşleşme, Liderlik Tablosu, Harita Editörü, Ayarlar, Klavye Rehberi, Zafer/Yenilgi) açık olma koşulları, kapanma işleyicileri ve z-index hiyerarşisini saf motora ayrıştırma.
-- [ ] **DesktopModals Bileşeni Sadeleşmesi:** Bileşeni deklaratif yerleşim katmanına indirgeme.
-- [ ] **Birim Testleri ve Doğrulama:** Yeni testlerle kapsamı artırma, derleme ve git push.
+### Faz 190: Masaüstü Modallar ve Çekmeceler Orkestrasyon Motoru (Tamamlandı)
+- [x] **Masaüstü Modallar Orkestrasyon Motoru (`desktopModalsOrchestrationUtils.ts`, `desktopModalsOrchestrationUtils.test.mjs`):** `MODAL_PRIORITY_HIERARCHY`, `resolveActiveModals`, `resolveTopmostModal`, `shouldPreventBackdropClose`, `resolveModalZIndex`, `resolveModalGroupRenderFlags`, `resolveModalsContainerAria`, `resolveDesktopModalsLayerState` fonksiyonları saf mimariyle geliştirildi; 10 yeni birim test ile %100 doğrulandı (toplam 699 istemci testi, 49 sunucu testi, 6 shared testi, **754 monorepo testi**).
+- [x] **useDesktopModals Kancası ve DesktopModalsLayer Sadeleşmesi (`apps/client/src/hooks/useDesktopModals.ts`, `apps/client/src/components/ui/hud/DesktopModalsLayer.tsx`):** Masaüstü sahnesi üzerindeki 6 modal (eşleşme, skor tablosu, harita editörü, ayarlar, yardım/kısayollar, oyun sonu) öncelik sırası, backdrop kilit kuralları, grup bayrakları ve semantik container öznitelikleri saf motora devredildi.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/desktopModalsOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 689'dan **699'a**, monorepo testleri 744'ten **754'e** çıkarıldı.
+
+### Faz 191: Masaüstü Ana Sayfa Görünümü (DesktopHomeView) Orkestrasyon Motoru (Sıradaki)
+- [ ] **Masaüstü Ana Sayfa Orkestrasyon Motoru (`desktopHomeOrchestrationUtils.ts`, `desktopHomeOrchestrationUtils.test.mjs`):** `DesktopHomeView.tsx` bileşenindeki yaşam döngüsü tercihleri, soket ev sahibi yapılandırması, klavye yedek kontrol bağlamı ve semantik sahne kapsayıcı rollerini saf motora ayrıştırma.
+- [ ] **useDesktopHomeView Kancası ve DesktopHomeView Bileşeni Sadeleşmesi:** Görünüm bileşenini tekil orkestrasyon kancasına bağlayarak saf bir sunum katmanına indirgeme.
+- [ ] **Birim Testleri ve Doğrulama:** Yeni birim testleriyle monorepo test barajını artırma, tam derleme ve git push.
 
 
 
