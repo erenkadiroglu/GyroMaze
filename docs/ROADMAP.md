@@ -778,10 +778,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Kontrolcü Görünüm Orkestratörü (`MobileControllerView.tsx`, `controller/index.ts`):** `page.tsx` içindeki monolitik kontrolcü JSX yapısı bağımsız `MobileControllerView` bileşenine taşındı; `controller/index.ts` üzerinden merkezi re-export mimarisi tamamlandı.
 - [x] **Yalın Next.js 15 App Router Sayfası (`controller/page.tsx`):** `page.tsx` bileşeni 163 satırdan **30 satıra** indirilerek saf ve standart bir Next.js 15 Suspense sayfa sarmalayıcısı haline getirildi.
 
-### Faz 159: Harita Editörü Modalı ve Hiyerarşik Barrel Konsolidasyonu (Tamamlandı)
-- [x] **Harita Editörü Görünüm ve Araç Motoru (`editorModalViewUtils.ts`, `editorModalViewUtils.test.mjs`):** Modal başlığı `getEditorModalTitle`, açıklama `getEditorModalDescription`, modal boyutu `getEditorModalSize`, ilk başlık çözümü `resolveEditorModalInitialTitle`, aria etiketi `formatEditorModalAriaLabel`, boş ızgara denetimi `isEditorGridEmpty` ve araç açıklamaları `formatEditorToolDescription` saf yardımcıları geliştirildi; 8 yeni birim test ile doğrulandı (toplam 473 istemci testi, 501 monorepo testi).
-- [x] **Harita Editörü Hiyerarşik Barrel Mimarisi (`footer/index.ts`, `grid/index.ts`, `meta/index.ts`, `templates/index.ts`, `toolbar/index.ts`, `editor/index.ts`):** Editörün tüm alt bileşenleri (araç çubuğu, ızgara, meta kontrolleri, şablon listesi, alt eylem çubuğu) temiz hiyerarşik re-export düzenine kavuşturuldu.
-- [x] **Yalın ve Semantik Harita Editörü Modalı (`LevelEditorModal.tsx`):** Saf yardımcı motorundan beslenen modal yapılandırması ve `role="region"` çalışma alanı semantiğiyle konsolide edildi.
+### Faz 160: Ayarlar Modalı ve Bölüm Bileşenleri Konsolidasyonu (Tamamlandı)
+- [x] **Ayarlar Çekmecesi Görünüm ve Özet Motoru (`settingsModalViewUtils.ts`, `settingsModalViewUtils.test.mjs`):** Standart başlık `getSettingsModalTitle`, açıklama `getSettingsModalDescription`, kapsayıcı aria etiketi `getSettingsContainerAriaLabel`, modal açık durum denetimi `isSettingsModalOpen`, alt bölüm etiket formatlayıcı `formatSettingsSectionAriaLabel` ve tek satırlık aktif tercih telemetrisi `formatActivePreferencesSummary` saf yardımcıları geliştirildi; 7 yeni birim test ile doğrulandı (toplam 480 istemci testi, 508 monorepo testi).
+- [x] **Ayarlar Bölümleri Hiyerarşik Barrel Mimarisi (`appearance/index.ts`, `audio/index.ts`, `gamemode/index.ts`, `physics/index.ts`, `settings/index.ts`):** Görünüm/kamera/kaplama, ses/katman anahtarları, oyun modu/kurallar ve fizik ivmesi alt bileşenleri tam hiyerarşik re-export modül sistemine bağlandı.
+- [x] **Yalın ve Semantik Ayarlar Çekmecesi (`SettingsModal.tsx`):** Saf yardımcı motorundan beslenen çekmece yapılandırması ve `role="region"` arayüz semantiğiyle konsolide edildi.
+
 
 
 

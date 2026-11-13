@@ -2,11 +2,17 @@
 
 import { Drawer } from './primitives';
 import { useSettingsDrawer } from '@/hooks/useSettingsDrawer';
-import { SettingsGameModeSection } from './settings/SettingsGameModeSection';
-import { SettingsAppearanceSection } from './settings/SettingsAppearanceSection';
-import { SettingsPhysicsSection } from './settings/SettingsPhysicsSection';
-import { SettingsAudioOverlaysSection } from './settings/SettingsAudioOverlaysSection';
-import { SettingsDrawerFooter } from './settings/SettingsDrawerFooter';
+import {
+  getSettingsModalTitle,
+  getSettingsContainerAriaLabel,
+} from '@/utils/settingsModalViewUtils';
+import {
+  SettingsGameModeSection,
+  SettingsAppearanceSection,
+  SettingsPhysicsSection,
+  SettingsAudioOverlaysSection,
+  SettingsDrawerFooter,
+} from './settings';
 
 /**
  * Sağdan açılan modüler birleşik Ayarlar Paneli:
@@ -48,7 +54,7 @@ export function SettingsModal() {
     <Drawer
       open={isSettingsOpen}
       onClose={handleClose}
-      title="Ayarlar"
+      title={getSettingsModalTitle()}
       footer={
         <SettingsDrawerFooter
           onOpenEditor={handleOpenEditor}
@@ -57,46 +63,52 @@ export function SettingsModal() {
         />
       }
     >
-      <SettingsGameModeSection
-        isMultiplayer={isMultiplayer}
-        onToggleMultiplayer={toggleMultiplayer}
-        gameMode={gameMode}
-        onSetGameMode={setGameMode}
-      />
+      <div
+        className="space-y-6"
+        role="region"
+        aria-label={getSettingsContainerAriaLabel()}
+      >
+        <SettingsGameModeSection
+          isMultiplayer={isMultiplayer}
+          onToggleMultiplayer={toggleMultiplayer}
+          gameMode={gameMode}
+          onSetGameMode={setGameMode}
+        />
 
-      <SettingsAppearanceSection
-        colorScheme={colorScheme}
-        onSetColorScheme={setColorScheme}
-        boardTheme={boardTheme}
-        onSetBoardTheme={setBoardTheme}
-        cameraMode={cameraMode}
-        onSetCameraMode={setCameraMode}
-        ballSkin={ballSkin}
-        onSetBallSkin={setBallSkin}
-      />
+        <SettingsAppearanceSection
+          colorScheme={colorScheme}
+          onSetColorScheme={setColorScheme}
+          boardTheme={boardTheme}
+          onSetBoardTheme={setBoardTheme}
+          cameraMode={cameraMode}
+          onSetCameraMode={setCameraMode}
+          ballSkin={ballSkin}
+          onSetBallSkin={setBallSkin}
+        />
 
-      <SettingsPhysicsSection
-        gravityScale={gravityScale}
-        onSetGravityScale={(val) => updateSettings({ gravityScale: val })}
-        tiltResponsiveness={tiltResponsiveness}
-        onSetTiltResponsiveness={(val) =>
-          updateSettings({ tiltResponsiveness: val })
-        }
-      />
+        <SettingsPhysicsSection
+          gravityScale={gravityScale}
+          onSetGravityScale={(val) => updateSettings({ gravityScale: val })}
+          tiltResponsiveness={tiltResponsiveness}
+          onSetTiltResponsiveness={(val) =>
+            updateSettings({ tiltResponsiveness: val })
+          }
+        />
 
-      <SettingsAudioOverlaysSection
-        soundVolume={soundVolume}
-        isSoundMuted={isSoundMuted}
-        onVolumeChange={handleVolumeChange}
-        showTrail={showTrail}
-        onSetShowTrail={(val) => updateSettings({ showTrail: val })}
-        showGhost={showGhost}
-        onSetShowGhost={(val) => updateSettings({ showGhost: val })}
-        showMiniMap={showMiniMap}
-        onSetShowMiniMap={(val) => updateSettings({ showMiniMap: val })}
-        isHapticEnabled={isHapticEnabled}
-        onSetHapticEnabled={(val) => updateSettings({ isHapticEnabled: val })}
-      />
+        <SettingsAudioOverlaysSection
+          soundVolume={soundVolume}
+          isSoundMuted={isSoundMuted}
+          onVolumeChange={handleVolumeChange}
+          showTrail={showTrail}
+          onSetShowTrail={(val) => updateSettings({ showTrail: val })}
+          showGhost={showGhost}
+          onSetShowGhost={(val) => updateSettings({ showGhost: val })}
+          showMiniMap={showMiniMap}
+          onSetShowMiniMap={(val) => updateSettings({ showMiniMap: val })}
+          isHapticEnabled={isHapticEnabled}
+          onSetHapticEnabled={(val) => updateSettings({ isHapticEnabled: val })}
+        />
+      </div>
     </Drawer>
   );
 }
