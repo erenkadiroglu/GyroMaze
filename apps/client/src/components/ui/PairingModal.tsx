@@ -1,10 +1,17 @@
 'use client';
 
-import { Smartphone, Copy, Check, ArrowRight } from 'lucide-react';
-import { Modal, Button } from '@/components/ui/primitives';
+import { Smartphone } from 'lucide-react';
+import { Modal } from '@/components/ui/primitives';
 import { usePairingModal } from '@/hooks/usePairingModal';
-import { PairingSlotSelector } from './pairing/PairingSlotSelector';
-import { PairingQRCodeCard } from './pairing/PairingQRCodeCard';
+import {
+  getPairingModalTitle,
+  getPairingModalDescription,
+} from '@/utils/pairingModalViewUtils';
+import {
+  PairingSlotSelector,
+  PairingQRCodeCard,
+  PairingModalFooter,
+} from './pairing';
 
 /**
  * Mobil kontrolcü eşleştirme penceresi:
@@ -32,37 +39,24 @@ export function PairingModal() {
     handleStartKeyboardMode,
   } = usePairingModal();
 
+  const title = getPairingModalTitle();
+  const description = getPairingModalDescription();
+
   return (
     <Modal
       open={isPairingModalOpen}
       onClose={handleClose}
       size="md"
-      title="Telefonunu bağla"
-      description="QR kodu okut veya 6 haneli oda kodunu kontrolcüye gir."
+      title={title}
+      description={description}
       icon={<Smartphone className="h-4 w-4" aria-hidden="true" />}
       footer={
-        <>
-          <Button
-            variant="secondary"
-            icon={
-              copiedLink ? (
-                <Check className="h-4 w-4 text-ok" aria-hidden="true" />
-              ) : (
-                <Copy className="h-4 w-4" aria-hidden="true" />
-              )
-            }
-            onClick={handleCopyLink}
-          >
-            {copyLinkLabel}
-          </Button>
-          <Button
-            variant="primary"
-            icon={<ArrowRight className="h-4 w-4" aria-hidden="true" />}
-            onClick={handleStartKeyboardMode}
-          >
-            Sahneye geç
-          </Button>
-        </>
+        <PairingModalFooter
+          copiedLink={copiedLink}
+          copyLinkLabel={copyLinkLabel}
+          onCopyLink={handleCopyLink}
+          onStartKeyboardMode={handleStartKeyboardMode}
+        />
       }
     >
       <div className="space-y-4">

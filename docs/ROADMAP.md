@@ -723,6 +723,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Yenilgi Bileşenleri (`DefeatModalBody.tsx`, `DefeatModalFooter.tsx`):** Kristal özet metni ve "Modu değiştir" / "Tekrar dene" butonları bağımsız modüllere ayrıştırıldı; `defeat/index.ts` ve `victory/index.ts` üzerinden merkezi `outcome/index.ts` barrel mimarisi kuruldu.
 - [x] **Yalın Oyun Sonucu Orkestratörü (`DefeatModal.tsx`, `GameOutcomeModals.tsx`):** `DefeatModal.tsx` 61 satırdan **50 satıra** indirildi; `GameOutcomeModals.tsx` temiz re-export importlarına bağlandı.
 
+### Faz 147: Masaüstü Eşleştirme Modalı Ayrıştırması (Tamamlandı)
+- [x] **Eşleştirme Modalı Görünüm Yardımcı Motoru (`pairingModalViewUtils.ts`, `pairingModalViewUtils.test.mjs`):** Başlık metni `getPairingModalTitle`, açıklama metni `getPairingModalDescription`, sahneye geçiş butonu metni `getPairingProceedLabel`, kopyalama durum ikonu çözümleyici `resolveCopyIconState` ve ekran okuyucu bildirimi `formatPairingModalAriaLabel` saf yardımcıları geliştirildi; 4 yeni birim test ile doğrulandı (toplam 407 istemci testi, 435 monorepo testi).
+- [x] **Modüler Eşleştirme Alt Bileşenleri (`PairingModalFooter.tsx`, `pairing/index.ts`):** "Bağlantıyı kopyala" ve "Sahneye geç" aksiyonları bağımsız footer bileşenine ayrıştırıldı; `pairing/index.ts` üzerinden merkezi modül yapısı tamamlandı.
+- [x] **Yalın Eşleştirme Orkestratörü (`PairingModal.tsx`):** Alt bileşen ve saf yardımcı mimarisine devredilerek `PairingModal.tsx` 91 satırdan **75 satıra** indirildi.
+
+
 
 
 
