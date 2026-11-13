@@ -1,4 +1,7 @@
-import { calculateMovingObstacleOffset } from './sceneUtils.ts';
+import {
+  calculateMovingObstacleOffset,
+  isLaserGateActive,
+} from './sceneUtils.ts';
 import { calculateBallRollingRotation } from './sceneCameraUtils.ts';
 
 export interface MovingObstacleSpec {
@@ -119,5 +122,98 @@ export function updateBallActorTransform(
   mesh.rotation.x = nextRot.x;
   mesh.rotation.z = nextRot.z;
 }
+
+/**
+ * 1. veya 2. oyuncu için bilye başlangıç doğuş (spawn) 3B koordinatını hesaplar.
+ */
+export function calculateBallSpawnPosition(
+  startPosition: [number, number, number],
+  slot: 1 | 2,
+  p2OffsetX: number,
+  p2OffsetZ: number,
+  ballRadius = 0.28,
+): [number, number, number] {
+  const [sx, , sz] = startPosition;
+  const targetX = slot === 2 ? sx + p2OffsetX : sx;
+  const targetZ = slot === 2 ? sz + p2OffsetZ : sz;
+  return [targetX, ballRadius, targetZ];
+}
+
+/**
+ * Kristallerin havada süzülme ve dönme animasyonlarını tüm görünür kristal mesh'leri için günceller.
+ */
+export function updateCrystalsAnimation(
+  meshes: Array<{
+    position: { y: number };
+    rotation: { y: number };
+    visible?: boolean;
+  } | null | undefined>,
+  crystalCount: number,
+  elapsed: number,
+  delta: number,
+): void {
+  for (let i = 0; i < crystalCount; i++) {
+    const mesh = meshes[i];
+    if (mesh && mesh.visible) {
+      const { y, rotationY } = calculateCrystalFloatTransform(
+        elapsed,
+        i,
+        mesh.rotation.y,
+        delta,
+      );
+      mesh.rotation.y = rotationY;
+      mesh.position.y = y;
+    }
+  }
+}
+
+/**
+ * Lazer kapısı ışın mesh'lerinin görünürlüğünü aktif/pasif periyoduna göre günceller.
+ */
+export function updateLaserBeamsVisibility(
+  beamMeshes: Array<{ visible: boolean } | null | undefined>,
+  laserGates: Array<{ periodSeconds: number; phaseOffset: number }>,
+  hazardElapsed: number,
+): void {
+  for (let i = 0; i < laserGates.length; i++) {
+    const gate = laserGates[i];
+    const beamMesh = beamMeshes[i];
+    if (beamMesh) {
+      beamMesh.visible = isLaserGateActive(
+        hazardElapsed,
+        gate.periodSeconds,
+        gate.phaseOffset,
+      );
+    }
+  }
+}
+
+/**
+ * Hareketli devriye engellerinin görsel konum ve kendi ekseni etrafında dönüşünü günceller.
+ */
+export function updateMovingObstaclesTransform(
+  obstacleMeshes: Array<{
+    position: { set: (x: number, y: number, z: number) => void };
+    rotation: { y: number };
+  } | null | undefined>,
+  movingObstacles: MovingObstacleSpec[],
+  hazardElapsed: number,
+  isInteractive: boolean,
+  delta: number,
+): void {
+  for (let i = 0; i < movingObstacles.length; i++) {
+    const obs = movingObstacles[i];
+    const mesh = obstacleMeshes[i];
+    if (mesh) {
+      mesh.position.set(...calculateObstacleMeshPosition(obs, hazardElapsed));
+      mesh.rotation.y = calculateObstacleRotationY(
+        mesh.rotation.y,
+        isInteractive,
+        delta,
+      );
+    }
+  }
+}
+
 
 

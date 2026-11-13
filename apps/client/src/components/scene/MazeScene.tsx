@@ -26,16 +26,17 @@ import {
   getLevelRevisionKey,
   MazeLevelDefinition,
 } from './mazeLevels';
-import { isLaserGateActive } from '@/utils/sceneUtils';
-import { calculateOuterWallConfigs } from '@/utils/sceneGeometry';
+import {
+  calculateOuterWallConfigs,
+} from '@/utils/sceneGeometry';
 import { isBallInsideGoal } from '@/utils/sceneCollisions';
 import {
   calculateGoalRingRotation,
-  calculateCrystalFloatTransform,
-  calculateObstacleMeshPosition,
-  calculateObstacleRotationY,
   updateTransientTelemetry,
   updateBallActorTransform,
+  updateCrystalsAnimation,
+  updateLaserBeamsVisibility,
+  updateMovingObstaclesTransform,
 } from '@/utils/sceneActorUtils';
 import {
   _targetEuler,
@@ -67,6 +68,7 @@ import { useBallInteractions } from '@/hooks/useBallInteractions';
 import { useGhostReplay } from '@/hooks/useGhostReplay';
 import { useMotionTrail } from '@/hooks/useMotionTrail';
 import { useMazeSceneEvents } from '@/hooks/useMazeSceneEvents';
+import { useMazeStageReset } from '@/hooks/useMazeStageReset';
 
 interface MazeStageProps {
   levelData: MazeLevelDefinition;
@@ -186,60 +188,22 @@ function MazeStage({
       resetBallAndBoard: () => resetBallAndBoardRef.current?.(),
     });
 
-  const resetSingleBall = useCallback(
-    (body: RapierRigidBody | null, slot: 1 | 2) => {
-      const [sx, , sz] = levelData.startPosition;
-      const targetX = slot === 2 ? sx + p2SpawnOffsetX : sx;
-      const targetZ = slot === 2 ? sz + p2SpawnOffsetZ : sz;
-
-      resetInteractionCooldowns(slot);
-
-      if (slot === 2) {
-        transientGyroP2.ballX = targetX;
-        transientGyroP2.ballZ = targetZ;
-        transientGyroP2.ballSpeed = 0;
-      } else {
-        transientGyro.ballX = targetX;
-        transientGyro.ballZ = targetZ;
-        transientGyro.ballSpeed = 0;
-      }
-
-      if (!body) return;
-      body.setTranslation({ x: targetX, y: BALL_RADIUS, z: targetZ }, true);
-      body.setLinvel({ x: 0, y: 0, z: 0 }, true);
-      body.setAngvel({ x: 0, y: 0, z: 0 }, true);
-      if (slot === 1) {
-        resetMotionTrail([sx, 0, sz]);
-      }
-    },
-    [
-      levelData.startPosition,
-      p2SpawnOffsetX,
-      p2SpawnOffsetZ,
-      resetInteractionCooldowns,
-      resetMotionTrail,
-    ],
-  );
-  resetSingleBallRef.current = resetSingleBall;
-
-  const resetBallAndBoard = useCallback(() => {
-    _currentQuat.identity();
-    if (visualTiltGroupRef.current) {
-      visualTiltGroupRef.current.quaternion.identity();
-    }
-    resetRunPaths();
-    hazardElapsedRef.current = 0;
-    resetSingleBall(ballBodyRef.current, 1);
-    resetSingleBall(ball2BodyRef.current, 2);
-  }, [
+  const { resetSingleBall, resetBallAndBoard } = useMazeStageReset({
+    startPosition: levelData.startPosition,
+    p2SpawnOffsetX,
+    p2SpawnOffsetZ,
+    resetCount,
+    levelRevisionKey,
+    ballBodyRef,
+    ball2BodyRef,
+    visualTiltGroupRef,
+    hazardElapsedRef,
+    resetInteractionCooldowns,
+    resetMotionTrail,
     resetRunPaths,
-    resetSingleBall,
-  ]);
+  });
+  resetSingleBallRef.current = resetSingleBall;
   resetBallAndBoardRef.current = resetBallAndBoard;
-
-  useEffect(() => {
-    resetBallAndBoard();
-  }, [resetCount, levelRevisionKey, resetBallAndBoard]);
 
   const handleBallCollision = useCallback(
     (slot: 1 | 2) => {
@@ -271,19 +235,12 @@ function MazeStage({
     }
 
     // Kristallerin havada süzülme ve dönme animasyonu
-    for (let i = 0; i < levelData.crystals.length; i++) {
-      const mesh = crystalMeshesRef.current[i];
-      if (mesh && mesh.visible) {
-        const { y, rotationY } = calculateCrystalFloatTransform(
-          elapsed,
-          i,
-          mesh.rotation.y,
-          safeDelta,
-        );
-        mesh.rotation.y = rotationY;
-        mesh.position.y = y;
-      }
-    }
+    updateCrystalsAnimation(
+      crystalMeshesRef.current,
+      levelData.crystals.length,
+      elapsed,
+      safeDelta,
+    );
 
     const isPageHidden = typeof document !== 'undefined' && document.hidden;
     const isInteractive =
@@ -300,32 +257,20 @@ function MazeStage({
     const hazardElapsed = hazardElapsedRef.current;
 
     // Lazer ışınlarının görünürlüğünü duraklatma duyarlı saatle kare başına güncelle
-    for (let i = 0; i < levelData.laserGates.length; i++) {
-      const gate = levelData.laserGates[i];
-      const beamMesh = laserBeamMeshesRef.current[i];
-      if (beamMesh) {
-        beamMesh.visible = isLaserGateActive(
-          hazardElapsed,
-          gate.periodSeconds,
-          gate.phaseOffset,
-        );
-      }
-    }
+    updateLaserBeamsVisibility(
+      laserBeamMeshesRef.current,
+      levelData.laserGates,
+      hazardElapsed,
+    );
 
     // Hareketli devriye engellerinin görsel konumunu kare başına güncelle
-    const movingObstacles = levelData.movingObstacles ?? [];
-    for (let i = 0; i < movingObstacles.length; i++) {
-      const obs = movingObstacles[i];
-      const mesh = movingObstacleMeshesRef.current[i];
-      if (mesh) {
-        mesh.position.set(...calculateObstacleMeshPosition(obs, hazardElapsed));
-        mesh.rotation.y = calculateObstacleRotationY(
-          mesh.rotation.y,
-          isInteractive,
-          safeDelta,
-        );
-      }
-    }
+    updateMovingObstaclesTransform(
+      movingObstacleMeshesRef.current,
+      levelData.movingObstacles ?? [],
+      hazardElapsed,
+      isInteractive,
+      safeDelta,
+    );
 
     const { pitchRad, rollRad } = calculateClampedTiltAngles(
       transientGyro.beta,
