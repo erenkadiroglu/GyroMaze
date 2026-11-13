@@ -532,6 +532,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Başlık Eylemleri ve Marka Kapsülü (`ControllerBrandCapsule.tsx`, `ControllerHeaderActions.tsx`):** Sol marka ve P1/P2 rozeti ile sağ taraftaki titreşim, tema, oda kodu ve bağlantı kapsülü bağımsız bileşenlere ayrıştırıldı.
 - [x] **Yalın Mobil Kontrolcü Başlığı (`ControllerHeader.tsx`):** Başlık yapısı alt bileşenlerle birleştirilerek `ControllerHeader.tsx` 154 satırdan **52 satıra** indirildi.
 
+### Faz 106: Mobil Kontrolcü Durum ve Bölüm Şeritleri Ayrıştırması (Tamamlandı)
+- [x] **Mobil Durum Şeritleri Yardımcı Motoru (`controllerBannerUtils.ts`, `controllerBannerUtils.test.mjs`):** `shouldShowLevelNavBanner`, `shouldShowVictoryBanner`, `shouldShowDefeatBanner` ve `isPrevLevelDisabled` saf yardımcıları geliştirildi; 5 yeni birim test ile doğrulandı (toplam 216 istemci testi, 244 monorepo testi).
+- [x] **Modüler Durum ve Gezinme Şeritleri (`ControllerErrorBanner.tsx`, `ControllerLevelNavBanner.tsx`, `ControllerVictoryBanner.tsx`, `ControllerDefeatBanner.tsx`):** Hata bildirimi, bölüm/kristal navigasyonu, zafer kutlaması ve süre doldu uyarı kartları bağımsız alt bileşenlere ayrıştırıldı.
+- [x] **Yalın Mobil Durum Şeritleri Orkestratörü (`ControllerStatusBanners.tsx`):** Tüm bildirim ve oyun sonu kartları modüler yapıyla bağlanarak `ControllerStatusBanners.tsx` 155 satırdan **55 satıra** indirildi.
+
 
 
 
