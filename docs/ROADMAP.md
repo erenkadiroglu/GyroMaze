@@ -763,6 +763,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Üst Çubuk ve Radar Barrel Mimarisi (`header/index.ts`, `header/actions/index.ts`, `header/readouts/index.ts`, `radar/index.ts`):** Üst bilgi çubuğunun aksiyon ve durum okuma alt modülleri ile 2B radarın hedef, kristal ve oyuncu işaretçileri tam modüler barrel hiyerarşisine kavuşturuldu.
 - [x] **Yalın ve Erişilebilir Üst Çubuk & Mini-Harita Orkestratörleri (`DesktopHeader.tsx`, `MiniMapRadar.tsx`):** `role="banner"` semantik üst çubuk yapısı ve temiz modüler radar importları ile her iki orkestratör bileşen konsolide edildi.
 
+### Faz 155: Masaüstü HUD Alt Çubuk ve Araç Çubuğu Modül Konsolidasyonu (Tamamlandı)
+- [x] **Alt Çubuk Yardımcı Motoru (`desktopFooterUtils.ts`, `desktopFooterUtils.test.mjs`):** Alt panel erişilebilirlik etiketi `getFooterAriaLabel`, konteyner stil sınıfları `getFooterContainerClass`, mini-harita görünürlük doğrulayıcısı `shouldRenderMiniMap` ve telemetri durum özet formatlayıcı `formatFooterSummary` saf yardımcıları geliştirildi; 5 yeni birim test ile doğrulandı (toplam 449 istemci testi, 477 monorepo testi).
+- [x] **Alt Panel ve Araç Çubuğu Barrel Mimarisi (`footer/index.ts`, `toolbar/index.ts`):** Hızlı araç çubuğu ve alt kontroller paneli ilgili klasörlerine taşındı; `footer/index.ts` ve `toolbar/index.ts` üzerinden temiz re-export mimarisi kuruldu.
+- [x] **Yalın ve Erişilebilir Alt Panel & Araç Çubuğu Orkestratörleri (`DesktopFooterControls.tsx`, `QuickControlsToolbar.tsx`):** `role="contentinfo"` ve `role="toolbar"` semantik erişilebilirlik yapıları, merkezi barrel importları ve saf yardımcı fonksiyonlar ile konsolide edildi.
+
+
 
 
 
