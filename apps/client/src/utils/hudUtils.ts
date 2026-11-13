@@ -154,3 +154,37 @@ export function resolveHudNotificationTone(
   }
 }
 
+/**
+ * Çok oyunculu modda 2. oyuncu kontrolcü bağlantısına göre ipucu metnini üretir.
+ */
+export function resolveMultiplayerTooltip(
+  isSecondControllerPaired: boolean,
+): string {
+  return isSecondControllerPaired
+    ? '2. telefon bağlı'
+    : 'Klavyede 1. Oyuncu WASD, 2. Oyuncu Ok Tuşları';
+}
+
+/**
+ * Masaüstü başlığındaki telefon eşleştirme düğmesi için gecikme (ms) veya bağla rozetini belirler.
+ */
+export function resolvePairingButtonBadge(
+  isAnyPaired: boolean,
+  latencyMs: number,
+): { text: string; isLatency: boolean } {
+  if (isAnyPaired) {
+    const safeLatency = Math.max(0, Number.isFinite(latencyMs) ? Math.round(latencyMs) : 0);
+    return { text: `${safeLatency}ms`, isLatency: true };
+  }
+  return { text: 'Bağla', isLatency: false };
+}
+
+/**
+ * Görünür sayaç (veya geri sayım) değerini "0.0 sn" biçiminde formatlar.
+ */
+export function formatVisibleTimerText(value: number): string {
+  const safe = Math.max(0, Number.isFinite(value) ? value : 0);
+  return `${safe.toFixed(1)} sn`;
+}
+
+

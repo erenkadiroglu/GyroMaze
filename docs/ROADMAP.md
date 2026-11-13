@@ -478,6 +478,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Bağımsız Eşleştirme Modali Kancası (`usePairingModal.ts`):** Pano kopyalama zamanlayıcıları, tarayıcı adresi algılama, QR kod URL çözümü ve klavye moduna geçiş kancaya taşındı.
 - [x] **Modüler Eşleştirme Arayüz Mimarisi (`PairingSlotSelector.tsx`, `PairingQRCodeCard.tsx`, `PairingModal.tsx`):** 1P/2P radyo grubu yuva seçici ve QR kod / oda kodu kartı bağımsız alt bileşenlere ayrılarak `PairingModal.tsx` 242 satırdan **88 satıra** indirildi.
 
+### Faz 95: Masaüstü HUD Üst Çubuğu, Başlık Kancası ve Durum Kapsülleri Ayrışımı (Tamamlandı)
+- [x] **HUD Başlık ve Durum Yardımcı Motoru (`hudUtils.ts`, `hudUtils.test.mjs`):** `resolveMultiplayerTooltip`, `resolvePairingButtonBadge` ve `formatVisibleTimerText` saf yardımcıları geliştirildi; 1 yeni birim test ile doğrulandı (toplam 177 istemci testi, 205 monorepo testi).
+- [x] **Bağımsız Başlık Kancası (`useDesktopHeader.ts`):** Portal/kristal telemetrisi, oyun süresi formatlama, kontrolcü bağlantı durumu ve modal tetikleyicileri bağımsız `useDesktopHeader` kancasına taşındı.
+- [x] **Modüler Üst Çubuk Arayüz Mimarisi (`HeaderBrandCapsule.tsx`, `HeaderStatusReadouts.tsx`, `HeaderActionButtons.tsx`, `DesktopHeader.tsx`):** Sol marka/bölüm kapsülü, sağ durum göstergeleri ve aksiyon butonları bağımsız bileşenlere ayrılarak `DesktopHeader.tsx` 184 satırdan **54 satıra** indirildi.
+
+
 
 
 

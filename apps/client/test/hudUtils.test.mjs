@@ -11,6 +11,9 @@ import {
   isTimerExpired,
   shouldWarnTimerTick,
   resolveHudNotificationTone,
+  resolveMultiplayerTooltip,
+  resolvePairingButtonBadge,
+  formatVisibleTimerText,
 } from '../src/utils/hudUtils.ts';
 
 test('hudUtils — HUD Durum, Süre ve Formatlama Yardımcıları', async (t) => {
@@ -121,6 +124,34 @@ test('hudUtils — HUD Durum, Süre ve Formatlama Yardımcıları', async (t) =>
       borderClass: 'border-signal/50',
       textClass: 'text-fg',
     });
+  });
+
+  await t.test('resolveMultiplayerTooltip, resolvePairingButtonBadge ve formatVisibleTimerText kurallarını uygular', () => {
+    // resolveMultiplayerTooltip
+    assert.equal(resolveMultiplayerTooltip(true), '2. telefon bağlı');
+    assert.equal(
+      resolveMultiplayerTooltip(false),
+      'Klavyede 1. Oyuncu WASD, 2. Oyuncu Ok Tuşları',
+    );
+
+    // resolvePairingButtonBadge
+    assert.deepEqual(resolvePairingButtonBadge(true, 42.4), {
+      text: '42ms',
+      isLatency: true,
+    });
+    assert.deepEqual(resolvePairingButtonBadge(true, -5), {
+      text: '0ms',
+      isLatency: true,
+    });
+    assert.deepEqual(resolvePairingButtonBadge(false, 42), {
+      text: 'Bağla',
+      isLatency: false,
+    });
+
+    // formatVisibleTimerText
+    assert.equal(formatVisibleTimerText(14.82), '14.8 sn');
+    assert.equal(formatVisibleTimerText(0), '0.0 sn');
+    assert.equal(formatVisibleTimerText(NaN), '0.0 sn');
   });
 });
 
