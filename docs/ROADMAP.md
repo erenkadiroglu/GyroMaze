@@ -453,6 +453,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Kontrolcü Sensör ve Bağlam Güvenlik Motoru (`controllerUtils.ts`, `controllerUtils.test.mjs`):** Sensör zaman aşımı koşulu `shouldTriggerSensorTimeout`, izin sonucu aksiyon çözümleyicisi `resolveSensorActivation`, dokunmatik geçiş anahtarı `resolveTouchOverrideToggle` ve güvenli bağlam denetleyicisi `isContextInsecure` saf yardımcıları geliştirildi; 1 yeni birim test ile doğrulandı (toplam 170 istemci testi, 198 monorepo testi).
 - [x] **Bağımsız Sensör Yaşam Döngüsü ve İzin Kancası (`useControllerSensors.ts`, `controller/page.tsx`):** HTML5 jiroskop sensör yaşam döngüsü, izin istekleri, güvensiz bağlam tespiti, 1500ms sinyal zaman aşımı, kalibrasyon ve ekran uyku kilidi (`useWakeLock`) bağımsız `useControllerSensors` kancasına devredildi; `controller/page.tsx` bileşeni 341 satırdan **249 satıra** indirildi.
 
+### Faz 90: Masaüstü HUD Oyun Saati Kancası, Klavye Kısayolları ve Arayüz Ayrışımı (Tamamlandı)
+- [x] **HUD Zamanlayıcı ve Bildirim Tonu Motoru (`hudUtils.ts`, `hudUtils.test.mjs`):** `shouldRunGameTimer`, `isTimerExpired`, `shouldWarnTimerTick` ve `resolveHudNotificationTone` saf yardımcıları geliştirildi; 2 yeni birim test ile doğrulandı (toplam 172 istemci testi, 200 monorepo testi).
+- [x] **Bağımsız Oyun Saati ve Klavye Kısayol Kancaları (`useGameTimer.ts`, `useDesktopKeyboardShortcuts.ts`):** Sekme dondurma ve Time Attack geri sayım döngüsü `useGameTimer` kancasına; masaüstü global klavye aksiyonları `useDesktopKeyboardShortcuts` kancasına ayrıştırıldı.
+- [x] **Modüler HUD Bildirimleri ve Alt Kontrol Paneli (`DesktopHUDOverlays.tsx`, `DesktopFooterControls.tsx`, `DesktopHUD.tsx`):** Sahne üstü duraklatma/kurtarma çubuğu ile toast bildirimleri `DesktopHUDOverlays` bileşenine; AttitudeGauge, mini-harita ve 1P/2P ipuçları `DesktopFooterControls` bileşenine devredildi; `DesktopHUD.tsx` orkestratörü 359 satırdan **96 satıra** indirildi.
+
+
 
 
 

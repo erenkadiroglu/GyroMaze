@@ -7,6 +7,10 @@ import {
   resolveConnectionStatus,
   formatPortalStatus,
   formatCameraModeLabel,
+  shouldRunGameTimer,
+  isTimerExpired,
+  shouldWarnTimerTick,
+  resolveHudNotificationTone,
 } from '../src/utils/hudUtils.ts';
 
 test('hudUtils — HUD Durum, Süre ve Formatlama Yardımcıları', async (t) => {
@@ -77,4 +81,46 @@ test('hudUtils — HUD Durum, Süre ve Formatlama Yardımcıları', async (t) =>
     assert.equal(formatCameraModeLabel('topdown'), 'Üstten');
     assert.equal(formatCameraModeLabel('follow'), 'Takip');
   });
+
+  await t.test('shouldRunGameTimer, isTimerExpired ve shouldWarnTimerTick kurallarını uygular', () => {
+    // 1. shouldRunGameTimer
+    assert.equal(shouldRunGameTimer('playing', false, false), true);
+    assert.equal(shouldRunGameTimer('paused', false, false), false);
+    assert.equal(shouldRunGameTimer('playing', true, false), false);
+    assert.equal(shouldRunGameTimer('playing', false, true), false);
+
+    // 2. isTimerExpired
+    assert.equal(isTimerExpired(false, 30, 20), false);
+    assert.equal(isTimerExpired(true, 19.9, 20), false);
+    assert.equal(isTimerExpired(true, 20.0, 20), true);
+    assert.equal(isTimerExpired(true, 25.4, 20), true);
+
+    // 3. shouldWarnTimerTick
+    assert.equal(shouldWarnTimerTick(false, 4, null), false);
+    assert.equal(shouldWarnTimerTick(true, 6, null), false);
+    assert.equal(shouldWarnTimerTick(true, 5, null), true);
+    assert.equal(shouldWarnTimerTick(true, 3, 3), false); // Aynı saniye tekrar uyarılmamalı
+    assert.equal(shouldWarnTimerTick(true, 2, 3), true);
+    assert.equal(shouldWarnTimerTick(true, 0, null), false);
+  });
+
+  await t.test('resolveHudNotificationTone bildirim tonuna göre doğru CSS sınıflarını döner', () => {
+    assert.deepEqual(resolveHudNotificationTone('warn'), {
+      borderClass: 'border-warn/50',
+      textClass: 'text-warn',
+    });
+    assert.deepEqual(resolveHudNotificationTone('success'), {
+      borderClass: 'border-ok/50',
+      textClass: 'text-ok',
+    });
+    assert.deepEqual(resolveHudNotificationTone('info'), {
+      borderClass: 'border-signal/50',
+      textClass: 'text-fg',
+    });
+    assert.deepEqual(resolveHudNotificationTone(undefined), {
+      borderClass: 'border-signal/50',
+      textClass: 'text-fg',
+    });
+  });
 });
+

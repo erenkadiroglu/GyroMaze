@@ -98,3 +98,59 @@ export function formatCameraModeLabel(cameraMode: 'isometric' | 'topdown' | 'fol
       return 'Kamera';
   }
 }
+
+/**
+ * Oyun içi sayacın aktif olarak çalışıp çalışmayacağını denetler.
+ */
+export function shouldRunGameTimer(
+  gameStatus: string,
+  isAnyOverlayOpen: boolean,
+  isPageHidden: boolean,
+): boolean {
+  return gameStatus === 'playing' && !isAnyOverlayOpen && !isPageHidden;
+}
+
+/**
+ * Süreye Karşı modunda azami sürenin aşılıp aşılmadığını doğrular.
+ */
+export function isTimerExpired(
+  isTimeAttack: boolean,
+  elapsed: number,
+  limit: number,
+): boolean {
+  return isTimeAttack && elapsed >= limit;
+}
+
+/**
+ * Süreye Karşı modunda kalan son 5 saniyede metronom uyarısı verilip verilmeyeceğini denetler.
+ */
+export function shouldWarnTimerTick(
+  isTimeAttack: boolean,
+  remainingCeil: number,
+  lastWarnedSecond: number | null,
+): boolean {
+  return (
+    isTimeAttack &&
+    remainingCeil <= 5 &&
+    remainingCeil > 0 &&
+    lastWarnedSecond !== remainingCeil
+  );
+}
+
+/**
+ * Sahne üstü HUD bildirim tonuna göre CSS sınır ve metin renk sınıflarını çözümler.
+ */
+export function resolveHudNotificationTone(
+  tone?: 'info' | 'warn' | 'success',
+): { borderClass: string; textClass: string } {
+  switch (tone) {
+    case 'warn':
+      return { borderClass: 'border-warn/50', textClass: 'text-warn' };
+    case 'success':
+      return { borderClass: 'border-ok/50', textClass: 'text-ok' };
+    case 'info':
+    default:
+      return { borderClass: 'border-signal/50', textClass: 'text-fg' };
+  }
+}
+
