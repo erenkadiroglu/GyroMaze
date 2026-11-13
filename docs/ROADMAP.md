@@ -952,9 +952,14 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Kurtarma Kartı ve Bileşen Sadeleşmesi (`SceneRecoveryCard.tsx`, `ContextLostFallback.tsx`, `SceneErrorBoundary.tsx`):** WebGL bağlam kaybı (`context_lost`) ve başlatma hataları (`init_error`) için paylaşılan erişilebilir `SceneRecoveryCard` geliştirilerek her iki bileşen saf motora bağlandı.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/sceneRecoveryOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 761'den **770'e**, monorepo testleri 816'dan **825'e** çıkarıldı.
 
-### Faz 201: Masaüstü Sahne Yükleme Arayüzü (DesktopSceneLoader) Orkestrasyon Motoru (Sıradaki)
-- [ ] **Masaüstü Yükleme Orkestrasyon Motoru (`desktopSceneLoaderOrchestrationUtils.ts`, `desktopSceneLoaderOrchestrationUtils.test.mjs`):** `DesktopSceneLoader.tsx` ve CSR dinamik yükleme durumunun spinner, kapsayıcı, erişilebilirlik (`role="status"`, `aria-live="polite"`) ve telemetri özelliklerini saf motora ayrıştırma.
-- [ ] **DesktopSceneLoader Bileşeni Sadeleşmesi:** Yükleyici bileşenini saf orkestrasyon motoruna bağlayarak deklaratif sunuma dönüştürme.
+### Faz 201: Masaüstü Sahne Yükleme Arayüzü (DesktopSceneLoader) Orkestrasyon Motoru (Tamamlandı)
+- [x] **Masaüstü Yükleme Orkestrasyon Motoru (`desktopSceneLoaderOrchestrationUtils.ts`, `desktopSceneLoaderOrchestrationUtils.test.mjs`):** `resolveDesktopLoaderContainerProps`, `getDesktopLoaderSpinnerProps`, `getDesktopLoaderMessageProps`, `formatDesktopSceneLoaderTelemetry`, `resolveDesktopSceneLoaderState` fonksiyonları saf mimariyle geliştirildi; 7 yeni birim test ile %100 doğrulandı (toplam 777 istemci testi, 49 sunucu testi, 6 shared testi, **832 monorepo testi**).
+- [x] **DesktopSceneLoadingFallback ve DesktopSceneLoader Sadeleşmesi (`DesktopSceneLoadingFallback.tsx`, `DesktopSceneLoader.tsx`):** CSR dinamik yükleme durumunun spinner, kapsayıcı ve mesaj sunumu bağımsız `DesktopSceneLoadingFallback` bileşeniyle saf orkestrasyon motoruna bağlandı.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/desktopSceneLoaderOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 770'ten **777'ye**, monorepo testleri 825'ten **832'ye** çıkarıldı.
+
+### Faz 202: 3B Labirent Sahnesi Kamera Rig (MazeCameraRig) Orkestrasyon Motoru (Sıradaki)
+- [ ] **3B Kamera Teçhizatı Orkestrasyon Motoru (`mazeCameraRigOrchestrationUtils.ts`, `mazeCameraRigOrchestrationUtils.test.mjs`):** `MazeCameraRig.tsx` bileşeninin dinamik görüş açısı (FOV), takip hedefi, kamera modu sınırlandırmaları ve telemetri durumunu saf motora ayrıştırma.
+- [ ] **MazeCameraRig Bileşeni Sadeleşmesi:** Kamera teçhizat bileşenini saf orkestrasyon motoruna bağlayarak deklaratif sunuma dönüştürme.
 - [ ] **Birim Testleri ve Doğrulama:** Yeni birim testleriyle monorepo test kapsamını artırma, tam derleme ve git push.
 
 
