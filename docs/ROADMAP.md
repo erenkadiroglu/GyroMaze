@@ -773,6 +773,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Mobil Kontrolcü Barrel Hiyerarşisi (`banners/index.ts`, `footer/index.ts`, `gimbal/index.ts`, `gimbal/selectors/index.ts`, `header/index.ts`, `header/actions/index.ts`, `room/index.ts`, `sensor/index.ts`):** Mobil kontrolcünün tüm alt modülleri bağımsız ve hiyerarşik barrel sistemine kavuşturuldu.
 - [x] **Yalın ve Erişilebilir Merkez Sahne Orkestratörü (`ControllerCenterStage.tsx`):** `role="region"` semantik yapısı, dinamik `aria-label` çözümlemesi ve saf yardımcı fonksiyonlar ile `ControllerCenterStage.tsx` refactor edildi.
 
+### Faz 157: Mobil Kontrolcü Sayfa Orkestratörü ve Görünüm Ayrıştırması (Tamamlandı)
+- [x] **Kontrolcü Görünüm Yardımcı Motoru (`controllerViewUtils.ts`, `controllerViewUtils.test.mjs`):** Ana kontrolcü semantik etiketi `getControllerMainAriaLabel`, ana konteyner stil sınıfları `getControllerMainContainerClass`, Suspense fallback metni/sınıfları `getControllerFallbackText` / `getControllerFallbackClass`, dinamik başlık formatlayıcı `formatControllerDocumentTitle` ve bağlantı/eşleşme hazır olma denetleyicisi `isControllerReady` saf yardımcıları geliştirildi; 5 yeni birim test ile doğrulandı (toplam 459 istemci testi, 487 monorepo testi).
+- [x] **Modüler Kontrolcü Görünüm Orkestratörü (`MobileControllerView.tsx`, `controller/index.ts`):** `page.tsx` içindeki monolitik kontrolcü JSX yapısı bağımsız `MobileControllerView` bileşenine taşındı; `controller/index.ts` üzerinden merkezi re-export mimarisi tamamlandı.
+- [x] **Yalın Next.js 15 App Router Sayfası (`controller/page.tsx`):** `page.tsx` bileşeni 163 satırdan **30 satıra** indirilerek saf ve standart bir Next.js 15 Suspense sayfa sarmalayıcısı haline getirildi.
+
+
 
 
 
