@@ -1,16 +1,12 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useGameStore } from '@/store/useGameStore';
-import { getMazeLevel } from '@/components/scene/mazeLevels';
 import {
-  calculateCampaignProgress,
-  getLevelProgress,
-  formatShortLevelTag,
-  cleanLevelTitle,
-  calculateNextProceduralLevel,
-  STANDARD_LEVEL_THRESHOLDS,
-} from '@/utils/levelProgressUtils';
+  resolveLevelSelectState,
+  shouldClosePopoverOnKeyDown,
+  shouldClosePopoverOnMouseDown,
+} from '@/utils/desktopHeaderOrchestrationUtils';
 import { soundEngine } from '@/utils/soundEngine';
 
 /**
@@ -30,37 +26,28 @@ export function useLevelSelect() {
   const showHudNotification = useGameStore((s) => s.showHudNotification);
   const isSoundMuted = useGameStore((s) => s.isSoundMuted);
 
-  const currentLevelInfo = getMazeLevel(level, customLevel);
-  const activeNumericLevel = level === 99 ? 1 : Math.max(1, level);
-
-  const shortLevelTag = formatShortLevelTag(level, currentLevelInfo.id);
-  const cleanTitle = cleanLevelTitle(currentLevelInfo.title);
-
-  const currentProgress = getLevelProgress(
-    currentLevelInfo.id,
-    bestTimes,
-    currentLevelInfo.starThresholds,
-  );
-
-  const campaignProgress = calculateCampaignProgress(
-    bestTimes,
-    STANDARD_LEVEL_THRESHOLDS,
-    5,
+  const state = useMemo(
+    () =>
+      resolveLevelSelectState({
+        level,
+        customLevel,
+        bestTimes,
+      }),
+    [level, customLevel, bestTimes],
   );
 
   // Menü dışına tıklanınca veya Esc basılınca kapat
   useEffect(() => {
     if (!isOpen) return;
     const onMouseDown = (e: MouseEvent) => {
-      if (
-        popoverRef.current &&
-        !popoverRef.current.contains(e.target as Node)
-      ) {
+      if (shouldClosePopoverOnMouseDown(popoverRef.current, e.target)) {
         setIsOpen(false);
       }
     };
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsOpen(false);
+      if (shouldClosePopoverOnKeyDown(e.key)) {
+        setIsOpen(false);
+      }
     };
     window.addEventListener('mousedown', onMouseDown);
     window.addEventListener('keydown', onKeyDown);
@@ -71,15 +58,11 @@ export function useLevelSelect() {
   }, [isOpen]);
 
   const handleJumpProceduralLevel = useCallback(() => {
-    const nextProc = calculateNextProceduralLevel(level);
-    setLevel(nextProc);
+    setLevel(state.nextProceduralLevel);
     setIsOpen(false);
     if (!isSoundMuted) soundEngine.playCalibrate();
-    showHudNotification(
-      `Prosedürel Bölüm ${nextProc < 10 ? `0${nextProc}` : nextProc} oluşturuldu`,
-      'info',
-    );
-  }, [level, setLevel, isSoundMuted, showHudNotification]);
+    showHudNotification(state.proceduralNotificationText, 'info');
+  }, [setLevel, isSoundMuted, showHudNotification, state]);
 
   const handleSelectLevel = useCallback(
     (targetLevel: number) => {
@@ -112,12 +95,12 @@ export function useLevelSelect() {
     popoverRef,
     level,
     customLevel,
-    currentLevelInfo,
-    activeNumericLevel,
-    shortLevelTag,
-    cleanTitle,
-    currentProgress,
-    campaignProgress,
+    currentLevelInfo: state.currentLevelInfo,
+    activeNumericLevel: state.activeNumericLevel,
+    shortLevelTag: state.shortLevelTag,
+    cleanTitle: state.cleanTitle,
+    currentProgress: state.currentProgress,
+    campaignProgress: state.campaignProgress,
     bestTimes,
     handleJumpProceduralLevel,
     handleSelectLevel,
@@ -125,4 +108,3 @@ export function useLevelSelect() {
     handleNextLevel,
   };
 }
-

@@ -1,18 +1,8 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useGameStore } from '@/store/useGameStore';
-import { getMazeLevel } from '@/components/scene/mazeLevels';
-import {
-  calculateTimeAttackLimit,
-  calculateTimeRemaining,
-  resolveTimerColorClass,
-  resolveConnectionStatus,
-  formatPortalStatus,
-  resolveMultiplayerTooltip,
-  resolvePairingButtonBadge,
-  formatVisibleTimerText,
-} from '@/utils/hudUtils';
+import { resolveDesktopHeaderTelemetry } from '@/utils/desktopHeaderOrchestrationUtils';
 
 /**
  * Masaüstü HUD üst çubuğu (DesktopHeader) için durum çözümleme,
@@ -38,29 +28,33 @@ export function useDesktopHeader() {
   const isHelpOpen = useGameStore((s) => s.isHelpOpen);
   const setHelpOpen = useGameStore((s) => s.setHelpOpen);
 
-  const currentLevelInfo = getMazeLevel(level, customLevel);
-  const currentBestTime = bestTimes[currentLevelInfo.id];
-  const totalCrystals = currentLevelInfo.crystals.length;
-  const { isUnlocked: isPortalUnlocked, tooltip: portalTooltip, ratioText } =
-    formatPortalStatus(totalCrystals, collectedCrystals.length);
-
-  const isTimeAttack = gameMode === 'time_attack';
-  const timeAttackLimit = calculateTimeAttackLimit(
-    currentLevelInfo.starThresholds,
+  const telemetry = useMemo(
+    () =>
+      resolveDesktopHeaderTelemetry({
+        level,
+        customLevel,
+        collectedCrystalsCount: collectedCrystals.length,
+        gameMode,
+        elapsedSeconds,
+        bestTimes,
+        isSocketConnected,
+        isControllerPaired,
+        isSecondControllerPaired,
+        latencyMs,
+      }),
+    [
+      level,
+      customLevel,
+      collectedCrystals.length,
+      gameMode,
+      elapsedSeconds,
+      bestTimes,
+      isSocketConnected,
+      isControllerPaired,
+      isSecondControllerPaired,
+      latencyMs,
+    ],
   );
-  const timeRemaining = calculateTimeRemaining(timeAttackLimit, elapsedSeconds);
-
-  const { isAnyPaired, dotColor } = resolveConnectionStatus(
-    isSocketConnected,
-    isControllerPaired,
-    isSecondControllerPaired,
-  );
-
-  const visibleTimerValue = isTimeAttack ? timeRemaining : elapsedSeconds;
-  const timerColorClass = resolveTimerColorClass(isTimeAttack, timeRemaining);
-  const visibleTimerText = formatVisibleTimerText(visibleTimerValue);
-  const multiplayerTooltip = resolveMultiplayerTooltip(isSecondControllerPaired);
-  const pairingBadge = resolvePairingButtonBadge(isAnyPaired, latencyMs);
 
   const handleOpenPairing = useCallback(() => {
     setPairingModalOpen(true);
@@ -75,19 +69,19 @@ export function useDesktopHeader() {
   }, [setHelpOpen, isHelpOpen]);
 
   return {
-    dotColor,
-    isPortalUnlocked,
-    portalTooltip,
-    ratioText,
-    isTimeAttack,
-    timerColorClass,
-    visibleTimerText,
-    currentBestTime,
+    dotColor: telemetry.dotColor,
+    isPortalUnlocked: telemetry.isPortalUnlocked,
+    portalTooltip: telemetry.portalTooltip,
+    ratioText: telemetry.ratioText,
+    isTimeAttack: telemetry.isTimeAttack,
+    timerColorClass: telemetry.timerColorClass,
+    visibleTimerText: telemetry.visibleTimerText,
+    currentBestTime: telemetry.currentBestTime,
     isMultiplayer,
-    multiplayerTooltip,
-    isAnyPaired,
+    multiplayerTooltip: telemetry.multiplayerTooltip,
+    isAnyPaired: telemetry.isAnyPaired,
     roomId,
-    pairingBadge,
+    pairingBadge: telemetry.pairingBadge,
     handleOpenPairing,
     handleOpenSettings,
     handleToggleHelp,

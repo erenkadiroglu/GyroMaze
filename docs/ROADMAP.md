@@ -882,9 +882,14 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **useGameOutcome Kancası Sadeleşmesi (`apps/client/src/hooks/useGameOutcome.ts`):** `useGameOutcome.ts` kancasındaki yıldız, rekor, süre sınırları, kutlama gereksinimi, çok oyunculu kazanan metni ve liderlik skoru hazırlığı saf orkestrasyon motoruna devredildi.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/gameOutcomeOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 667'den **673'e**, monorepo testleri 722'den **728'e** çıkarıldı.
 
-### Faz 187: Masaüstü Başlık (Header) ve Seviye Seçim Orkestrasyon Motoru (Sıradaki)
-- [ ] **Masaüstü Başlık Orkestrasyon Motoru (`desktopHeaderOrchestrationUtils.ts`, `desktopHeaderOrchestrationUtils.test.mjs`):** `useDesktopHeader.ts` ve `useLevelSelect.ts` kancalarındaki başlık/altbaşlık formatlama, seviye penceresi hesaplama, modal tetikleyicileri ve sesli bölüm geçişlerini saf motora ayrıştırma.
-- [ ] **useDesktopHeader ve useLevelSelect Kancaları Sadeleşmesi:** Kancaları salt durum bağlayıcılarına indirgeme.
+### Faz 187: Masaüstü Başlık (Header) ve Seviye Seçim Orkestrasyon Motoru (Tamamlandı)
+- [x] **Masaüstü Başlık Orkestrasyon Motoru (`desktopHeaderOrchestrationUtils.ts`, `desktopHeaderOrchestrationUtils.test.mjs`):** `resolveDesktopHeaderTelemetry`, `resolveLevelSelectState`, `formatProceduralNotification`, `shouldClosePopoverOnKeyDown`, `shouldClosePopoverOnMouseDown` fonksiyonları saf mimariyle geliştirildi; 7 yeni birim test ile %100 doğrulandı (toplam 680 istemci testi, 49 sunucu testi, 6 shared testi, **735 monorepo testi**).
+- [x] **useDesktopHeader ve useLevelSelect Kancaları Sadeleşmesi (`apps/client/src/hooks/useDesktopHeader.ts`, `apps/client/src/hooks/useLevelSelect.ts`):** Üst çubuk telemetrisi, portal/süre formatlaması, bağlantı ve eşleşme rozeti, bölüm seçici açılır menü kontrolü ve prosedürel seviye bildirimleri saf orkestrasyon motoruna devredildi.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/desktopHeaderOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 673'ten **680'e**, monorepo testleri 728'den **735'e** çıkarıldı.
+
+### Faz 188: Alt Telemetri ve Radar Görünürlük Orkestrasyon Motoru (Sıradaki)
+- [ ] **Alt Telemetri Orkestrasyon Motoru (`desktopFooterOrchestrationUtils.ts`, `desktopFooterOrchestrationUtils.test.mjs`):** `useDesktopFooter.ts` kancasındaki hız göstergesi (attitude gauge), 2B mini-harita radarı, görünürlük tercihleri, kamera ve aydınlık/karanlık mod geçiş tetikleyicilerini saf motora ayrıştırma.
+- [ ] **useDesktopFooter Kancası Sadeleşmesi:** Kancayı salt durum seçicilerine indirgeme.
 - [ ] **Birim Testleri ve Doğrulama:** Yeni testlerle kapsamı artırma, derleme ve git push.
 
 
