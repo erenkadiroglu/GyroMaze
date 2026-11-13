@@ -14,6 +14,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "test": "node --test test/sharedValidationUtils.test.mjs",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

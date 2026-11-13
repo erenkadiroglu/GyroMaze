@@ -59,3 +59,4 @@ export function formatHookDebugLabel(hookName: string): string {
   const category = resolveHookCategory(safeName);
   return `[${category.toUpperCase()}] ${safeName}`;
 }
+

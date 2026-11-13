@@ -778,10 +778,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Kontrolcü Görünüm Orkestratörü (`MobileControllerView.tsx`, `controller/index.ts`):** `page.tsx` içindeki monolitik kontrolcü JSX yapısı bağımsız `MobileControllerView` bileşenine taşındı; `controller/index.ts` üzerinden merkezi re-export mimarisi tamamlandı.
 - [x] **Yalın Next.js 15 App Router Sayfası (`controller/page.tsx`):** `page.tsx` bileşeni 163 satırdan **30 satıra** indirilerek saf ve standart bir Next.js 15 Suspense sayfa sarmalayıcısı haline getirildi.
 
-### Faz 163: Kanca, Store ve Bileşen Kök Barrel Konsolidasyonu (Tamamlandı)
-- [x] **Kanca Sınıflandırma ve Telemetri Motoru (`hookCategoryUtils.ts`, `hookCategoryUtils.test.mjs`):** Sabit kanca kategori listesi `HOOK_CATEGORIES`, kanca adı etki alanı çözümleyici `resolveHookCategory`, sahne kancası denetleyici `isSceneHook`, kontrolcü kancası denetleyici `isControllerHook` ve hata ayıklama etiketi `formatHookDebugLabel` saf yardımcıları geliştirildi; 7 yeni birim test ile doğrulandı (toplam 498 istemci testi, 526 monorepo testi).
-- [x] **Merkezi İstemci Kanca Barrel Mimarisi (`hooks/index.ts`):** 31 adet bağımsız kanca (tercihler, masaüstü HUD, mobil kontrolcü, 3B sahne/fizik, WebSocket ve donanım) tekil temiz giriş noktasında kategorize edilerek re-export edildi.
-- [x] **Kök Bileşen ve Store Barrel Düzeni (`store/index.ts`, `components/index.ts`):** Durum yönetimi ve üst seviye bileşen klasörleri (`desktop`, `scene`, `ui`) hiyerarşik modül sistemine entegre edildi.
+### Faz 164: Shared Paketi Modüler Tip Ayrışımı ve Ortak Doğrulama Motoru (Tamamlandı)
+- [x] **Ortak Doğrulama ve Güvenlik Motoru (`sharedValidationUtils.ts`, `sharedValidationUtils.test.mjs`):** 6 haneli oda kodu doğrulayıcı `isValidRoomCode`, oyuncu adı temizleyici `sanitizePlayerName`, oyuncu yuvası denetleyici `isValidPlayerSlot`, bölüm numarası denetleyici `isValidLevelNumber` ve NaN korumalı açı sınırlayıcı `clampAngle` saf yardımcıları geliştirildi; 6 yeni birim test ile doğrulandı (toplam 6 shared testi, 498 istemci testi, 28 sunucu testi, **532 monorepo testi**).
+- [x] **Modüler Tip ve Sözleşme Mimarisi (`types/gyro.ts`, `types/game.ts`, `types/haptic.ts`, `types/leaderboard.ts`, `types/room.ts`, `types/index.ts`):** `packages/shared/src/index.ts` içindeki 214 satırlık monolitik tip havuzu tekil sorumluluk ilkesine (SRP) göre mantıksal alt modüllere bölündü.
+- [x] **Üç Çalışma Alanlı Monorepo Test Entegrasyonu (`packages/shared/package.json`):** `packages/shared` için `test` script'i eklenerek monorepo genelinde 3 çalışma alanının tümünde (client, server, shared) test paketleri standart hale getirildi.
+
 
 
 
