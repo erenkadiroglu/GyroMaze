@@ -492,6 +492,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Bağımsız Ayarlar Çekmecesi Kancası (`useSettingsDrawer.ts`):** Ses kademesi/sessize alma akışı, harita editörü ve skor tablosu geçişleri ile varsayılanlara sıfırlama eylemleri `useSettingsDrawer` kancasına taşındı.
 - [x] **Modüler Ayarlar Alt Çubuğu Mimarisi (`SettingsDrawerFooter.tsx`, `SettingsModal.tsx`):** Harita editörü, skor tablosu ve sıfırlama butonları bağımsız `SettingsDrawerFooter` bileşeni olarak ayrıştırılarak `SettingsModal.tsx` 146 satırdan **78 satıra** indirildi.
 
+### Faz 98: Kokpit Yapay Ufuk ve Canlı Radar Kancası, Telemetri Sütunu Ayrışımı (Tamamlandı)
+- [x] **Yapay Ufuk ve Radar Yardımcı Motoru (`radarUtils.ts`, `radarUtils.test.mjs`):** `resolveAttitudeTransformStyle`, `calculateRadarDotTransform` ve `shouldThrottleTelemetryText` saf yardımcıları geliştirildi; 1 yeni birim test ile doğrulandı (toplam 180 istemci testi, 208 monorepo testi).
+- [x] **Bağımsız Telemetri RAF Döngüsü Kancası (`useAttitudeTelemetryLoop.ts`):** 60 FPS yapay ufuk disk açısı, 2B mini-harita bilye koordinatları ve 10 Hz metin güncelleme döngüsü `useAttitudeTelemetryLoop` kancasına devredildi.
+- [x] **Modüler Kokpit Telemetri Arayüz Mimarisi (`AttitudeTelemetryColumn.tsx`, `AttitudeGauge.tsx`):** Sayısal eğim, yatış ve hız göstergesi bağımsız `AttitudeTelemetryColumn` bileşeni olarak ayrılarak `AttitudeGauge.tsx` 160 satırdan **74 satıra** indirildi.
+
+
 
 
 

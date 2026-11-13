@@ -95,3 +95,47 @@ export function formatAttitudeTelemetry(
     speedStr: `${safeSpeed.toFixed(1)} m/s`,
   };
 }
+
+/**
+ * Yapay ufuk göstergesinin disk elemanı için GPU hızlandırmalı CSS transform dizesi üretir.
+ */
+export function resolveAttitudeTransformStyle(
+  shiftY: number,
+  rotDeg: string | number,
+): string {
+  const safeShiftY = Number.isFinite(shiftY) ? shiftY : 0;
+  const safeRot = typeof rotDeg === 'number' ? rotDeg.toFixed(1) : rotDeg;
+  return `translate3d(0, ${safeShiftY.toFixed(1)}px, 0) rotate(${safeRot}deg)`;
+}
+
+/**
+ * 3B bilye koordinatlarına göre 2B mini-harita gösterge noktası için CSS transform dizesi üretir.
+ */
+export function calculateRadarDotTransform(
+  worldX: number,
+  worldZ: number,
+  boardSize: number,
+  radarDimension = 42,
+  dotPadding = 4,
+): string {
+  const { rx, rz } = calculateRadarCoords(
+    worldX,
+    worldZ,
+    boardSize,
+    radarDimension,
+    dotPadding,
+  );
+  return `translate3d(${(rx - dotPadding).toFixed(1)}px, ${(rz - dotPadding).toFixed(1)}px, 0)`;
+}
+
+/**
+ * Sayısal telemetri metin güncellemeleri için zaman aralığı denetleyicisi (varsayılan 100ms / 10 Hz).
+ */
+export function shouldThrottleTelemetryText(
+  now: number,
+  lastTextTime: number,
+  intervalMs = 100,
+): boolean {
+  return now - lastTextTime >= intervalMs;
+}
+

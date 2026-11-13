@@ -5,6 +5,9 @@ import {
   calculateRadarPercentage,
   calculateAttitudeHorizonTransform,
   formatAttitudeTelemetry,
+  resolveAttitudeTransformStyle,
+  calculateRadarDotTransform,
+  shouldThrottleTelemetryText,
 } from '../src/utils/radarUtils.ts';
 
 test('radarUtils — Kokpit Yapay Ufuk ve 2B Radar Motoru', async (t) => {
@@ -92,5 +95,28 @@ test('radarUtils — Kokpit Yapay Ufuk ve 2B Radar Motoru', async (t) => {
     assert.equal(invalid.pitchStr, '+0.0°');
     assert.equal(invalid.rollStr, '+0.0°');
     assert.equal(invalid.speedStr, '0.0 m/s');
+  });
+
+  await t.test('resolveAttitudeTransformStyle, calculateRadarDotTransform ve shouldThrottleTelemetryText kurallarını uygular', () => {
+    // resolveAttitudeTransformStyle
+    assert.equal(
+      resolveAttitudeTransformStyle(5.2, '12.0'),
+      'translate3d(0, 5.2px, 0) rotate(12.0deg)',
+    );
+    assert.equal(
+      resolveAttitudeTransformStyle(0, 0),
+      'translate3d(0, 0.0px, 0) rotate(0.0deg)',
+    );
+
+    // calculateRadarDotTransform (0, 0) merkez -> rx=21, rz=21 -> ofset = 21-4 = 17px
+    assert.equal(
+      calculateRadarDotTransform(0, 0, 12, 42, 4),
+      'translate3d(17.0px, 17.0px, 0)',
+    );
+
+    // shouldThrottleTelemetryText
+    assert.equal(shouldThrottleTelemetryText(250, 100, 100), true);
+    assert.equal(shouldThrottleTelemetryText(150, 100, 100), false);
+    assert.equal(shouldThrottleTelemetryText(200, 100, 100), true);
   });
 });
