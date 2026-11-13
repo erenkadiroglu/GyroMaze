@@ -1,7 +1,6 @@
 'use client';
 
-import { useGameStore } from '@/store/useGameStore';
-import { shouldShowPauseRecoveryBar } from '@/utils/overlayBarUtils';
+import { useDesktopHUDOverlays } from '@/hooks/useDesktopHUDOverlays';
 import { PauseRecoveryBar, HudNotificationToast } from './overlays';
 
 export interface DesktopHUDOverlaysProps {
@@ -10,27 +9,28 @@ export interface DesktopHUDOverlaysProps {
 
 /**
  * Masaüstü HUD sahne üzeri duraklatma/bağlantı kurtarma çubuğu ve
- * geçici durum bildirim kartları (HUD Notifications).
+ * geçici durum bildirim kartlarını (HUD Notifications) sunan deklaratif katman bileşeni.
  */
 export function DesktopHUDOverlays({
   isAnyOverlayOpen,
 }: DesktopHUDOverlaysProps) {
-  const gameStatus = useGameStore((s) => s.gameStatus);
-  const setGameStatus = useGameStore((s) => s.setGameStatus);
-  const setPairingModalOpen = useGameStore((s) => s.setPairingModalOpen);
-  const hudNotification = useGameStore((s) => s.hudNotification);
-
-  const showRecoveryBar = shouldShowPauseRecoveryBar(gameStatus, isAnyOverlayOpen);
+  const {
+    showRecoveryBar,
+    handlePairClick,
+    handleResumeClick,
+    hudNotification,
+    containerProps,
+  } = useDesktopHUDOverlays({ isAnyOverlayOpen });
 
   return (
-    <>
+    <div {...containerProps}>
       <PauseRecoveryBar
         open={showRecoveryBar}
-        onPairClick={() => setPairingModalOpen(true)}
-        onResumeClick={() => setGameStatus('playing')}
+        onPairClick={handlePairClick}
+        onResumeClick={handleResumeClick}
       />
 
       <HudNotificationToast notification={hudNotification} />
-    </>
+    </div>
   );
 }

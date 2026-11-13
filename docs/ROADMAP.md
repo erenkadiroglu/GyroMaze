@@ -907,9 +907,14 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **useDesktopHomeView Kancası ve DesktopHomeView Bileşeni Sadeleşmesi (`apps/client/src/hooks/useDesktopHomeView.ts`, `apps/client/src/components/desktop/DesktopHomeView.tsx`):** Yaşam döngüsü tercihleri, ev sahibi soket konfigürasyonu, klavye yönlendirme desteği ve semantik kapsayıcı öznitelikleri saf orkestrasyon motoruna devredildi.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/desktopHomeOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 699'dan **708'e**, monorepo testleri 754'ten **763'e** çıkarıldı.
 
-### Faz 192: Masaüstü Sahne Üstü Bildirim ve Duraklatma Katmanı (DesktopHUDOverlays) Orkestrasyon Motoru (Sıradaki)
-- [ ] **Sahne Üstü Bildirim ve Duraklatma Orkestrasyon Motoru (`desktopOverlaysOrchestrationUtils.ts`, `desktopOverlaysOrchestrationUtils.test.mjs`):** `DesktopHUDOverlays.tsx`, `PauseRecoveryBar.tsx` ve `HudNotificationToast.tsx` bileşenlerindeki duraklatma çubuğu görünürlüğü, eşleştirme açma eylemi, oyuna devam etme işleyicisi ve bildirim kartı görünürlük/otomatik sönme mantıklarını saf motora ayrıştırma.
-- [ ] **useDesktopHUDOverlays Kancası ve DesktopHUDOverlays Sadeleşmesi:** Bildirim ve kurtarma çubuğu durumunu tekil kancaya bağlayarak sunum katmanına indirgeme.
+### Faz 192: Masaüstü Sahne Üstü Bildirim ve Duraklatma Katmanı (DesktopHUDOverlays) Orkestrasyon Motoru (Tamamlandı)
+- [x] **Sahne Üstü Bildirim ve Duraklatma Orkestrasyon Motoru (`desktopOverlaysOrchestrationUtils.ts`, `desktopOverlaysOrchestrationUtils.test.mjs`):** `getOverlaysContainerClassName`, `formatOverlaysTelemetry`, `resolveOverlaysContainerProps`, `resolveDesktopOverlaysState` fonksiyonları saf mimariyle geliştirildi; 5 yeni birim test ile %100 doğrulandı (toplam 713 istemci testi, 49 sunucu testi, 6 shared testi, **768 monorepo testi**).
+- [x] **useDesktopHUDOverlays Kancası ve DesktopHUDOverlays Sadeleşmesi (`apps/client/src/hooks/useDesktopHUDOverlays.ts`, `apps/client/src/components/ui/DesktopHUDOverlays.tsx`):** Sahne üzeri duraklatma kurtarma çubuğu, eşleştirme açma eylemi, oyuna devam etme ve toast bildirim kartı görünürlük/otomatik sönme mantıkları saf motora devredildi.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/desktopOverlaysOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 708'den **713'e**, monorepo testleri 763'ten **768'e** çıkarıldı.
+
+### Faz 193: Mobil Kontrolcü Durum Bildirimleri (ControllerStatusBanners) Orkestrasyon Motoru (Sıradaki)
+- [ ] **Mobil Kontrolcü Bildirimleri Orkestrasyon Motoru (`controllerBannersOrchestrationUtils.ts`, `controllerBannersOrchestrationUtils.test.mjs`):** `ControllerStatusBanners.tsx` bileşenindeki hata banner'ı, seviye yönlendirme çubuğu, zafer bildirimi ve yenilgi bildirimlerinin öncelik sıralaması, görünürlük kuralları ve aksiyon işleyicilerini saf motora ayrıştırma.
+- [ ] **useControllerStatusBanners Kancası ve ControllerStatusBanners Sadeleşmesi:** Durum banner'larını tekil orkestrasyon kancasına bağlayarak saf bir sunum katmanına indirgeme.
 - [ ] **Birim Testleri ve Doğrulama:** Yeni birim testleriyle monorepo test barajını artırma, tam derleme ve git push.
 
 
