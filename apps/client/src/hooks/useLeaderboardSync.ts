@@ -7,6 +7,12 @@ import {
   filterLeaderboardEntries,
   fetchLeaderboardFromRest,
 } from '@/utils/leaderboardUtils';
+import {
+  DEFAULT_SYNC_ERROR_MESSAGE,
+  resolveInitialSelectedLevel,
+  resolveActiveLevelNumber,
+  resolveEffectiveSelectedLevelOnOpen,
+} from '@/utils/leaderboardSyncUtils';
 
 export interface UseLeaderboardSyncOptions {
   open: boolean;
@@ -36,8 +42,8 @@ export function useLeaderboardSync({
   const leaderboard = useGameStore((s) => s.leaderboard);
   const setLeaderboard = useGameStore((s) => s.setLeaderboard);
 
-  const [selectedLevel, setSelectedLevel] = useState<number | 'all'>(
-    initialLevel === 99 ? 1 : Math.max(1, initialLevel),
+  const [selectedLevel, setSelectedLevel] = useState<number | 'all'>(() =>
+    resolveInitialSelectedLevel(initialLevel),
   );
   const [searchQuery, setSearchQuery] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -53,9 +59,7 @@ export function useLeaderboardSync({
         setLeaderboard(records);
       });
     } catch {
-      setFetchError(
-        'Sunucu skorları yenilenemedi; mevcut kayıtlar gösteriliyor.',
-      );
+      setFetchError(DEFAULT_SYNC_ERROR_MESSAGE);
     } finally {
       setIsRefreshing(false);
     }
@@ -64,9 +68,9 @@ export function useLeaderboardSync({
   // Modal her açıldığında varsayılan bölümü güncelle ve REST üzerinden tazele
   useEffect(() => {
     if (open) {
-      if (initialLevel !== 99 && initialLevel > 0) {
-        setSelectedLevel(initialLevel);
-      }
+      setSelectedLevel((prev) =>
+        resolveEffectiveSelectedLevelOnOpen(initialLevel, prev),
+      );
       setSearchQuery('');
       setFetchError(null);
       void syncLeaderboard();
@@ -78,8 +82,7 @@ export function useLeaderboardSync({
     searchQuery,
   });
 
-  const activeLevelNumber =
-    typeof selectedLevel === 'number' ? selectedLevel : 1;
+  const activeLevelNumber = resolveActiveLevelNumber(selectedLevel);
 
   return {
     selectedLevel,

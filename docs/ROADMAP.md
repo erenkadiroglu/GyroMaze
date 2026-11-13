@@ -862,10 +862,15 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **useGameTimer Kancası Sadeleşmesi (`apps/client/src/hooks/useGameTimer.ts`):** `useGameTimer.ts` kancasındaki standart artan kronometre, Time Attack geri sayımı, süre tükenme (game_over) koşulu ve aralık (interval) adımları saf motora aktarılarak kanca salt yaşam döngüsü yöneticisine indirgendi.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/gameTimerUtils.test.mjs` dahil edilerek test sayısı 635'ten **644'e**, monorepo testleri **699'a** çıkarıldı.
 
-### Faz 183: Skor ve Liderlik Senkronizasyon Motoru (Sıradaki)
-- [ ] **Liderlik Tablosu Senkronizasyon Motoru (`leaderboardSyncUtils.ts`, `leaderboardSyncUtils.test.mjs`):** `useLeaderboardSync.ts` kancasındaki sunucu HTTP/WebSocket skor çekme, yerel skor sıralaması, rekor karşılaştırma, hata yönetimi ve durum güncellemelerini saf motora ayrıştırma.
-- [ ] **useLeaderboardSync Kancası Sadeleşmesi:** Kancayı salt reaktif veri dinleyicisine indirgeme.
-- [ ] **Birim Testleri ve Doğrulama:** Yeni testlerle kapsamı artırarak 700+ test barajını aşma, derleme ve git push.
+### Faz 183: Skor ve Liderlik Senkronizasyon Motoru (Tamamlandı)
+- [x] **Liderlik Tablosu Senkronizasyon Motoru (`leaderboardSyncUtils.ts`, `leaderboardSyncUtils.test.mjs`):** `DEFAULT_SYNC_ERROR_MESSAGE`, `CUSTOM_MAP_LEVEL_ID`, `resolveInitialSelectedLevel`, `resolveActiveLevelNumber`, `resolveEffectiveSelectedLevelOnOpen`, `calculateLeaderboardMetrics`, `resolveLeaderboardEmptyStateMessage`, `resolveLevelTabAriaLabel`, `resolveRefreshButtonAriaLabel`, `canSubmitNewRecord` fonksiyonları saf mimariyle geliştirildi; 10 yeni birim test ile %100 doğrulandı (toplam 654 istemci testi, 49 sunucu testi, 6 shared testi, **709 monorepo testi**).
+- [x] **useLeaderboardSync Kancası Sadeleşmesi (`apps/client/src/hooks/useLeaderboardSync.ts`):** `useLeaderboardSync.ts` kancasındaki başlangıç ve efektif seviye çözümleme, hata mesajı standartlaştırma ve aktif bölüm numarası hesaplamaları saf motora devredildi.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/leaderboardSyncUtils.test.mjs` dahil edilerek istemci test sayısı 644'ten **654'e**, monorepo testleri 699'dan **709'a** çıkarıldı (700+ test barajı aşıldı).
+
+### Faz 184: Klavye Kısayolları ve HUD Eylemleri Dinleyici Motoru (Sıradaki)
+- [ ] **Klavye Dinleyici Yardımcı Motoru (`keyboardShortcutsListenerUtils.ts`, `keyboardShortcutsListenerUtils.test.mjs`):** `useKeyboardShortcuts.ts` kancasındaki olay tuş kontrolü, metin alanlarında (input/textarea) kısayolları engelleme, modal açıkken kısayol bastırma ve HUD aksiyon tetikleme mantığını saf motora ayrıştırma.
+- [ ] **useKeyboardShortcuts Kancası Sadeleşmesi:** Kancayı salt `window.addEventListener('keydown')` yaşam döngüsüne indirgeme.
+- [ ] **Birim Testleri ve Doğrulama:** Yeni testlerle kapsamı artırma, derleme ve git push.
 
 
 
