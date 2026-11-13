@@ -5,6 +5,7 @@ import type * as THREE from 'three';
 import { ActorMotionTrail } from './actors/ActorMotionTrail';
 import { ActorGhostBall } from './actors/ActorGhostBall';
 import { ActorPlayerBalls } from './actors/ActorPlayerBalls';
+import { useMazeStageActors } from '@/hooks/useMazeStageActors';
 
 interface MazeStageActorsProps {
   startPosition: [number, number, number];
@@ -29,20 +30,30 @@ export function MazeStageActors({
   visualBallMeshRef,
   visualBall2MeshRef,
 }: MazeStageActorsProps) {
+  const {
+    startPosition: safeStartPosition,
+    p2SpawnOffsetX: safeOffsetX,
+    p2SpawnOffsetZ: safeOffsetZ,
+  } = useMazeStageActors({
+    startPosition,
+    p2SpawnOffsetX,
+    p2SpawnOffsetZ,
+  });
+
   return (
     <>
       <ActorMotionTrail
-        startPosition={startPosition}
+        startPosition={safeStartPosition}
         trailMeshesRef={trailMeshesRef}
       />
       <ActorGhostBall
-        startPosition={startPosition}
+        startPosition={safeStartPosition}
         ghostBallMeshRef={ghostBallMeshRef}
       />
       <ActorPlayerBalls
-        startPosition={startPosition}
-        p2SpawnOffsetX={p2SpawnOffsetX}
-        p2SpawnOffsetZ={p2SpawnOffsetZ}
+        startPosition={safeStartPosition}
+        p2SpawnOffsetX={safeOffsetX}
+        p2SpawnOffsetZ={safeOffsetZ}
         visualBallMeshRef={visualBallMeshRef}
         visualBall2MeshRef={visualBall2MeshRef}
       />

@@ -987,9 +987,14 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **useMazeStageHazards Kancası ve MazeStageHazards Sadeleşmesi (`apps/client/src/hooks/useMazeStageHazards.ts`, `apps/client/src/components/scene/MazeStageHazards.tsx`):** Tuzak delikleri (`HazardVoidHoles`), hızlandırma rampaları (`HazardBoostPads`), kuantum portalları (`HazardTeleporters`), lazer kapıları (`HazardLaserGates`) ve kinetik engellerin (`HazardMovingObstacles`) liste doğrulaması, revizyon anahtarı güvenliği ve telemetri tekil kancaya devredildi.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/mazeStageHazardsOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 820'den **829'a**, monorepo testleri 875'ten **884'e** çıkarıldı.
 
-### Faz 208: 3B Labirent Sahnesi Dinamik Aktörleri (MazeStageActors) Orkestrasyon Motoru (Sıradaki)
-- [ ] **3B Sahne Aktörleri Orkestrasyon Motoru (`mazeStageActorsOrchestrationUtils.ts`, `mazeStageActorsOrchestrationUtils.test.mjs`):** 1P oyuncu bilyesi, 2P çok oyunculu bilyesi, hayalet yarışçı hologramı ve hareket izi aktörlerinin başlangıç konumları, ofsetleri, görünürlükleri ve telemetri durumunu saf motora ayrıştırma.
-- [ ] **MazeStageActors Bileşeni ve useMazeStageActors Kancası:** Dinamik aktörler hiyerarşisini deklaratif ve test edilebilir kancaya bağlama.
+### Faz 208: 3B Labirent Sahnesi Dinamik Aktörleri (MazeStageActors) Orkestrasyon Motoru (Tamamlandı)
+- [x] **3B Sahne Aktörleri Orkestrasyon Motoru (`mazeStageActorsOrchestrationUtils.ts`, `mazeStageActorsOrchestrationUtils.test.mjs`):** `normalizeActorPosition`, `resolveActorSpawnPositions`, `resolveActorDescriptors`, `formatStageActorsTelemetry`, `resolveStageActorsOrchestrationBundle` fonksiyonları saf mimariyle geliştirildi; 7 yeni birim test ile %100 doğrulandı (toplam 836 istemci testi, 49 sunucu testi, 6 shared testi, **891 monorepo testi**).
+- [x] **useMazeStageActors Kancası ve MazeStageActors Sadeleşmesi (`apps/client/src/hooks/useMazeStageActors.ts`, `apps/client/src/components/scene/MazeStageActors.tsx`):** 1P metalik bilye, 2P çok oyunculu bilye, hayalet yarışçı hologramı ve neon hareket izi aktörlerinin başlangıç konumları, ofsetleri ve telemetri durumu tekil kancaya devredildi.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/mazeStageActorsOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 829'dan **836'ya**, monorepo testleri 884'ten **891'e** çıkarıldı.
+
+### Faz 209: 3B Labirent Sahnesi Sabit Fizik Çarpıştırıcıları (MazeStageColliders) Orkestrasyon Motoru (Sıradaki)
+- [ ] **3B Sahne Çarpıştırıcıları Orkestrasyon Motoru (`mazeStageCollidersOrchestrationUtils.ts`, `mazeStageCollidersOrchestrationUtils.test.mjs`):** Rapier sabit gövde (`fixed RigidBody`) parametreleri (`friction: 0.12`, `restitution: 0.18`), duvar/sensör adetleri, revizyon anahtarları ve telemetri durumunu saf motora ayrıştırma.
+- [ ] **MazeStageColliders Bileşeni ve useMazeStageColliders Kancası:** Sabit çarpıştırıcılar hiyerarşisini deklaratif ve test edilebilir kancaya bağlama.
 - [ ] **Birim Testleri ve Doğrulama:** Yeni birim testleriyle monorepo test kapsamını artırma, tam derleme ve git push.
 
 
