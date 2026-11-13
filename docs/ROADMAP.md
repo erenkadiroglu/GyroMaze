@@ -842,10 +842,15 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **useMazeCameraRig Kancası Sadeleşmesi (`apps/client/src/hooks/useMazeCameraRig.ts`):** Modal açık olma kontrolleri, güvenli delta kenetleme, eğim kenetleme, kamera modları (isometric, topdown, follow), hedef/bakış hesaplaması, lerp sönümlemesi ve dinamik FOV güncellemesi saf yardımcı motora devredildi.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/mazeCameraRigUtils.test.mjs` dahil edilerek test sayısı 586'dan **598'e**, monorepo testleri **653'e** yükseltildi.
 
-### Faz 179: Bilye Neon Hareket İzi ve Kuyruk Simülasyon Motoru (Sıradaki)
-- [ ] **Hareket İzi Yardımcı Motoru (`motionTrailUtils.ts`, `motionTrailUtils.test.mjs`):** `useMotionTrail.ts` kancasındaki iz noktaları ekleme/temizleme, mesafe eşiği, solma (decay/fade) ömrü, Catmull-Rom eğri enterpolasyonu ve opaklık tampon hesaplamalarını saf motora ayrıştırma.
-- [ ] **useMotionTrail Kancası Sadeleşmesi:** Kancayı salt React/Three.js yaşam döngüsüne indirgeme.
-- [ ] **Birim Testleri ve Doğrulama:** Yeni testlerle kapsamı artırma, derleme ve git push.
+### Faz 179: Bilye Neon Hareket İzi ve Kuyruk Simülasyon Motoru (Tamamlandı)
+- [x] **Hareket İzi Yardımcı Motoru (`motionTrailUtils.ts`, `motionTrailUtils.test.mjs`):** `DEFAULT_TRAIL_COUNT`, `DEFAULT_TRAIL_Y_OFFSET`, `DEFAULT_TRAIL_SMOOTH_FACTOR`, `createInitialTrailHistory`, `resetTrailHistoryBuffer`, `calculateTrailTransform`, `stepAndResolveTrail`, `applyTrailMeshTransforms` fonksiyonları saf mimariyle geliştirildi; 9 yeni birim test ile %100 doğrulandı (toplam 607 istemci testi, 49 sunucu testi, 6 shared testi, **662 monorepo testi**).
+- [x] **useMotionTrail Kancası Sadeleşmesi (`apps/client/src/hooks/useMotionTrail.ts`):** Sıfır bellek tahsisiyle (Zero GC) geriye doğru enterpolasyon, halka ölçekleme ve Three.js mesh transformasyonu saf yardımcı motora devredildi.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/motionTrailUtils.test.mjs` dahil edilerek test sayısı 598'den **607'ye**, monorepo testleri **662'ye** yükseltildi.
+
+### Faz 180: Mobil Ekran Uyanık Kalma ve WebGL Bağlam Kurtarma Motorları (Sıradaki)
+- [ ] **WakeLock & WebGL Yardımcı Motorları (`wakeLockUtils.ts`, `webGLRecoveryUtils.ts`):** `useWakeLock.ts` ve `useWebGLContextRecovery.ts` kancalarındaki tarayıcı Screen Wake Lock API desteği, görünürlük değişimi yeniden bağlama, WebGL `webglcontextlost`/`webglcontextrestored` olayları ve sayfa görünürlüğü kurtarma mantıklarını saf motorlara ayrıştırma.
+- [ ] **Kancaların Sadeleşmesi:** Kancaları salt tarayıcı olay dinleyicisi yaşam döngüsüne indirgeme.
+- [ ] **Birim Testleri ve Doğrulama:** Yeni birim testlerle monorepo kapsamını artırma, derleme ve git push.
 
 
 
