@@ -99,3 +99,88 @@ export async function fetchLeaderboardFromRest(
   const data = (await res.json()) as unknown;
   return Array.isArray(data) ? (data as LeaderboardEntry[]) : [];
 }
+
+/**
+ * Aktif bölüm numarasına göre ortalanmış 5 elemanlı bölüm listesi penceresi üretir.
+ */
+export function calculateLevelWindow(
+  activeLevel: number,
+  windowSize = 5,
+): number[] {
+  const safeLevel = Number.isFinite(activeLevel) && activeLevel > 0 ? activeLevel : 1;
+  const start = Math.max(1, safeLevel - Math.floor(windowSize / 2));
+  return Array.from({ length: windowSize }, (_, i) => start + i);
+}
+
+/**
+ * Sıralama indeksine göre (0: altın, 1: gümüş, 2: bronz, 3+: standart) rozet ve satır görsel stillerini çözümler.
+ */
+export function resolveRankBadgeStyle(index: number): {
+  isPodium: boolean;
+  medalType?: 'gold' | 'silver' | 'bronze';
+  badgeClass: string;
+  rowClass: string;
+} {
+  switch (index) {
+    case 0:
+      return {
+        isPodium: true,
+        medalType: 'gold',
+        badgeClass: 'bg-brass text-brass-fg shadow-sm',
+        rowClass: 'border-brass/40 bg-brass/10 ring-1 ring-brass/20',
+      };
+    case 1:
+      return {
+        isPodium: true,
+        medalType: 'silver',
+        badgeClass: 'bg-slate-300 text-slate-900',
+        rowClass: 'border-slate-400/30 bg-surface-2/80',
+      };
+    case 2:
+      return {
+        isPodium: true,
+        medalType: 'bronze',
+        badgeClass: 'bg-amber-600 text-white',
+        rowClass: 'border-amber-700/30 bg-surface-2/60',
+      };
+    default:
+      return {
+        isPodium: false,
+        badgeClass: 'bg-surface text-muted',
+        rowClass: 'border-line bg-surface-2/40',
+      };
+  }
+}
+
+/**
+ * Bölüm kimliğini standart rozet metnine dönüştürür (Böl. 01, Böl. 05, Böl. 12).
+ */
+export function formatLevelBadge(levelId: number): string {
+  const safeId = Number.isFinite(levelId) && levelId > 0 ? levelId : 1;
+  return `Böl. ${safeId < 10 ? `0${safeId}` : String(safeId)}`;
+}
+
+/**
+ * Filtreleme ve arama durumuna göre boş liste mesajını formatlar.
+ */
+export function resolveEmptyLeaderboardMessage(
+  selectedLevel: number | 'all',
+  searchQuery: string,
+): { title?: string; message: string } {
+  const cleanQuery = searchQuery.trim();
+  if (cleanQuery) {
+    return {
+      title: 'Eşleşen kayıt bulunamadı',
+      message: `"${cleanQuery}" için arama kriterini değiştirip tekrar deneyin.`,
+    };
+  }
+  if (selectedLevel === 'all') {
+    return {
+      message: 'Henüz kayıtlı hiçbir skor bulunmuyor.',
+    };
+  }
+  return {
+    message: `Bölüm ${selectedLevel} için henüz kayıtlı bir skor yok. İlk rekoru sen kır!`,
+  };
+}
+

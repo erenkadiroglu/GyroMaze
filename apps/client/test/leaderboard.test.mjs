@@ -4,6 +4,10 @@ import {
   formatRecordTime,
   formatRecordDate,
   filterLeaderboardEntries,
+  calculateLevelWindow,
+  resolveRankBadgeStyle,
+  formatLevelBadge,
+  resolveEmptyLeaderboardMessage,
 } from '../src/utils/leaderboardUtils.ts';
 
 describe('leaderboardUtils — Liderlik Tablosu Formatlayıcı ve Filtreleme Motoru', () => {
@@ -70,5 +74,49 @@ describe('leaderboardUtils — Liderlik Tablosu Formatlayıcı ve Filtreleme Mot
     const bozukGiris = filterLeaderboardEntries(null);
     assert.deepEqual(bozukGiris, []);
   });
+
+  it('calculateLevelWindow, resolveRankBadgeStyle, formatLevelBadge ve resolveEmptyLeaderboardMessage kurallarını uygular', () => {
+    // 1. calculateLevelWindow
+    assert.deepEqual(calculateLevelWindow(1), [1, 2, 3, 4, 5]);
+    assert.deepEqual(calculateLevelWindow(2), [1, 2, 3, 4, 5]);
+    assert.deepEqual(calculateLevelWindow(5), [3, 4, 5, 6, 7]);
+    assert.deepEqual(calculateLevelWindow(-1), [1, 2, 3, 4, 5]);
+
+    // 2. resolveRankBadgeStyle
+    const gold = resolveRankBadgeStyle(0);
+    assert.equal(gold.isPodium, true);
+    assert.equal(gold.medalType, 'gold');
+    assert.ok(gold.badgeClass.includes('bg-brass'));
+
+    const silver = resolveRankBadgeStyle(1);
+    assert.equal(silver.isPodium, true);
+    assert.equal(silver.medalType, 'silver');
+
+    const bronze = resolveRankBadgeStyle(2);
+    assert.equal(bronze.isPodium, true);
+    assert.equal(bronze.medalType, 'bronze');
+
+    const standard = resolveRankBadgeStyle(3);
+    assert.equal(standard.isPodium, false);
+    assert.equal(standard.medalType, undefined);
+
+    // 3. formatLevelBadge
+    assert.equal(formatLevelBadge(1), 'Böl. 01');
+    assert.equal(formatLevelBadge(5), 'Böl. 05');
+    assert.equal(formatLevelBadge(12), 'Böl. 12');
+
+    // 4. resolveEmptyLeaderboardMessage
+    const searchEmpty = resolveEmptyLeaderboardMessage('all', 'eren');
+    assert.equal(searchEmpty.title, 'Eşleşen kayıt bulunamadı');
+    assert.ok(searchEmpty.message.includes('eren'));
+
+    const allEmpty = resolveEmptyLeaderboardMessage('all', '');
+    assert.equal(allEmpty.title, undefined);
+    assert.ok(allEmpty.message.includes('hiçbir skor'));
+
+    const levelEmpty = resolveEmptyLeaderboardMessage(3, '');
+    assert.ok(levelEmpty.message.includes('Bölüm 3'));
+  });
 });
+
 
