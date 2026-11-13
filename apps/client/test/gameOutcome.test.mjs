@@ -4,6 +4,11 @@ import {
   calculateEarnedStars,
   formatStarGoalMessage,
   isPersonalBest,
+  calculateTimeAttackLimit,
+  cleanPlayerName,
+  resolveMultiplayerWinnerText,
+  formatOutcomeStarAriaLabel,
+  formatDefeatCrystalSummary,
 } from '../src/utils/gameOutcomeUtils.ts';
 
 describe('gameOutcomeUtils — Zafer Değerlendirme, Yıldız ve Rekor Motoru', () => {
@@ -49,6 +54,51 @@ describe('gameOutcomeUtils — Zafer Değerlendirme, Yıldız ve Rekor Motoru', 
     assert.equal(isPersonalBest(0, 16.0), false);
     assert.equal(isPersonalBest(-5, 16.0), false);
     assert.equal(isPersonalBest(NaN, 16.0), false);
+  });
+
+  it('calculateTimeAttackLimit, cleanPlayerName, resolveMultiplayerWinnerText ve formatlayıcıları doğrular', () => {
+    // calculateTimeAttackLimit
+    assert.equal(calculateTimeAttackLimit(24), 28);
+    assert.equal(calculateTimeAttackLimit(10), 14); // En az 14 sn
+    assert.equal(calculateTimeAttackLimit(0), 28); // Varsayılan 24 -> 28
+
+    // cleanPlayerName
+    assert.equal(cleanPlayerName('  Eren  '), 'Eren');
+    assert.equal(cleanPlayerName(''), 'Oyuncu');
+    assert.equal(cleanPlayerName(null), 'Oyuncu');
+    assert.equal(cleanPlayerName('a'.repeat(30)), 'a'.repeat(24));
+
+    // resolveMultiplayerWinnerText
+    assert.equal(
+      resolveMultiplayerWinnerText(1),
+      '1. Oyuncu (Ana bilye) kazandı',
+    );
+    assert.equal(
+      resolveMultiplayerWinnerText(2),
+      '2. Oyuncu (Altın bilye) kazandı',
+    );
+    assert.equal(
+      resolveMultiplayerWinnerText(null),
+      'Kazanan belirlenemedi',
+    );
+
+    // formatOutcomeStarAriaLabel
+    assert.equal(
+      formatOutcomeStarAriaLabel(3),
+      'Performans: 3 üzerinden 3 yıldız',
+    );
+    assert.equal(
+      formatOutcomeStarAriaLabel(5),
+      'Performans: 3 üzerinden 3 yıldız',
+    );
+    assert.equal(
+      formatOutcomeStarAriaLabel(0),
+      'Performans: 3 üzerinden 1 yıldız',
+    );
+
+    // formatDefeatCrystalSummary
+    assert.equal(formatDefeatCrystalSummary(2, 5), '2/5');
+    assert.equal(formatDefeatCrystalSummary(NaN, 3), '0/3');
   });
 });
 

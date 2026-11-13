@@ -468,6 +468,12 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Bağımsız Bölüm Seçici Kancası (`useLevelSelect.ts`):** Açılır menü yaşam döngüsü, dışarı tıklama/Esc denetleyicisi, kampanya yıldız/rekor ilerlemesi ve prosedürel bölüm sıçrama eylemleri bağımsız `useLevelSelect` kancasına taşındı.
 - [x] **Modüler Bölüm Seçici Arayüz Mimarisi (`LevelSelectTrigger.tsx`, `LevelSelectMenu.tsx`, `LevelSelectPopover.tsx`):** Üst çubuk tetikleyicisi/okları ve 1..5 standart bölüm kartları ile özel/prosedürel butonlar bağımsız bileşenlere ayrılarak `LevelSelectPopover.tsx` 300 satırdan **65 satıra** indirildi.
 
+### Faz 93: Oyun Sonucu Modalları, Zafer/Yenilgi Kancası ve Çok Oyunculu Rozet Motoru (Tamamlandı)
+- [x] **Zafer/Yenilgi Değerlendirme ve Formatlayıcı Motoru (`gameOutcomeUtils.ts`, `gameOutcome.test.mjs`):** `calculateTimeAttackLimit`, `cleanPlayerName`, `resolveMultiplayerWinnerText`, `formatOutcomeStarAriaLabel` ve `formatDefeatCrystalSummary` saf yardımcıları geliştirildi; 1 yeni birim test ile doğrulandı (toplam 175 istemci testi, 203 monorepo testi).
+- [x] **Bağımsız Oyun Sonucu Kancası (`useGameOutcome.ts`):** Zafer konfeti eşiği, kişisel rekor (PB), yıldız hesabı, oyuncu adı yerel saklama ve liderlik tablosu puan gönderim yaşam döngüsü bağımsız `useGameOutcome` kancasına devredildi.
+- [x] **Modüler Sonuç Modalları Mimarisi (`VictoryModal.tsx`, `DefeatModal.tsx`, `GameOutcomeModals.tsx`):** Zafer ve süre doldu modalları bağımsız alt bileşenlere ayrılarak `GameOutcomeModals.tsx` 271 satırdan **63 satıra** indirildi.
+
+
 
 
 
