@@ -1,7 +1,8 @@
 'use client';
 
-import { Smartphone, SlidersHorizontal, HelpCircle } from 'lucide-react';
-import { Button, IconButton } from '@/components/ui/primitives';
+import { HeaderPairingButton } from './actions/HeaderPairingButton';
+import { HeaderSettingsButton } from './actions/HeaderSettingsButton';
+import { HeaderHelpButton } from './actions/HeaderHelpButton';
 
 export interface HeaderActionButtonsProps {
   isAnyPaired: boolean;
@@ -30,45 +31,16 @@ export function HeaderActionButtons({
     <>
       <span className="h-4 w-px bg-line" aria-hidden="true" />
 
-      {/* Oda Kodu & Eşleştir Düğmesi */}
-      <Button
-        variant={isAnyPaired ? 'secondary' : 'primary'}
-        size="sm"
-        icon={<Smartphone className="h-3.5 w-3.5" aria-hidden="true" />}
-        onClick={onOpenPairing}
-        title="Oda kodu ve QR bağlantı penceresini aç"
-      >
-        <span className="gm-num tracking-wider">
-          {roomId ?? '......'}
-        </span>
-        {pairingBadge.isLatency ? (
-          <span className="gm-num hidden text-xs text-ok sm:inline">
-            {pairingBadge.text}
-          </span>
-        ) : (
-          <span className="hidden sm:inline">{pairingBadge.text}</span>
-        )}
-      </Button>
+      <HeaderPairingButton
+        isAnyPaired={isAnyPaired}
+        roomId={roomId}
+        pairingBadge={pairingBadge}
+        onOpenPairing={onOpenPairing}
+      />
 
-      {/* Ayarlar Paneli Düğmesi */}
-      <Button
-        variant="secondary"
-        size="sm"
-        icon={<SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" />}
-        onClick={onOpenSettings}
-      >
-        Ayarlar
-      </Button>
+      <HeaderSettingsButton onOpenSettings={onOpenSettings} />
 
-      {/* Kısayollar ve Yardım Rehberi */}
-      <IconButton
-        label="Klavye kısayolları ve yardım rehberi"
-        shortcut="H"
-        onClick={onToggleHelp}
-      >
-        <HelpCircle className="h-4 w-4 text-brass" aria-hidden="true" />
-      </IconButton>
+      <HeaderHelpButton onToggleHelp={onToggleHelp} />
     </>
   );
 }
-

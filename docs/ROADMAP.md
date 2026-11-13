@@ -688,6 +688,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **Modüler Gösterge Bileşenleri (`HeaderCrystalStatus.tsx`, `HeaderTimerStatus.tsx`, `HeaderMultiplayerBadge.tsx`):** Kristal oranı ve portal kilidi, oyun süresi ve bölüm rekoru ile çok oyunculu aktiflik rozeti bağımsız modüllere ayrıştırıldı.
 - [x] **Yalın Üst Durum Orkestratörü (`HeaderStatusReadouts.tsx`):** Alt bileşen mimarisine geçirilerek `HeaderStatusReadouts.tsx` 91 satırdan **56 satıra** indirildi.
 
+### Faz 140: Masaüstü HUD Üst Eylem Butonları Ayrıştırması (Tamamlandı)
+- [x] **HUD Eylem Butonları Yardımcı Motoru (`headerActionUtils.ts`, `headerActionUtils.test.mjs`):** Eşleştirme butonu varyantı `resolvePairingButtonVariant`, oda kodu metni güvenli formatlayıcı `formatPairingButtonRoomCode`, gecikme rozet stili `resolvePairingBadgeClass` ve ekran okuyucu etiketi `formatPairingButtonAriaLabel` saf yardımcıları geliştirildi; 4 yeni birim test ile doğrulandı (toplam 372 istemci testi, 400 monorepo testi).
+- [x] **Modüler Eylem Buton Bileşenleri (`HeaderPairingButton.tsx`, `HeaderSettingsButton.tsx`, `HeaderHelpButton.tsx`):** Telefon eşleştirme/gecikme rozeti butonu, ayarlar çekmecesi butonu ve klavye yardım rehberi ikon butonu bağımsız modüllere ayrıştırıldı.
+- [x] **Yalın Üst Eylem Butonları Orkestratörü (`HeaderActionButtons.tsx`):** Alt bileşen mimarisine geçirilerek `HeaderActionButtons.tsx` 74 satırdan **45 satıra** indirildi.
+
 
 
 
