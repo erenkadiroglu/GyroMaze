@@ -912,9 +912,14 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **useDesktopHUDOverlays Kancası ve DesktopHUDOverlays Sadeleşmesi (`apps/client/src/hooks/useDesktopHUDOverlays.ts`, `apps/client/src/components/ui/DesktopHUDOverlays.tsx`):** Sahne üzeri duraklatma kurtarma çubuğu, eşleştirme açma eylemi, oyuna devam etme ve toast bildirim kartı görünürlük/otomatik sönme mantıkları saf motora devredildi.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/desktopOverlaysOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 708'den **713'e**, monorepo testleri 763'ten **768'e** çıkarıldı.
 
-### Faz 193: Mobil Kontrolcü Durum Bildirimleri (ControllerStatusBanners) Orkestrasyon Motoru (Sıradaki)
-- [ ] **Mobil Kontrolcü Bildirimleri Orkestrasyon Motoru (`controllerBannersOrchestrationUtils.ts`, `controllerBannersOrchestrationUtils.test.mjs`):** `ControllerStatusBanners.tsx` bileşenindeki hata banner'ı, seviye yönlendirme çubuğu, zafer bildirimi ve yenilgi bildirimlerinin öncelik sıralaması, görünürlük kuralları ve aksiyon işleyicilerini saf motora ayrıştırma.
-- [ ] **useControllerStatusBanners Kancası ve ControllerStatusBanners Sadeleşmesi:** Durum banner'larını tekil orkestrasyon kancasına bağlayarak saf bir sunum katmanına indirgeme.
+### Faz 193: Mobil Kontrolcü Durum Bildirimleri (ControllerStatusBanners) Orkestrasyon Motoru (Tamamlandı)
+- [x] **Mobil Kontrolcü Bildirimleri Orkestrasyon Motoru (`controllerBannersOrchestrationUtils.ts`, `controllerBannersOrchestrationUtils.test.mjs`):** `resolveControllerBannersVisibility`, `formatControllerBannersTelemetry`, `resolveControllerBannersContainerProps`, `resolveControllerBannersState` fonksiyonları saf mimariyle geliştirildi; 8 yeni birim test ile %100 doğrulandı (toplam 721 istemci testi, 49 sunucu testi, 6 shared testi, **776 monorepo testi**).
+- [x] **useControllerStatusBanners Kancası ve ControllerStatusBanners Sadeleşmesi (`apps/client/src/hooks/useControllerStatusBanners.ts`, `apps/client/src/app/controller/ControllerStatusBanners.tsx`):** Hata bildirimi, seviye gezinme butonları, zafer ve süre dolumu şeritlerinin görünürlük kuralları, eylemleri ve semantik bölge öznitelikleri saf motora devredildi.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/controllerBannersOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 713'ten **721'e**, monorepo testleri 768'den **776'ya** çıkarıldı.
+
+### Faz 194: Mobil Kontrolcü Başlık ve Hızlı Eylemler (ControllerHeader) Orkestrasyon Motoru (Sıradaki)
+- [ ] **Mobil Kontrolcü Başlık Orkestrasyon Motoru (`controllerHeaderOrchestrationUtils.ts`, `controllerHeaderOrchestrationUtils.test.mjs`):** `ControllerHeader.tsx` bileşenindeki marka kapsülü, 6 haneli oda kodu, oyuncu yuvası (1P/2P) rozeti, haptik titreşim eylemi, renk teması geçişi, oda düzenleyici tetikleyicisi ve gecikme telemetrisini saf motora ayrıştırma.
+- [ ] **useControllerHeader Kancası ve ControllerHeader Sadeleşmesi:** Başlık durumunu tekil kancaya bağlayarak sunum katmanına indirgeme.
 - [ ] **Birim Testleri ve Doğrulama:** Yeni birim testleriyle monorepo test barajını artırma, tam derleme ve git push.
 
 
