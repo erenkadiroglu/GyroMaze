@@ -962,9 +962,14 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **useMazeCameraRig Kancası ve Kamera Teçhizatı Sadeleşmesi (`apps/client/src/hooks/useMazeCameraRig.ts`):** Sayfa gizliliği, modal kilitleri, kamera modu etiketleri ve interaktiflik mantığı tekil orkestrasyon motoruna devredildi.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/mazeCameraRigOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 777'den **785'e**, monorepo testleri 832'den **840'a** çıkarıldı.
 
-### Faz 203: 3B Labirent Sahne Tabanı ve Izgarası (MazeStageBoardBase) Orkestrasyon Motoru (Sıradaki)
-- [ ] **3B Sahne Tabanı Orkestrasyon Motoru (`mazeStageBoardBaseOrchestrationUtils.ts`, `mazeStageBoardBaseOrchestrationUtils.test.mjs`):** `MazeStageBoardBase.tsx` bileşeninin tahta boyutuna göre zemin kutusu boyutları, ızgara çizgi sayısı, zemin teması renkleri ve telemetri durumunu saf motora ayrıştırma.
-- [ ] **MazeStageBoardBase Bileşeni Sadeleşmesi:** Tahta tabanı bileşenini saf orkestrasyon motoruna bağlayarak deklaratif sunuma dönüştürme.
+### Faz 203: 3B Labirent Sahne Tabanı ve Izgarası (MazeStageBoardBase) Orkestrasyon Motoru (Tamamlandı)
+- [x] **3B Sahne Tabanı Orkestrasyon Motoru (`mazeStageBoardBaseOrchestrationUtils.ts`, `mazeStageBoardBaseOrchestrationUtils.test.mjs`):** `resolveBoardBaseDimensions`, `resolveBoardGridLinesCount`, `resolveBoardBaseThemeColors`, `formatBoardBaseTelemetry`, `resolveBoardBaseOrchestrationBundle` fonksiyonları saf mimariyle geliştirildi; 6 yeni birim test ile %100 doğrulandı (toplam 791 istemci testi, 49 sunucu testi, 6 shared testi, **846 monorepo testi**).
+- [x] **useMazeStageBoardBase Kancası ve MazeStageBoardBase Sadeleşmesi (`apps/client/src/hooks/useMazeStageBoardBase.ts`, `apps/client/src/components/scene/stage/MazeStageBoardBase.tsx`):** Zemin kutusu geometrisi, zemin gölgesi, kılavuz ızgara çizgileri ve dinamik açık/koyu renk paleti tekil orkestrasyon motoruna devredildi.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/mazeStageBoardBaseOrchestrationUtils.test.mjs` dahil edilerek istemci test sayısı 785'ten **791'e**, monorepo testleri 840'tan **846'ya** çıkarıldı.
+
+### Faz 204: 3B Labirent Sahnesi Fizik Küreleri (MazeStagePhysicsBalls) Orkestrasyon Motoru (Sıradaki)
+- [ ] **3B Fizik Küreleri Orkestrasyon Motoru (`mazeStagePhysicsBallsOrchestrationUtils.ts`, `mazeStagePhysicsBallsOrchestrationUtils.test.mjs`):** `MazeStagePhysicsBalls.tsx` bileşenindeki 1P ve 2P fizik küreleri doğuş pozisyonları, materyal renkleri, çarpışma filtreleri ve telemetri özetini saf motora ayrıştırma.
+- [ ] **MazeStagePhysicsBalls Bileşeni ve useMazeStagePhysicsBalls Kancası:** Fizik küreleri bileşenini deklaratif sunuma kavuşturma.
 - [ ] **Birim Testleri ve Doğrulama:** Yeni birim testleriyle monorepo test kapsamını artırma, tam derleme ve git push.
 
 

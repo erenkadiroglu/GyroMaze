@@ -146,3 +146,4 @@ describe('mazeCameraRigOrchestrationUtils — 3B Kamera Teçhizatı Orkestrasyon
     assert.match(bundle.telemetrySummary, /Kamera Rig: Kuş Bakışı/);
   });
 });
+

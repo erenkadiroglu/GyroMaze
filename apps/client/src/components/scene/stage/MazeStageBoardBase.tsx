@@ -1,25 +1,19 @@
 'use client';
 
-import {
-  resolveBoardBaseConfig,
-  resolveGridHelperConfig,
-} from '@/utils/stageUtils';
+import { useMazeStageBoardBase } from '@/hooks/useMazeStageBoardBase';
 import { _boardMaterial } from '../sceneMaterials';
 
-interface MazeStageBoardBaseProps {
+export interface MazeStageBoardBaseProps {
   boardSize: number;
   isLightBoard: boolean;
 }
 
 /**
  * 3B Labirent tahta tabanı ve ızgara yardımcısı (gridHelper) bileşeni.
+ * useMazeStageBoardBase kancası üzerinden saf orkestrasyon motoru tarafından beslenir.
  */
-export function MazeStageBoardBase({
-  boardSize,
-  isLightBoard,
-}: MazeStageBoardBaseProps) {
-  const baseConfig = resolveBoardBaseConfig(boardSize);
-  const gridConfig = resolveGridHelperConfig(boardSize, isLightBoard);
+export function MazeStageBoardBase(props: MazeStageBoardBaseProps) {
+  const { baseConfig, gridConfig } = useMazeStageBoardBase(props);
 
   return (
     <>
@@ -44,4 +38,3 @@ export function MazeStageBoardBase({
     </>
   );
 }
-
