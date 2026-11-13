@@ -817,6 +817,11 @@ Yeni eklenecek tüm haritalarda aşağıdaki mühendislik kuralları zorunludur:
 - [x] **useSocket Kancası Sadeleşmesi (`apps/client/src/hooks/useSocket.ts`):** Tekrarlayan haptik desenleri, tünel/localhost soket URL çözümleme mantığı, 60Hz jiroskop veri frenleme eşikleri, RTT gecikme hesaplaması ve oda kodu normalizasyonu saf yardımcı motora devredildi.
 - [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/socketConnectionUtils.test.mjs` dahil edilerek istemci test sayısı 527'den **536'ya** çıkarıldı.
 
+### Faz 173: İstemci Jiroskop Açı Sarma, Ölü Bölge ve Filtre Motoru (Tamamlandı)
+- [x] **Jiroskop Filtreleme Yardımcı Motoru (`orientationFilterUtils.ts`, `orientationFilterUtils.test.mjs`):** `wrapAngleDelta`, `applyDeadzone`, `applyExponentialSmoothing`, `clampAndRoundAngle`, `calculateFilteredOrientation` ve `resolveSensorInitialPermission` saf motor fonksiyonları geliştirildi; 7 yeni birim test ile %100 doğrulandı (toplam 543 istemci testi, 49 sunucu testi, 6 shared testi, **598 monorepo testi**).
+- [x] **useDeviceOrientation Kancası Sadeleşmesi (`apps/client/src/hooks/useDeviceOrientation.ts`):** Ham açı filtreleme, mikro titreme engelleme ölü bölgesi (0.2°), EMA yumuşatma (0.72) ve açı sınırlandırma (±35°) saf yardımcı motora aktarıldı.
+- [x] **İstemci Test Otomasyonu (`apps/client/package.json`):** İstemci test script'ine `test/orientationFilterUtils.test.mjs` dahil edilerek test sayısı 536'dan **543'e** yükseltildi.
+
 
 
 

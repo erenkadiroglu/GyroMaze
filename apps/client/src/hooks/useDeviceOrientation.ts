@@ -2,6 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { GyroData, CalibrationOffset } from '@gyromaze/shared';
+import {
+  calculateFilteredOrientation,
+  resolveSensorInitialPermission,
+} from '@/utils/orientationFilterUtils';
 
 /**
  * iOS 13+ Safari tarayıcılarında bulunan izin fonksiyonu için genişletilmiş tip.
@@ -27,7 +31,12 @@ export function useDeviceOrientation({
 }: UseDeviceOrientationOptions = {}) {
   const [permissionState, setPermissionState] = useState<
     'prompt' | 'granted' | 'denied' | 'unsupported'
-  >('prompt');
+  >(() =>
+    resolveSensorInitialPermission(
+      typeof window !== 'undefined',
+      typeof window !== 'undefined' && 'DeviceOrientationEvent' in window,
+    ),
+  );
   const [hasSensorSignal, setHasSensorSignal] = useState(false);
 
   const onOrientationDataRef = useRef(onOrientationData);
@@ -112,8 +121,6 @@ export function useDeviceOrientation({
       return;
     }
 
-    const wrapDelta = (angle: number) => (((angle % 360) + 540) % 360) - 180;
-
     const handleOrientation = (event: DeviceOrientationEvent) => {
       if (event.beta === null && event.gamma === null) {
         return;
@@ -148,32 +155,16 @@ export function useDeviceOrientation({
         smoothedRef.current.gamma = 0;
       }
 
-      let deltaBeta = wrapDelta(beta - calibrationRef.current.betaOffset);
-      let deltaGamma = wrapDelta(gamma - calibrationRef.current.gammaOffset);
+      const { gyroData, nextSmoothed } = calculateFilteredOrientation({
+        rawAlpha: alpha,
+        rawBeta: beta,
+        rawGamma: gamma,
+        calibration: calibrationRef.current,
+        currentSmoothed: smoothedRef.current,
+      });
 
-      // Mikro el titremelerini sönümlemek için 0.2 derecelik minimal ölü bölge
-      if (Math.abs(deltaBeta) < 0.2) deltaBeta = 0;
-      if (Math.abs(deltaGamma) < 0.2) deltaGamma = 0;
-
-      // MEMS sensör gürültüsünü gecikme yaratmadan temizleyen hızlı üstel filtre (EMA = 0.72)
-      smoothedRef.current.beta +=
-        (deltaBeta - smoothedRef.current.beta) * 0.72;
-      smoothedRef.current.gamma +=
-        (deltaGamma - smoothedRef.current.gamma) * 0.72;
-
-      // Maksimum ±35 derece sınırlandırma ve saf kayan nokta yuvarlama (sıfır nesne/string tahsisi)
-      const clampedBeta =
-        Math.round(Math.max(-35, Math.min(35, smoothedRef.current.beta)) * 10) /
-        10;
-      const clampedGamma =
-        Math.round(
-          Math.max(-35, Math.min(35, smoothedRef.current.gamma)) * 10,
-        ) / 10;
-
-      calibratedRef.current.alpha = Math.round(alpha * 10) / 10;
-      calibratedRef.current.beta = clampedBeta;
-      calibratedRef.current.gamma = clampedGamma;
-      calibratedRef.current.timestamp = Date.now();
+      smoothedRef.current = nextSmoothed;
+      calibratedRef.current = gyroData;
 
       onOrientationDataRef.current?.(calibratedRef.current);
     };
